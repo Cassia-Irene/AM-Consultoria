@@ -1,0 +1,9 @@
+Olha, vou te contar como eu imagino isso, porque na prática o sistema tem que se adaptar ao meu jeito de trabalhar — e não o contrário.
+
+1️⃣ Flexibilidade é essencial. Eu não quero algo quadrado demais. Cada cliente é diferente: alguns têm visita mensal, outros por projeto, outros pagam mensalidade fixa; às vezes preciso adicionar categorias de pendência ou criar observações extras na hora. Então campos fixos demais me atrapalhariam. Preciso poder alterar valores, incluir novos tipos de visita, marcar extra, registrar observações sem precisar pedir “autorização” do sistema.
+
+2️⃣ Interface eu gosto de algo simples e visual. Listas detalhadas de clientes e visitas, mas com dashboards que mostrem rapidamente pendências, atrasos, valores a receber. Cores podem ajudar — vermelho para pendências críticas, verde para resolvidas, amarelo para atenção — mas nada exagerado. Não quero mil telas complexas; quero conseguir ver de relance o que precisa de ação.
+
+3️⃣ Dispositivos: preciso usar tanto no computador quanto no celular. Muitas vezes estou na rua, visitando o Lar ou a APAE, e preciso registrar pendência ou visita extra na hora. Tablet também serve, mas celular é essencial.
+
+4️⃣ Rotinas atuais: eu quero substituir caderno e WhatsApp, mas de forma prática. Hoje eu anoto tudo no papel e depois tento lembrar de atualizar planilhas e grupos. Quero que o sistema permita escrever notas rápidas, marcar pendências e visitas como eu faria no caderno, mas com o registro ficando organizado e acessível. A lógica do “anotar e depois conferir” que eu uso hoje tem que estar lá, mas sem perder tempo procurando informações.

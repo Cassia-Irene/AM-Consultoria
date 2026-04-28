@@ -1,7 +1,4 @@
-<<<<<<< HEAD
 version: '3.8'
-=======
->>>>>>> origin/cass
 services:
   postgres:
     image: postgres:16
@@ -10,10 +7,7 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin123
       POSTGRES_DB: am_consultoria
-<<<<<<< HEAD
       POSTGRES_HOST_AUTH_METHOD: trust
-=======
->>>>>>> origin/cass
     ports:
       - "5432:5432"
     volumes:

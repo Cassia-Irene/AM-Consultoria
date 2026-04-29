@@ -713,7 +713,7 @@ export default function NovaVisitaPage() {
                 >
                   {tipo}
                   {tipo === 'Extra' && (
-                    <span className="block text-[9px] font-normal opacity-60">Fora do contrato</span>
+                    <span className="block text-[10px] text-white font-normal opacity-80">Fora do contrato</span>
                   )}
                 </button>
               ))}

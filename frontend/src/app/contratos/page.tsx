@@ -3,7 +3,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { StatusBadge } from '../../components/StatusBadge'
+import { StatusBadge, type StatusVariant } from '../../components/StatusBadge'
 import { Contratos } from '../../lib/mocks'
 
 export default function ContratosPage() {
@@ -56,9 +56,9 @@ export default function ContratosPage() {
             <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gray-50">
               <div>
                 <p className="text-[15px] font-medium text-gray-900">{c.cliente}</p>
-                <p className="text-xs text-gray-400">{c.tipo} · desde {c.dataInicio}</p>
+                <p className="text-xs text-gray-400">{c.tipo} · desde {c.criadoEm}</p>
               </div>
-              <StatusBadge variant={c.status} />
+              <StatusBadge variant={c.status as StatusVariant} />
             </div>
 
             {/* ── DADOS ── */}
@@ -73,8 +73,12 @@ export default function ContratosPage() {
                 />
               )}
 
-              {c.motivoAlteracao && (
-                <Row label="Última alteração" value={`${c.ultimaAlteracao} — ${c.motivoAlteracao}`} small />
+              {c.MudancaValor?.motivoAlteracao && (
+                <Row
+                  label="Última alteração"
+                  value={`${c.MudancaValor.ultimaAlteracao} — ${c.MudancaValor.motivoAlteracao}`}
+                  small
+                />
               )}
 
               <Row label="Visitas/mês" value={`${c.visitasMes} regulares`} />
@@ -87,7 +91,7 @@ export default function ContratosPage() {
                   }`}>
                     {formatMoney(c.faturamentoMes.valor)}
                   </span>
-                  <StatusBadge variant={c.faturamentoMes.status} />
+                  <StatusBadge variant={c.faturamentoMes.status as StatusVariant} />
                 </div>
               </div>
             </div>

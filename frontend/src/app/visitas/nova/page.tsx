@@ -28,119 +28,225 @@ interface PendenciaGerada {
 
 /** Sugestão gerada automaticamente pelo sistema a partir do resumo */
 interface PendenciaSugerida extends PendenciaGerada {
-  gatilho: string        // keyword que disparou a sugestão
-  estado: 'pendente' | 'editando'  // descartada = removida do array
+  gatilho: string
+  estado: 'pendente' | 'editando'
+  scoreBase: number  // 0–1: confiança da sugestão; >= 0.7 → pré-aceita
 }
 
 interface FormState {
   clienteId: string
   tipoVisita: TipoVisita
-  resumo: string         // o que aconteceu — curto, obrigatório
-  observacoes: string    // anotação livre — opcional
+  resumo: string
+  observacoes: string
   pendencias: PendenciaGerada[]
 }
 
 type Etapa = 1 | 2 | 3
 
-/* ─────────────────────────────────────────────
-   MOTOR DE SUGESTÕES — heurísticas locais
-───────────────────────────────────────────── */
-
 interface Regra {
   palavras: string[]
+  /**
+   * Palavras que CANCELAM a sugestão mesmo que o gatilho bata.
+   * Ex: "contrato" bate, mas "assinou" indica que já foi resolvido.
+   */
+  negadores?: string[]
   titulo: string
   prioridade: PrioridadePendencia
   diasAFrente: number
-  gatilho: string  // label amigável para exibir
+  gatilho: string
+  /**
+   * Score base de confiança (0–1).
+   * >= 0.7 → pré-aceita automaticamente (opt-out)
+   * < 0.7  → aparece como sugestão opcional (opt-in)
+   */
+  scoreBase: number
 }
 
 const REGRAS: Regra[] = [
   {
-    palavras: ['anvisa', 'vigilância', 'vigilancia', 'sanitária', 'sanitaria', 'inspeção', 'inspecao', 'fiscal'],
+    palavras: ['anvisa', 'vigilância', 'vigilancia', 'sanitária', 'sanitaria', 'inspecão', 'inspecao', 'vistoria', 'auditoria'],
+    negadores: ['aprovado', 'aprovada', 'ok', 'passou', 'liberado', 'liberada'],
     titulo: 'Pendência ANVISA',
     prioridade: 'urgente',
     diasAFrente: 3,
     gatilho: 'ANVISA',
+    scoreBase: 0.9,
   },
   {
-    palavras: ['relatório', 'relatorio', 'laudo', 'documento', 'documentação', 'documentacao'],
+    palavras: ['relatório', 'relatorio', 'laudo', 'documentar', 'documentação', 'documentacao'],
+    // 'documento' removido — ambíguo demais ("o cliente pediu um documento" ≠ pendência)
+    negadores: ['enviou', 'enviado', 'mandou', 'entregou', 'pronto', 'concluído', 'concluido'],
     titulo: 'Enviar relatório',
     prioridade: 'atencao',
     diasAFrente: 7,
     gatilho: 'relatório',
+    scoreBase: 0.8,
   },
   {
-    palavras: ['contrato', 'renovação', 'renovacao', 'assinatura', 'assinar', 'assinou'],
+    palavras: ['contrato', 'renovação', 'renovacao', 'assinatura'],
+    // 'assinar'/'assinou' removidos — indicam conclusão, não pendência
+    negadores: ['assinou', 'assinado', 'fechou', 'fechado', 'renovado'],
     titulo: 'Resolver pendência contratual',
     prioridade: 'atencao',
     diasAFrente: 5,
     gatilho: 'contrato',
+    scoreBase: 0.75,
   },
   {
-    palavras: ['fatura', 'pagamento', 'boleto', 'cobrança', 'cobranca', 'cobrar', 'pagar'],
+    palavras: ['fatura', 'pagamento', 'boleto', 'cobrança', 'cobranca', 'cobrar', 'pagar', 'inadimplente', 'inadimplência', 'vencido', 'vencida'],
+    negadores: ['pagou', 'pago', 'quitou', 'quitado', 'regularizado'],
     titulo: 'Regularizar pagamento',
     prioridade: 'urgente',
     diasAFrente: 2,
     gatilho: 'pagamento',
+    scoreBase: 0.9,
   },
   {
     palavras: ['treinamento', 'capacitação', 'capacitacao', 'capacitar', 'treinar'],
+    negadores: ['fez', 'feito', 'realizado', 'concluído', 'concluido'],
     titulo: 'Agendar treinamento com equipe',
     prioridade: 'normal',
     diasAFrente: 14,
     gatilho: 'treinamento',
+    scoreBase: 0.7,
   },
   {
-    palavras: ['retorno', 'voltar', 'reagendar', 'próxima visita', 'proxima visita'],
+    // Intenção implícita: "pedir", "marcar", "combinar" indicam ação futura
+    palavras: ['retorno', 'reagendar', 'próxima visita', 'proxima visita', 'voltar lá', 'agendar', 'marcar visita', 'pediu pra voltar', 'pediu retorno'],
+    negadores: ['cancelou', 'cancelado', 'não quer', 'não precisa'],
     titulo: 'Agendar próxima visita',
     prioridade: 'normal',
     diasAFrente: 7,
     gatilho: 'retorno',
+    scoreBase: 0.65,
   },
   {
-    palavras: ['alvará', 'alvara', 'licença', 'licenca', 'renovação alvará'],
+    palavras: ['alvará', 'alvara', 'licença', 'licenca'],
+    negadores: ['renovado', 'regularizado', 'em dia'],
     titulo: 'Renovar alvará/licença',
     prioridade: 'atencao',
     diasAFrente: 10,
     gatilho: 'alvará',
+    scoreBase: 0.8,
   },
   {
-    palavras: ['equipe', 'funcionários', 'funcionarios', 'colaborador'],
-    titulo: 'Acompanhar equipe',
-    prioridade: 'normal',
-    diasAFrente: 7,
+    // Equipe: qualquer mencao é suficiente para sugerir alinhamento
+    palavras: [
+      'equipe', 'funcionários', 'funcionarios', 'colaborador', 'colaboradores',
+      'alinhar', 'alinhamento', 'comunicar', 'comunicado', 'reunir', 'reunião',
+    ],
+    negadores: ['resolvido', 'alinhado', 'alinhada'],
+    titulo: 'Alinhar com equipe do cliente',
+    prioridade: 'atencao',
+    diasAFrente: 3,
     gatilho: 'equipe',
+    scoreBase: 0.65,
+  },
+  {
+    // Saúde: contexto comum em clientes como Lar São Francisco e APAE
+    palavras: [
+      'paciente', 'residente', 'idoso', 'cuidado', 'cuidador', 'enfermagem',
+      'medico', 'médico', 'saúde', 'saude', 'medicamento', 'prontuário', 'prontuario',
+      'ocorrência', 'ocorrencia', 'incidente',
+    ],
+    negadores: ['resolvido', 'resolvida', 'estavel', 'estável'],
+    titulo: 'Acompanhar situação do paciente/residente',
+    prioridade: 'atencao',
+    diasAFrente: 2,
+    gatilho: 'paciente',
+    scoreBase: 0.7,
+  },
+  {
+    // Solicitações diretas do cliente são ações implícitas
+    palavras: ['cliente pediu', 'pediu para', 'solicitou', 'precisa de', 'está esperando', 'aguardando'],
+    negadores: ['não precisa', 'cancelou', 'desistiu'],
+    titulo: 'Atender solicitação do cliente',
+    prioridade: 'atencao',
+    diasAFrente: 3,
+    gatilho: 'solicitação',
+    scoreBase: 0.65,
   },
 ]
 
-/** Palavras que elevam qualquer sugestão para 'urgente' */
-const BOOSTS_URGENTE = ['urgente', 'urgência', 'urgencia', 'crítico', 'critico', 'imediato', 'prazo']
+/**
+ * Palavras de urgência CIRURGICAS.
+ * Em vez de elevar tudo, só elevam a regra cujo gatilho está próximo no texto.
+ * A proximidade é definida por uma janela de 40 caracteres antes/depois do boost.
+ */
+const BOOSTS_URGENTE = [
+  'urgente', 'urgência', 'urgencia', 'crítico', 'critico',
+  'imediato', 'imediata', 'emergencia', 'emergência',
+  // Removido 'prazo' — muito ambíguo, causa boost em contextos informativos
+]
+
+/** Score mínimo para pré-aceitar (aparecer como "Já inclusa"). Abaixo disso → sugestão opcional */
+const THRESHOLD_PRE_ACEITAR = 0.7
+
+/** Janela de caracteres para considerar boost de urgência cirúrgico */
+const JANELA_BOOST = 60
 
 function prazoEmDias(dias: number): string {
   const d = new Date()
   d.setDate(d.getDate() + dias)
-  return d.toLocaleDateString('pt-BR')  // dd/mm/yyyy
+  return d.toLocaleDateString('pt-BR')
+}
+
+/**
+ * Verifica se existe um boost de urgencia PROXIMO ao gatilho no texto.
+ * Evita elevar toda a lista quando a palavra "urgente" aparece em outro contexto.
+ */
+function temBoostProximo(texto: string, gatilho: string): boolean {
+  const idx = texto.indexOf(gatilho.toLowerCase())
+  if (idx === -1) return false
+  const inicio = Math.max(0, idx - JANELA_BOOST)
+  const fim    = Math.min(texto.length, idx + gatilho.length + JANELA_BOOST)
+  const janela = texto.slice(inicio, fim)
+  return BOOSTS_URGENTE.some(b => janela.includes(b))
+}
+
+/** Boost global: quando o texto inteiro é claramente de urgência */
+function temBoostGlobal(texto: string): boolean {
+  // Só aplica boost global se houver 2+ palavras de urgência no texto
+  const count = BOOSTS_URGENTE.filter(b => texto.includes(b)).length
+  return count >= 2
 }
 
 function sugerirPendencias(resumo: string): PendenciaSugerida[] {
   const texto = resumo.toLowerCase()
-  const ehUrgente = BOOSTS_URGENTE.some(p => texto.includes(p))
+  const boostGlobal = temBoostGlobal(texto)
   const sugestoes: PendenciaSugerida[] = []
 
   for (const regra of REGRAS) {
+    // 1. Verifica se algum gatilho batóu
     const match = regra.palavras.some(p => texto.includes(p))
     if (!match) continue
 
-    const prioridade: PrioridadePendencia =
-      ehUrgente && regra.prioridade !== 'urgente' ? 'atencao' : regra.prioridade
+    // 2. Verifica negadores: se o contexto indica que já foi resolvido, ignora
+    const negado = regra.negadores?.some(n => texto.includes(n)) ?? false
+    if (negado) continue
+
+    // 3. Calcula boost de urgência cirúrgico
+    const boostLocal = temBoostProximo(texto, regra.gatilho)
+    const comBoost   = boostGlobal || boostLocal
+
+    // 4. Define prioridade final
+    let prioridade: PrioridadePendencia = regra.prioridade
+    if (comBoost && prioridade === 'normal')   prioridade = 'atencao'
+    if (comBoost && prioridade === 'atencao')  prioridade = 'urgente'
+    // urgente permanece urgente
+
+    // 5. Score final (boost sobe o score, dando mais chances de pré-aceitar)
+    const scoreFinal = comBoost ? Math.min(regra.scoreBase + 0.15, 1) : regra.scoreBase
 
     sugestoes.push({
       id: uid(),
       titulo: regra.titulo,
-      prazo: prazoEmDias(regra.diasAFrente),
+      prazo: prazoEmDias(prioridade === 'urgente' ? Math.ceil(regra.diasAFrente * 0.66) : regra.diasAFrente),
       prioridade,
       gatilho: regra.gatilho,
       estado: 'pendente',
+      // score utilizado pelo chamador para separar opt-out vs opt-in
+      scoreBase: scoreFinal,
     })
   }
 
@@ -157,28 +263,218 @@ function uid() {
   return Math.random().toString(36).slice(2, 9)
 }
 
-function pendenciaVazia(): PendenciaGerada {
-  return { id: uid(), titulo: '', prazo: '', prioridade: 'normal' }
-}
-
 /* ─────────────────────────────────────────────
    SUB-COMPONENTES
 ───────────────────────────────────────────── */
 
+/** Formulário inline para adicionar pendência manualmente — sem abrir modal */
+function AdicionarPendenciaInline({ onAdd, variant = 'dashed' }: { onAdd: (p: PendenciaGerada) => void, variant?: 'dashed' | 'primary' }) {
+  const [titulo, setTitulo] = useState('')
+  const [prioridade, setPrioridade] = useState<PrioridadePendencia>('atencao')
+  const [aberto, setAberto] = useState(false)
+
+  function submeter() {
+    if (!titulo.trim()) return
+    const dias = prioridade === 'urgente' ? 2 : prioridade === 'atencao' ? 5 : 10
+    const d = new Date()
+    d.setDate(d.getDate() + dias)
+    onAdd({
+      id: Math.random().toString(36).slice(2, 9),
+      titulo: titulo.trim(),
+      prazo: d.toLocaleDateString('pt-BR'),
+      prioridade,
+    })
+    setTitulo('')
+    setPrioridade('atencao')
+    setAberto(false)
+  }
+
+  if (!aberto) {
+    if (variant === 'primary') {
+      return (
+        <button
+          type="button"
+          onClick={() => setAberto(true)}
+          className="w-full flex items-center justify-center gap-2 bg-[#0466C8] rounded-xl py-3 text-white text-sm font-bold active:bg-[#0353A4] transition-colors"
+        >
+          + Adicionar pendência
+        </button>
+      )
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={() => setAberto(true)}
+        className="w-full flex items-center justify-center gap-2 border border-dashed border-[#23272F] rounded-2xl py-3.5 text-[#0466C8] text-sm font-semibold active:border-[#0466C8]/60 active:bg-[#0466C8]/5 transition-colors"
+      >
+        <span className="text-lg leading-none">+</span> Escrever pendência
+      </button>
+    )
+  }
+
+  return (
+    <div className="bg-[#0d1117] border border-[#0466C8]/40 rounded-2xl px-4 py-4 space-y-3">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-[#0466C8]">Nova pendência</p>
+
+      <input
+        type="text"
+        value={titulo}
+        onChange={e => setTitulo(e.target.value)}
+        onKeyDown={e => e.key === 'Enter' && submeter()}
+        placeholder="O que ficou em aberto?"
+        autoFocus
+        className="w-full bg-transparent text-white text-sm placeholder-[#7D8597] border-b border-[#23272F] pb-2 focus:outline-none focus:border-[#0466C8] transition-colors"
+      />
+
+      <div className="flex gap-2 items-center">
+        {(['urgente', 'atencao', 'normal'] as PrioridadePendencia[]).map(p => {
+          const labels = { urgente: 'Urgente', atencao: 'Atenção', normal: 'Normal' }
+          const active = { urgente: 'bg-red-900/50 text-red-400 border-red-700', atencao: 'bg-amber-900/30 text-amber-400 border-amber-700', normal: 'bg-[#23272F] text-[#7D8597] border-[#23272F]' }
+          return (
+            <button key={p} type="button" onClick={() => setPrioridade(p)}
+              className={`text-[10px] font-bold px-3 py-1.5 rounded-lg border transition-all ${
+                prioridade === p ? active[p] : 'bg-transparent text-[#7D8597] border-[#23272F]'
+              }`}>
+              {labels[p]}
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="flex gap-2 pt-1">
+        <button type="button" onClick={() => setAberto(false)}
+          className="flex-1 py-2.5 rounded-xl text-sm text-[#7D8597] bg-[#23272F] active:opacity-70 transition-opacity">
+          Cancelar
+        </button>
+        <button type="button" onClick={submeter} disabled={!titulo.trim()}
+          className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0466C8] disabled:opacity-40 active:bg-[#0353A4] transition-colors">
+          Adicionar
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/** Card editável para pendências já incluídas — toque para expandir e editar */
+function PendenciaEditavel({
+  p,
+  onChange,
+  onRemove,
+}: {
+  p: PendenciaGerada
+  onChange: (changes: Partial<PendenciaGerada>) => void
+  onRemove: () => void
+}) {
+  const [expandido, setExpandido] = useState(false)
+
+  const cColor = p.prioridade === 'urgente' ? 'border-red-500' : p.prioridade === 'atencao' ? 'border-amber-400' : 'border-[#23272F]'
+  const dest   = p.prioridade === 'urgente' ? '→ Modo Caos' : '→ Planejamento'
+  const dColor = p.prioridade === 'urgente' ? 'text-red-400' : 'text-[#7D8597]'
+  const prioActive = {
+    urgente: 'bg-red-900/50 text-red-400 border-red-700',
+    atencao: 'bg-amber-900/30 text-amber-400 border-amber-700',
+    normal:  'bg-[#23272F] text-[#7D8597] border-[#23272F]',
+  }
+
+  if (!expandido) {
+    return (
+      <div
+        className={`flex items-center gap-3 bg-[#0d1117] border-l-4 ${cColor} rounded-r-xl px-4 py-3 active:bg-[#161b22] transition-colors cursor-pointer`}
+        onClick={() => setExpandido(true)}
+      >
+        <div className="flex-1 min-w-0">
+          <p className="text-white text-sm font-semibold truncate">{p.titulo || '(sem título)'}</p>
+          <p className={`text-[10px] font-bold ${dColor}`}>{dest} · {p.prazo}</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[#7D8597] text-[10px]">editar</span>
+          <button
+            type="button"
+            onClick={e => { e.stopPropagation(); onRemove() }}
+            className="text-[#7D8597] active:text-red-400 text-lg leading-none"
+          >×</button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className={`bg-[#0d1117] border-l-4 ${cColor} rounded-r-xl px-4 py-4 space-y-3`}>
+      {/* Título */}
+      <input
+        type="text"
+        value={p.titulo}
+        onChange={e => onChange({ titulo: e.target.value })}
+        placeholder="O que ficou pendente?"
+        autoFocus
+        className="w-full bg-transparent text-white text-sm font-semibold placeholder-[#7D8597] border-b border-[#23272F] pb-2 focus:outline-none focus:border-[#0466C8] transition-colors"
+      />
+
+      {/* Prioridade */}
+      <div className="flex gap-1.5">
+        {(['urgente', 'atencao', 'normal'] as PrioridadePendencia[]).map(pr => (
+          <button
+            key={pr}
+            type="button"
+            onClick={() => onChange({ prioridade: pr })}
+            className={`text-[10px] font-bold px-3 py-1.5 rounded-lg border transition-all ${
+              p.prioridade === pr ? prioActive[pr] : 'bg-transparent text-[#7D8597] border-[#23272F]'
+            }`}
+          >
+            {pr === 'urgente' ? 'Urgente' : pr === 'atencao' ? 'Atenção' : 'Normal'}
+          </button>
+        ))}
+      </div>
+
+      {/* Prazo */}
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] text-[#7D8597] shrink-0">Prazo:</span>
+        <input
+          type="text"
+          value={p.prazo}
+          onChange={e => onChange({ prazo: e.target.value })}
+          placeholder="dd/mm/aaaa"
+          maxLength={10}
+          className="flex-1 bg-[#23272F] text-white text-xs rounded-lg px-3 py-1.5 placeholder-[#7D8597] focus:outline-none focus:ring-1 focus:ring-[#0466C8]"
+        />
+      </div>
+
+      {/* Ações */}
+      <div className="flex gap-2 pt-1">
+        <button
+          type="button"
+          onClick={onRemove}
+          className="px-4 py-2 rounded-xl text-xs text-red-400 bg-red-900/20 active:bg-red-900/40 transition-colors"
+        >
+          Remover
+        </button>
+        <button
+          type="button"
+          onClick={() => setExpandido(false)}
+          className="flex-1 py-2 rounded-xl text-sm font-bold text-white bg-[#0466C8] active:bg-[#0353A4] transition-colors"
+        >
+          Pronto
+        </button>
+      </div>
+    </div>
+  )
+}
+
 /** Indicador de etapas no topo */
 function EtapaIndicador({ atual }: { atual: Etapa }) {
   const etapas = [
-    { num: 1, label: 'O que aconteceu' },
-    { num: 2, label: 'Ficou algo aberto?' },
+    { num: 1, label: 'Resumo' },
+    { num: 2, label: 'Pendências' },
     { num: 3, label: 'Confirmar' },
   ]
 
   return (
-    <div className="flex items-center gap-0 px-5 py-3 border-b border-[#23272F]">
+    <div className="flex items-center justify-center gap-2 px-2 py-3 border-b border-[#23272F]">
       {etapas.map((e, i) => (
-        <div key={e.num} className="flex items-center flex-1">
+        <div key={e.num} className="flex items-center">
           <div className="flex flex-col items-center">
-            <div className={`size-6 rounded-full flex items-center justify-center text-[11px] font-bold transition-colors ${
+            <div className={`size-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-colors ${
               e.num < atual
                 ? 'bg-emerald-500 text-white'
                 : e.num === atual
@@ -187,14 +483,15 @@ function EtapaIndicador({ atual }: { atual: Etapa }) {
             }`}>
               {e.num < atual ? '✓' : e.num}
             </div>
-            <p className={`text-[9px] mt-0.5 font-medium whitespace-nowrap ${
+            <p className={`text-[12px] mt-1 font-medium whitespace-nowrap px-1 ${
               e.num === atual ? 'text-[#0466C8]' : 'text-white'
             }`}>
               {e.label}
             </p>
           </div>
+          
           {i < etapas.length - 1 && (
-            <div className={`flex-1 h-px mx-1 mb-3 transition-colors ${
+            <div className={`w-8 h-px mx-1 -mt-4 transition-colors ${
               e.num < atual ? 'bg-emerald-500' : 'bg-[#23272F]'
             }`} />
           )}
@@ -204,163 +501,6 @@ function EtapaIndicador({ atual }: { atual: Etapa }) {
   )
 }
 
-/** Card de pendência gerada na etapa 2 */
-function PendenciaCard({
-  p,
-  onChange,
-  onRemove,
-}: {
-  p: PendenciaGerada
-  onChange: (updated: PendenciaGerada) => void
-  onRemove: () => void
-}) {
-  const prioMap: { value: PrioridadePendencia; label: string; color: string }[] = [
-    { value: 'urgente', label: 'Urgente',  color: 'bg-red-900/50 text-red-400 border-red-800' },
-    { value: 'atencao', label: 'Atenção',  color: 'bg-amber-900/50 text-amber-400 border-amber-800' },
-    { value: 'normal',  label: 'Normal',   color: 'bg-[#23272F] text-[#7D8597] border-[#23272F]' },
-  ]
-
-  return (
-    <div className="bg-[#0d1117] border border-[#23272F] rounded-2xl px-4 py-4 space-y-3">
-      {/* Título */}
-      <input
-        type="text"
-        value={p.titulo}
-        onChange={e => onChange({ ...p, titulo: e.target.value })}
-        placeholder="O que ficou pendente?"
-        className="w-full bg-transparent text-white text-sm font-medium placeholder-[#7D8597] border-b border-[#23272F] pb-2 focus:outline-none focus:border-[#0466C8] transition-colors"
-      />
-
-      {/* Prioridade + Prazo na mesma linha */}
-      <div className="flex gap-2">
-        {/* Prioridade */}
-        <div className="flex gap-1">
-          {prioMap.map(pr => (
-            <button
-              type="button"
-              key={pr.value}
-              onClick={() => onChange({ ...p, prioridade: pr.value })}
-              className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-all ${
-                p.prioridade === pr.value ? pr.color : 'bg-transparent text-[#7D8597] border-[#23272F]'
-              }`}
-            >
-              {pr.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Prazo */}
-        <input
-          type="text"
-          value={p.prazo}
-          onChange={e => onChange({ ...p, prazo: e.target.value })}
-          placeholder="dd/mm/aaaa"
-          maxLength={10}
-          className="flex-1 bg-[#23272F] text-white text-xs rounded-lg px-3 py-1 placeholder-[#7D8597] focus:outline-none focus:ring-1 focus:ring-[#0466C8] min-w-0"
-        />
-      </div>
-
-      {/* Remover */}
-      <button
-        type="button"
-        onClick={onRemove}
-        className="text-[10px] text-[#7D8597] active:text-red-400 transition-colors"
-      >
-        Remover
-      </button>
-    </div>
-  )
-}
-
-/** Card de sugestão automática — aceitar (1 toque), editar inline ou descartar */
-function SugestaoCard({
-  s,
-  onAceitar,
-  onEditar,
-  onDescartar,
-  onChange,
-}: {
-  s: PendenciaSugerida
-  onAceitar: () => void
-  onEditar: () => void
-  onDescartar: () => void
-  onChange: (updated: PendenciaSugerida) => void
-}) {
-  const prioMap = [
-    { value: 'urgente' as PrioridadePendencia, label: 'Urgente',  ring: 'border-red-500',   dot: 'bg-red-500',   text: 'text-red-400' },
-    { value: 'atencao' as PrioridadePendencia, label: 'Atenção', ring: 'border-amber-400', dot: 'bg-amber-400', text: 'text-amber-400' },
-    { value: 'normal'  as PrioridadePendencia, label: 'Normal',  ring: 'border-[#23272F]', dot: 'bg-[#7D8597]', text: 'text-[#7D8597]' },
-  ]
-  const prio = prioMap.find(p => p.value === s.prioridade)!
-
-  if (s.estado === 'editando') {
-    return (
-      <div className="bg-[#0d1117] border border-[#0466C8] rounded-2xl px-4 py-4 space-y-3">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-[#0466C8]">Editando</p>
-        <input
-          type="text"
-          value={s.titulo}
-          onChange={e => onChange({ ...s, titulo: e.target.value })}
-          className="w-full bg-transparent text-white text-sm font-medium border-b border-[#23272F] pb-2 focus:outline-none focus:border-[#0466C8] transition-colors"
-          autoFocus
-        />
-        <div className="flex gap-2">
-          <div className="flex gap-1">
-            {prioMap.map(pr => (
-              <button type="button" key={pr.value}
-                onClick={() => onChange({ ...s, prioridade: pr.value })}
-                className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-all ${
-                  s.prioridade === pr.value ? `bg-[#23272F] ${pr.text} ${pr.ring}` : 'bg-transparent text-[#7D8597] border-[#23272F]'
-                }`}>
-                {pr.label}
-              </button>
-            ))}
-          </div>
-          <input type="text" value={s.prazo}
-            onChange={e => onChange({ ...s, prazo: e.target.value })}
-            placeholder="dd/mm/aaaa" maxLength={10}
-            className="flex-1 bg-[#23272F] text-white text-xs rounded-lg px-3 py-1 placeholder-[#7D8597] focus:outline-none focus:ring-1 focus:ring-[#0466C8] min-w-0"
-          />
-        </div>
-        <button type="button" onClick={onAceitar}
-          className="w-full bg-emerald-700 active:bg-emerald-800 text-white text-sm font-bold rounded-xl py-2.5 transition-colors">
-          ✓ Confirmar
-        </button>
-      </div>
-    )
-  }
-
-  return (
-    <div className={`bg-[#0d1117] border ${prio.ring} rounded-2xl px-4 py-4`}>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] font-bold text-[#7D8597] uppercase tracking-wide">
-          🔍 detectado: &ldquo;{s.gatilho}&rdquo;
-        </span>
-        <button type="button" onClick={onDescartar}
-          className="text-[#7D8597] active:text-red-400 text-xs leading-none px-1">
-          ✕
-        </button>
-      </div>
-      <p className="text-white font-semibold text-sm mb-0.5">{s.titulo}</p>
-      <p className={`text-xs ${prio.text} mb-3`}>
-        <span className={`inline-block size-1.5 rounded-full ${prio.dot} mr-1`} />
-        {s.prioridade === 'urgente' ? 'Urgente' : s.prioridade === 'atencao' ? 'Atenção' : 'Normal'}
-        {' · '}
-        {s.prazo}
-      </p>
-      <div className="flex gap-2">
-        <button type="button" onClick={onAceitar}
-          className="flex-1 bg-emerald-700/30 active:bg-emerald-700/60 text-emerald-400 text-sm font-bold rounded-xl py-2.5 border border-emerald-700/40 transition-colors">
-          ✓ Aceitar
-        </button>
-        <button type="button" onClick={onEditar}
-          className="flex-1 bg-[#23272F] active:bg-[#0d1117] text-[#7D8597] text-sm font-semibold rounded-xl py-2.5 transition-colors">
-          Editar
-        </button>
-      </div>
-    </div>
-  )
-}
 
 /* ─────────────────────────────────────────────
    PAGE
@@ -391,9 +531,30 @@ export default function NovaVisitaPage() {
     if (!form.resumo.trim()) e.resumo = 'Descreva brevemente o que aconteceu'
     setErrors(e)
     if (Object.keys(e).length === 0) {
-      // Gera sugestões a partir do resumo (só se ainda não gerou)
       if (sugestoes.length === 0) {
-        setSugestoes(sugerirPendencias(form.resumo))
+        const todas = sugerirPendencias(form.resumo)
+        
+        // Agora usamos o Score de Confiança para decidir o Opt-out
+        // >= THRESHOLD_PRE_ACEITAR (0.7) → Entra direto como "Já inclusa"
+        // < 0.7 → Fica como sugestão opcional (chip)
+        const paraIncluir = todas.filter(s => s.scoreBase >= THRESHOLD_PRE_ACEITAR)
+        const paraSugerir = todas.filter(s => s.scoreBase < THRESHOLD_PRE_ACEITAR)
+
+        if (paraIncluir.length > 0) {
+          setForm(f => ({ 
+            ...f, 
+            pendencias: [
+              ...f.pendencias, 
+              ...paraIncluir.map(s => ({ 
+                id: s.id, 
+                titulo: s.titulo, 
+                prazo: s.prazo, 
+                prioridade: s.prioridade 
+              }))
+            ] 
+          }))
+        }
+        setSugestoes(paraSugerir)
       }
       setEtapa(2)
     }
@@ -412,30 +573,16 @@ export default function NovaVisitaPage() {
     setSugestoes(ss => ss.filter(s => s.id !== id))
   }
 
-  function editarSugestao(id: string) {
-    setSugestoes(ss => ss.map(s => s.id === id ? { ...s, estado: 'editando' } : s))
-  }
-
   function descartarSugestao(id: string) {
     setSugestoes(ss => ss.filter(s => s.id !== id))
   }
 
-  function updateSugestao(id: string, updated: PendenciaSugerida) {
-    setSugestoes(ss => ss.map(s => s.id === id ? updated : s))
-  }
-  function addPendencia() {
-    setForm(f => ({ ...f, pendencias: [...f.pendencias, pendenciaVazia()] }))
-  }
-
-  function updatePendencia(id: string, updated: PendenciaGerada) {
-    setForm(f => ({
-      ...f,
-      pendencias: f.pendencias.map(p => p.id === id ? updated : p),
-    }))
-  }
-
   function removePendencia(id: string) {
     setForm(f => ({ ...f, pendencias: f.pendencias.filter(p => p.id !== id) }))
+  }
+
+  function updatePendencia(id: string, changes: Partial<PendenciaGerada>) {
+    setForm(f => ({ ...f, pendencias: f.pendencias.map(p => p.id === id ? { ...p, ...changes } : p) }))
   }
 
   /* ── submit ── */
@@ -522,7 +669,7 @@ export default function NovaVisitaPage() {
           ETAPA 1 — O QUE ACONTECEU
       ════════════════════════════ */}
       {etapa === 1 && (
-        <div className="px-4 pt-5 pb-32 space-y-5">
+        <div className="justify-center px-4 pt-5 pb-32 space-y-5">
 
           {/* Cliente */}
           <div>
@@ -619,62 +766,77 @@ export default function NovaVisitaPage() {
       {etapa === 2 && (
         <div className="px-4 pt-5 pb-32 space-y-5">
 
-          {/* ── SUGESTÕES DO SISTEMA ── */}
-          {sugestoes.length > 0 && (
-            <section className="space-y-3">
-              <p className="text-[11px] font-black uppercase tracking-widest text-[#0466C8] px-1">
-                Sugeridas pelo sistema ({sugestoes.length})
-              </p>
-              {sugestoes.map(s => (
-                <SugestaoCard
-                  key={s.id}
-                  s={s}
-                  onAceitar={() => aceitarSugestao(s.id)}
-                  onEditar={() => editarSugestao(s.id)}
-                  onDescartar={() => descartarSugestao(s.id)}
-                  onChange={updated => updateSugestao(s.id, updated)}
-                />
-              ))}
-            </section>
-          )}
-
-          {/* ── PENDENCIAS CONFIRMADAS/MANUAIS ── */}
+          {/* ── BLOCO 1: JÁ VÃO SER SALVAS (pré-aceitas, opt-out, editáveis) ── */}
           {form.pendencias.length > 0 && (
-            <section className="space-y-3">
-              <p className="text-[11px] font-black uppercase tracking-widest text-emerald-500 px-1">
-                Confirmadas ({form.pendencias.length})
+            <section>
+              <p className="text-[11px] font-black uppercase tracking-widest text-emerald-500 px-1 mb-2">
+                Ações detectadas — já inclusas ({form.pendencias.length})
               </p>
-              {form.pendencias.map(p => (
-                <PendenciaCard
-                  key={p.id}
-                  p={p}
-                  onChange={updated => updatePendencia(p.id, updated)}
-                  onRemove={() => removePendencia(p.id)}
-                />
-              ))}
+              <p className="text-[10px] text-[#7D8597] px-1 mb-3">Toque para editar · × para remover.</p>
+              <div className="space-y-2">
+                {form.pendencias.map(p => (
+                  <PendenciaEditavel
+                    key={p.id}
+                    p={p}
+                    onChange={changes => updatePendencia(p.id, changes)}
+                    onRemove={() => removePendencia(p.id)}
+                  />
+                ))}
+              </div>
             </section>
           )}
 
-          {/* Estado vazio — sem sugestões e sem manuais */}
+          {/* ── BLOCO 2: SUGESTÕES OPCIONAIS (atenção/normal — chips) ── */}
+          {sugestoes.length > 0 && (
+            <section>
+              <p className="text-[11px] font-black uppercase tracking-widest text-[#0466C8] px-1 mb-2">
+                Adicionar também? ({sugestoes.length})
+              </p>
+              <div className="space-y-2">
+                {sugestoes.map(s => {
+                  const dest   = s.prioridade === 'atencao' ? '→ Planejamento hoje' : '→ Planejamento'
+                  const dColor = s.prioridade === 'atencao' ? 'text-amber-400' : 'text-[#7D8597]'
+                  return (
+                    <div key={s.id} className="flex items-center gap-3 bg-[#0d1117] border border-[#23272F] rounded-xl px-4 py-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-semibold truncate">{s.titulo}</p>
+                        <p className={`text-[10px] font-bold ${dColor}`}>{dest} · {s.prazo}</p>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <button type="button" onClick={() => aceitarSugestao(s.id)}
+                          className="text-emerald-400 text-xs font-bold bg-emerald-900/30 px-3 py-1.5 rounded-lg active:bg-emerald-900/60">+ Sim</button>
+                        <button type="button" onClick={() => descartarSugestao(s.id)}
+                          className="text-[#7D8597] text-xs font-bold bg-[#23272F] px-3 py-1.5 rounded-lg active:opacity-60">Não</button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* Estado vazio + adicionar manualmente */}
           {sugestoes.length === 0 && form.pendencias.length === 0 && (
-            <div className="text-center py-10">
-              <p className="text-3xl mb-3">👍️</p>
-              <p className="text-white text-sm font-semibold">Nenhuma pendência</p>
-              <p className="text-[#7D8597] text-xs mt-1">Tudo certo? Avance para confirmar.</p>
+            <div className="py-8 space-y-6">
+              <div className="text-center">
+                <p className="text-2xl mb-3">✏️</p>
+                <p className="text-white text-sm font-bold">Nada detectado no resumo</p>
+                <p className="text-[#7D8597] text-[10px] mt-1.5 leading-relaxed">
+                  O sistema não encontrou palavras-chave<br />
+                  Adicione a pendência manualmente abaixo.
+                </p>
+              </div>
+              <AdicionarPendenciaInline 
+                variant="primary" 
+                onAdd={p => setForm(f => ({ ...f, pendencias: [...f.pendencias, p] }))} 
+              />
             </div>
           )}
 
-          {/* Adicionar manualmente */}
-          <button
-            type="button"
-            onClick={addPendencia}
-            className="w-full flex items-center justify-center gap-2 bg-[#0d1117] border border-dashed border-[#23272F] rounded-2xl py-4 text-[#7D8597] text-sm active:border-[#0466C8] active:text-[#0466C8] transition-colors"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Adicionar manualmente
-          </button>
+          {/* Link discreto para adicionar mais, quando já há itens */}
+          {(sugestoes.length > 0 || form.pendencias.length > 0) && (
+            <AdicionarPendenciaInline onAdd={p => setForm(f => ({ ...f, pendencias: [...f.pendencias, p] }))} />
+          )}
         </div>
       )}
 
@@ -749,22 +911,13 @@ export default function NovaVisitaPage() {
         )}
 
         {etapa === 2 && (
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={avancarEtapa2}
-              className="flex-1 py-4 rounded-xl text-sm font-bold text-[#7D8597] bg-[#23272F] active:bg-[#0d1117] transition-all"
-            >
-              {form.pendencias.length === 0 ? 'Nada em aberto' : 'Pronto'}
-            </button>
-            <button
-              type="button"
-              onClick={addPendencia}
-              className="flex-1 py-4 rounded-xl text-sm font-bold text-white bg-[#0466C8] active:bg-[#0353A4] transition-all"
-            >
-              + Adicionar
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={avancarEtapa2}
+            className="w-full py-4 rounded-xl text-base font-bold text-white bg-[#0466C8] active:bg-[#0353A4] active:scale-[0.98] transition-all"
+          >
+            {form.pendencias.length === 0 ? 'Nada em aberto' : 'Pronto'}
+          </button>
         )}
 
         {etapa === 3 && (

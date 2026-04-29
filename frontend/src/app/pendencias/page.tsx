@@ -5,6 +5,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { PendenciaCard, Pendencia } from '../../components/PendenciaCard'
 import { Pendencias } from '../../lib/mocks'
+import { Clientes } from '../../mocks/clientes'
 
 type Filtro = 'todas' | 'urgente' | 'atencao' | 'andamento' | 'resolvida'
 
@@ -22,7 +23,19 @@ const STATUS_ORDER: Record<Pendencia['status'], number> = {
 
 export default function PendenciasPage() {
   const [filtro, setFiltro] = useState<Filtro>('todas')
-  const [pendencias, setPendencias] = useState<Pendencia[]>(Pendencias)
+
+  // Mapeia clienteId → nome do cliente e garante campo 'cliente' exigido pelo tipo
+  const pendenciasComCliente: Pendencia[] = Pendencias.map(p => ({
+    id: p.id,
+    titulo: p.titulo,
+    cliente: Clientes.find(c => c.id === p.clienteId)?.nome ?? p.clienteId,
+    prazo: p.prazo,
+    status: p.status as Pendencia['status'],
+    diasAtraso: (p as { diasAtraso?: number }).diasAtraso,
+    descricao: p.descricao,
+  }))
+
+  const [pendencias, setPendencias] = useState<Pendencia[]>(pendenciasComCliente)
 
   const filtradas = pendencias
     .filter(p => filtro === 'todas' || p.status === filtro)

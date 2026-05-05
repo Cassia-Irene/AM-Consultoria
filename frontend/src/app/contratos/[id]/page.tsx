@@ -319,14 +319,6 @@ function VisitaCard({ v }: { v: Visita }) {
   )
 }
 
-function HistoryItem({ date, text }: { date: string; text: string }) {
-  return (
-    <div className="flex gap-4 items-start py-1">
-      <span className="text-[10px] font-black tabular-nums text-zinc-600 pt-0.5">{date}</span>
-      <p className="text-xs text-zinc-500">{text}</p>
-    </div>
-  )
-}
 
 function StatusBadge({ variant }: { variant: string }) {
   const styles: Record<string, string> = {

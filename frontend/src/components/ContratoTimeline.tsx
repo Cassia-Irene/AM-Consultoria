@@ -3,7 +3,7 @@
 
 import { useState } from 'react'
 import type { Contrato, HistoricoContrato } from '@/domain/contrato'
-import { buildContratoTimeline, type TimelineItem } from '@/utils/contratoTimeline'
+import { buildContratoTimeline } from '@/utils/contratoTimeline'
 
 type Props = {
   contratos: Contrato[]
@@ -15,7 +15,7 @@ export function ContratoTimeline({ contratos, historicos, contratoId }: Props) {
   const items = buildContratoTimeline(contratos, historicos, contratoId)
   const [selectedDiff, setSelectedDiff] = useState<{ de: Contrato; para: Contrato } | null>(null)
 
-  function handleVerDiff(h: any) {
+  function handleVerDiff(h: { contratoEncerradoId: string; contratoNovoId: string }) {
     const de = contratos.find(c => c.id === h.contratoEncerradoId)
     const para = contratos.find(c => c.id === h.contratoNovoId)
     if (de && para) {
@@ -97,7 +97,7 @@ function ContratoDiff({ antigo, novo }: { antigo: Contrato; novo: Contrato }) {
   const fields = [
     { label: 'Serviços', key: 'servicos_contratados' },
     { label: 'Visitas Mensais', key: 'visitas_previstas_mes' },
-    { label: 'Relatório', key: 'inclui_relatorio', formatter: (v: any) => v ? 'Incluso' : 'Não incluso' },
+    { label: 'Relatório', key: 'inclui_relatorio', formatter: (v: boolean | string | number | undefined | null) => v ? 'Incluso' : 'Não incluso' },
     { label: 'Status', key: 'status' },
   ]
 
@@ -108,8 +108,8 @@ function ContratoDiff({ antigo, novo }: { antigo: Contrato; novo: Contrato }) {
         <p className="text-[9px] font-black uppercase tracking-widest text-sky-500">Nova Versão ({novo.id})</p>
       </div>
       {fields.map(f => {
-        const valDe = (antigo as any)[f.key]
-        const valPara = (novo as any)[f.key]
+        const valDe = (antigo as Record<string, string | number | boolean | undefined | null>)[f.key]
+        const valPara = (novo as Record<string, string | number | boolean | undefined | null>)[f.key]
         const mudou = valDe !== valPara
         
         if (!mudou) return null

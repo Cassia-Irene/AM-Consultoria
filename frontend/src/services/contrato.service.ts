@@ -3,13 +3,13 @@
 // Orquestra os dados para a página de detalhes do contrato.
 // Consome múltiplos mappers para compor a visão 360 do contrato.
 
-import { getContratos } from '@/mappers/contrato.mapper'
+import { getContratos, getHistoricos } from '@/mappers/contrato.mapper'
 import { getFaturamentos } from '@/mappers/faturamento.mapper'
 import { getVisitas } from '@/mappers/visita.mapper'
 import { getClientes } from '@/mappers/cliente.mapper'
 import { getFaturamentoMaisRecente } from '@/domain/faturamento'
 import { fetchApi } from './api'
-import type { Contrato } from '@/domain/contrato'
+import type { Contrato, HistoricoContrato } from '@/domain/contrato'
 import type { FaturamentoCliente } from '@/domain/faturamento'
 import type { Visita } from '@/domain/visita'
 import type { Cliente } from '@/domain/cliente'
@@ -19,16 +19,19 @@ export interface ContratoDetail {
   cliente: Cliente
   faturamentoAtual?: FaturamentoCliente
   visitas: Visita[]
+  historicos: HistoricoContrato[]
+  todosContratos: Contrato[]
 }
 
 export const ContratoService = {
   async getContratoDetail(id: string): Promise<ContratoDetail | null> {
     try {
-      const [contratos, faturamentos, visitas, clientes] = await Promise.all([
+      const [contratos, faturamentos, visitas, clientes, historicos] = await Promise.all([
         fetchApi<Contrato[]>('/contratos', undefined, getContratos()),
         fetchApi<FaturamentoCliente[]>('/faturamento-cliente', undefined, getFaturamentos()),
         fetchApi<Visita[]>('/visitas', undefined, getVisitas()),
-        fetchApi<Cliente[]>('/clientes', undefined, getClientes())
+        fetchApi<Cliente[]>('/clientes', undefined, getClientes()),
+        fetchApi<HistoricoContrato[]>('/contratos/historico', undefined, getHistoricos())
       ])
 
       const contrato = contratos.find(c => c.id === id)
@@ -48,7 +51,9 @@ export const ContratoService = {
         contrato,
         cliente: cliente || { id: contrato.clienteId, nome_instituicao: `Cliente ${contrato.clienteId}`, tipo_instituicao: 'Não informada', cidade: 'Não informada', nivel_complexidade: 'baixa', status: 'ativo' },
         faturamentoAtual,
-        visitas: visitasDoContrato
+        visitas: visitasDoContrato,
+        historicos,
+        todosContratos: contratos
       }
     } catch (err) {
       console.error('[ERROR][CONTRATO_SERVICE] Falha ao compor detalhes do contrato:', err)

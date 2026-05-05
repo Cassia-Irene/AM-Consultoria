@@ -16,3 +16,11 @@ export interface ContratoRaw {
 
   observacoes_gerais: string | null
 }
+
+export interface HistoricoContratoRaw {
+  id_historico: number
+  id_contrato_encerrado: number
+  id_contrato_novo: number
+  data_alteracao: string
+  motivo_alteracao: string
+}

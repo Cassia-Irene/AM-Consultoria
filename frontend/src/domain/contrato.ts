@@ -17,3 +17,11 @@ export type Contrato = {
 
   observacoes_gerais?: string      // Text nullable
 }
+
+export type HistoricoContrato = {
+  id: string
+  idContratoEncerrado: string
+  idContratoNovo: string
+  dataAlteracao: string
+  motivo: string
+}

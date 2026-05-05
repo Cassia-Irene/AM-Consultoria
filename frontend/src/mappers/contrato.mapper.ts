@@ -1,15 +1,15 @@
-// src/mappers/contrato.mapper.ts
-//
-// Converte ContratoRaw (shape da API) → Contrato (domain).
-// Validação estrita conforme novo mapa lógico.
-
 import { Contratos as ContratosMock } from '@/mocks/contratos'
-import type { Contrato } from '@/domain/contrato'
-import type { ContratoRaw } from '@/types/contrato.raw'
+import { HistoricosContratos as HistoricosMock } from '@/mocks/historicos'
+import type { Contrato, HistoricoContrato } from '@/domain/contrato'
+import type { ContratoRaw, HistoricoContratoRaw } from '@/types/contrato.raw'
 import { validateShape } from '@/utils/schemaGuard'
 
 export function getContratos(): Contrato[] {
   return (ContratosMock as unknown as ContratoRaw[]).map(mapContrato)
+}
+
+export function getHistoricos(): HistoricoContrato[] {
+  return (HistoricosMock as unknown as HistoricoContratoRaw[]).map(mapHistorico)
 }
 
 export function mapContrato(raw: ContratoRaw): Contrato {
@@ -38,8 +38,26 @@ export function mapContrato(raw: ContratoRaw): Contrato {
 
     data_inicio: raw.data_inicio,
     data_fim: raw.data_fim ?? undefined,
-    status: raw.status as any, // Cast temporário ou normalização
+    status: raw.status as 'ativo' | 'inativo' | 'suspenso',
 
     observacoes_gerais: raw.observacoes_gerais ?? undefined,
+  }
+}
+
+export function mapHistorico(raw: HistoricoContratoRaw): HistoricoContrato {
+  validateShape<HistoricoContratoRaw>('HistoricoContratoRaw', raw, [
+    'id_historico',
+    'id_contrato_encerrado',
+    'id_contrato_novo',
+    'data_alteracao',
+    'motivo_alteracao'
+  ])
+
+  return {
+    id: String(raw.id_historico),
+    idContratoEncerrado: String(raw.id_contrato_encerrado),
+    idContratoNovo: String(raw.id_contrato_novo),
+    dataAlteracao: raw.data_alteracao,
+    motivo: raw.motivo_alteracao
   }
 }

@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ContratoService, type ContratoDetail } from '@/services/contrato.service'
 import { getStatusFaturamento } from '@/domain/faturamento'
+import { ContratoTimeline } from '@/components/ContratoTimeline'
 import type { Visita } from '@/domain/visita'
 
 export default function ContratoDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -71,7 +72,7 @@ export default function ContratoDetailPage({ params }: { params: Promise<{ id: s
       // Sucesso: Redireciona para a nova versão
       setShowModal(false)
       router.push(`/contratos/${novo.id}`)
-    } catch (err) {
+    } catch {
       alert('Falha ao atualizar contrato. Tente novamente.')
     } finally {
       setSubmitting(false)
@@ -189,16 +190,16 @@ export default function ContratoDetailPage({ params }: { params: Promise<{ id: s
           </div>
         </section>
 
-        {/* ── SEÇÃO 4: HISTÓRICO DE ALTERAÇÕES (MOCK) ── */}
-        <section className="opacity-60">
-          <SectionHeader label="Histórico de Alterações" />
-          <div className="space-y-2">
-            {/* BACKEND_DEPENDENCY: integrar com historico_contrato */}
-            <HistoryItem date="05/05/2026" text="Contrato ativado pelo sistema" />
-            <HistoryItem date="01/05/2026" text="Ajuste de visitas mensais: 2 → 3" />
-            <HistoryItem date="20/04/2026" text="Criação do registro contratual" />
+        {/* ── SEÇÃO 4: EVOLUÇÃO DO CONTRATO (TIMELINE) ── */}
+        <section>
+          <SectionHeader label="Evolução do Contrato" />
+          <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-3xl p-8">
+            <ContratoTimeline 
+              contratos={data.todosContratos}
+              historicos={data.historicos}
+              contratoId={id}
+            />
           </div>
-          <p className="text-[9px] text-zinc-700 mt-2 italic">* Dados simulados - integração pendente</p>
         </section>
       </div>
 

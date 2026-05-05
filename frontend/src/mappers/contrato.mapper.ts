@@ -7,12 +7,21 @@
 import { Contratos as ContratosMock } from '@/lib/mocks'
 import type { Contrato, StatusContrato } from '@/domain/contrato'
 import type { ContratoRaw } from '@/types/contrato.raw'
+import { validateShape } from '@/utils/schemaGuard'
 
 export function getContratos(): Contrato[] {
   return (ContratosMock as unknown as ContratoRaw[]).map(mapContrato)
 }
 
 export function mapContrato(raw: ContratoRaw): Contrato {
+  validateShape<ContratoRaw>('ContratoRaw', raw, [
+    'id_contrato',
+    'id_cliente',
+    'tipo_cobranca',
+    'data_inicio',
+    'valor_mensal'
+  ])
+
   // Validação de campos obrigatórios — falha explícita, sem fallback
   if (!raw.id_contrato) throw new Error(`ContratoRaw missing required field: id_contrato`)
   if (!raw.id_cliente) throw new Error(`ContratoRaw missing required field: id_cliente`)

@@ -16,6 +16,7 @@ import { getFaturamentos } from '@/mappers/faturamento.mapper'
 import { getVisitas } from '@/mappers/visita.mapper'
 
 import { safeArray } from '@/utils/safe'
+import { fetchApi } from './api'
 
 export interface DashboardResponse {
   pendencias: Pendencia[]
@@ -28,24 +29,20 @@ export interface DashboardResponse {
 export const DashboardService = {
   async getDashboardData(): Promise<DashboardResponse> {
     try {
-      // TODO: substituir por chamadas reais à API
-      // const [pendencias, clientes, contratos, faturamentos, visitas] = await Promise.all([
-      //   fetchApi<Pendencia[]>('/pendencias'),
-      //   fetchApi<Cliente[]>('/clientes'),
-      //   fetchApi<Contrato[]>('/contratos'),
-      //   fetchApi<FaturamentoCliente[]>('/faturamento-cliente?mes=2026-05'),
-      //   fetchApi<Visita[]>('/visitas?hoje=true'),
-      // ])
-
-      console.info('[INFO][FLOW] [DashboardService] Carregando dados dos mocks...')
-      await new Promise(resolve => setTimeout(resolve, 300))
+      const [pendencias, clientes, contratos, faturamentos, visitas] = await Promise.all([
+        fetchApi<Pendencia[]>('/pendencias', undefined, getPendencias()),
+        fetchApi<Pick<Cliente, 'id' | 'nome_instituicao'>[]>('/clientes', undefined, getClientes().map(c => ({ id: c.id, nome_instituicao: c.nome_instituicao }))),
+        fetchApi<Pick<Contrato, 'id' | 'clienteId'>[]>('/contratos', undefined, getContratos().map(c => ({ id: c.id, clienteId: c.clienteId }))),
+        fetchApi<FaturamentoCliente[]>('/faturamento-cliente?mes=2026-05', undefined, getFaturamentos()),
+        fetchApi<Visita[]>('/visitas?hoje=true', undefined, getVisitas()),
+      ])
 
       return {
-        pendencias: safeArray(getPendencias()),
-        clientes: safeArray(getClientes()).map(c => ({ id: c.id, nome_instituicao: c.nome_instituicao })),
-        contratos: safeArray(getContratos()).map(c => ({ id: c.id, clienteId: c.clienteId })),
-        faturamentos: safeArray(getFaturamentos()),
-        visitas: safeArray(getVisitas()),
+        pendencias: safeArray(pendencias),
+        clientes: safeArray(clientes),
+        contratos: safeArray(contratos),
+        faturamentos: safeArray(faturamentos),
+        visitas: safeArray(visitas),
       }
     } catch (err) {
       console.warn('[WARN][DASHBOARD] Fallback ativado. Erro ao carregar dados:', err)

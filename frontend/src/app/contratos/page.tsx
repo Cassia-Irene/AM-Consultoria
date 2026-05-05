@@ -4,12 +4,14 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { StatusBadge, type StatusVariant } from '../../components/StatusBadge'
-import { getContratos } from '@/mappers/contrato.mapper'
 import { getClientes } from '@/mappers/cliente.mapper'
+import { getContratos } from '@/mappers/contrato.mapper'
 import { getFaturamentos } from '@/mappers/faturamento.mapper'
 import { getFaturamentoMaisRecente } from '@/domain/faturamento'
 import type { Contrato } from '@/domain/contrato'
 import type { FaturamentoCliente } from '@/domain/faturamento'
+import type { Cliente } from '@/domain/cliente'
+import { fetchApi } from '@/services/api'
 
 type ContratoComCliente = Contrato & { clienteNome: string }
 
@@ -25,10 +27,12 @@ export default function ContratosPage() {
 
     async function loadData() {
       try {
-        await new Promise(resolve => setTimeout(resolve, 100))
+        const [todosContratos, clientes, fatDados] = await Promise.all([
+          fetchApi<Contrato[]>('/contratos', undefined, getContratos()),
+          fetchApi<Cliente[]>('/clientes', undefined, getClientes()),
+          fetchApi<FaturamentoCliente[]>('/faturamento-cliente', undefined, getFaturamentos())
+        ])
 
-        const todosContratos = getContratos()
-        const clientes = getClientes()
         const clienteNomePorId = new Map(clientes.map(c => [c.id, c.nome_instituicao]))
 
         const comNome: ContratoComCliente[] = todosContratos.map(c => ({
@@ -38,7 +42,7 @@ export default function ContratosPage() {
 
         if (isMounted) {
           setContratos(comNome)
-          setFaturamentos(getFaturamentos())
+          setFaturamentos(fatDados)
         }
       } catch (err) {
         if (isMounted) {

@@ -7,12 +7,22 @@
 import { Faturamentos as FaturamentosMock } from '@/lib/mocks'
 import type { FaturamentoCliente, StatusFaturamento } from '@/domain/faturamento'
 import type { FaturamentoRaw } from '@/types/faturamento.raw'
+import { validateShape } from '@/utils/schemaGuard'
 
 export function getFaturamentos(): FaturamentoCliente[] {
   return (FaturamentosMock as unknown as FaturamentoRaw[]).map(mapFaturamento)
 }
 
 export function mapFaturamento(raw: FaturamentoRaw): FaturamentoCliente {
+  validateShape<FaturamentoRaw>('FaturamentoRaw', raw, [
+    'id_faturamento',
+    'id_cliente',
+    'id_contrato',
+    'mes_referencia',
+    'valor_total',
+    'status'
+  ])
+
   if (!raw.id_faturamento) throw new Error('FaturamentoRaw missing required field: id_faturamento')
   if (!raw.id_cliente) throw new Error(`FaturamentoRaw missing required field: id_cliente`)
   if (!raw.id_contrato) throw new Error(`FaturamentoRaw missing required field: id_contrato`)

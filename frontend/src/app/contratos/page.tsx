@@ -1,9 +1,11 @@
 'use client'
 // app/contratos/page.tsx
+//
+// Refatoração estética completa para alinhar com o Dashboard Caos/Planejamento.
+// Mantém lógica de integração híbrida e resiliência.
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { StatusBadge, type StatusVariant } from '../../components/StatusBadge'
 import { getClientes } from '@/mappers/cliente.mapper'
 import { getContratos } from '@/mappers/contrato.mapper'
 import { getFaturamentos } from '@/mappers/faturamento.mapper'
@@ -47,7 +49,7 @@ export default function ContratosPage() {
       } catch (err) {
         if (isMounted) {
           console.warn('[WARN][CONTRATOS] Erro ao carregar dados:', err)
-          setError('Algumas informações não puderam ser carregadas. O painel está em modo seguro.')
+          setError('Não foi possível carregar os dados dos contratos.')
         }
       } finally {
         if (isMounted) setLoading(false)
@@ -58,19 +60,10 @@ export default function ContratosPage() {
     return () => { isMounted = false }
   }, [])
 
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-white flex items-center justify-center">
-        <p className="text-gray-400 text-sm animate-pulse">Carregando contratos...</p>
-      </main>
-    )
-  }
-
   const listaFiltrada = mostrarInativos
     ? contratos
     : contratos.filter(c => c.status === 'ativo')
 
-  // Totais calculados sobre faturamento real — não sobre contrato
   const totalReceber = listaFiltrada.reduce((sum, c) => {
     const fat = getFaturamentoMaisRecente(faturamentos, c.id)
     return fat?.status === 'pendente' ? sum + fat.valor_total : sum
@@ -85,143 +78,189 @@ export default function ContratosPage() {
     return `R$\u2009${n.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
   }
 
-  // Mês de referência atual (para exibição)
-  const mesAtual = new Date().toLocaleString('pt-BR', { month: 'short' })
+  const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })
+
+  if (loading) {
+    return <LoadingSkeleton />
+  }
 
   return (
-    <main className="min-h-screen bg-white pb-24">
+    <main className="min-h-screen bg-[#07090D] pb-32 text-zinc-300">
       {/* ── HEADER ── */}
-      <div className="bg-[#001845] px-4 pt-12 pb-5 sticky top-0 z-10">
-        <div className="flex items-center gap-3 mb-4">
-          <Link href="/dashboard" className="text-blue-200 text-2xl leading-none">‹</Link>
-          <h1 className="text-lg font-medium text-white">Contratos</h1>
+      <header className="sticky top-0 z-10 bg-[#07090D]/95 backdrop-blur-sm px-5 pt-10 pb-4 border-b border-zinc-800/50">
+        <div className="flex items-center gap-4 mb-1">
+          <Link href="/dashboard" className="text-zinc-500 hover:text-white transition-colors">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </Link>
+          <h1 className="text-white text-xl font-black tracking-tight">Contratos</h1>
         </div>
+        <div className="flex items-center justify-between ml-10">
+          <p className="text-zinc-500 text-xs font-medium">Gestão e acompanhamento operacional</p>
+          <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">{hoje}</p>
+        </div>
+      </header>
 
+      <div className="px-5 pt-6 space-y-8">
+        {/* ── ERROR ALERT ── */}
         {error && (
-          <div className="mb-4 bg-amber-900/30 border border-amber-500/50 rounded-xl px-3 py-2">
-            <p className="text-amber-400 text-xs">{error}</p>
+          <div className="bg-red-950/40 border border-red-700/50 rounded-2xl px-4 py-3 text-red-400 text-sm">
+            <p className="font-bold uppercase tracking-widest text-[10px] mb-1">Aviso</p>
+            {error}
           </div>
         )}
 
-        {/* ── RESUMO FATURAMENTO MÊS ── */}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="bg-white/10 rounded-xl p-3">
-            <p className="text-xs text-blue-200 mb-0.5">Pago em {mesAtual}</p>
-            <p className="text-lg font-medium text-green-300">{formatMoney(totalPago)}</p>
+        {/* ── RESUMO MÉTRICAS ── */}
+        <section className="grid grid-cols-2 gap-3">
+          <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">A Receber</p>
+            <p className="text-white text-lg font-black tabular-nums">{formatMoney(totalReceber)}</p>
           </div>
-          <div className="bg-white/10 rounded-xl p-3">
-            <p className="text-xs text-blue-200 mb-0.5">A receber em {mesAtual}</p>
-            <p className={`text-lg font-medium ${totalReceber > 0 ? 'text-amber-300' : 'text-green-300'}`}>
-              {formatMoney(totalReceber)}
-            </p>
+          <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Pago (mês)</p>
+            <p className="text-emerald-500 text-lg font-black tabular-nums">{formatMoney(totalPago)}</p>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <div className="px-4 pt-4 space-y-3">
-        {listaFiltrada.map(c => {
-          const fat = getFaturamentoMaisRecente(faturamentos, c.id)
-          return (
-            <div key={c.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-              {/* ── CARD HEADER ── */}
-              <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gray-50">
-                <div>
-                  <p className="text-[15px] font-medium text-gray-900">{c.clienteNome}</p>
-                  <p className="text-xs text-gray-400">
-                    {c.tipo_cobranca} · desde {c.data_inicio}
-                  </p>
-                </div>
-                <StatusBadge variant={c.status as StatusVariant} />
-              </div>
+        {/* ── FILTROS E CONTAGEM ── */}
+        <section className="flex items-center justify-between px-1">
+          <p className="text-[11px] font-black uppercase tracking-widest text-zinc-500">
+            {listaFiltrada.length} Contratos {mostrarInativos ? 'Totais' : 'Ativos'}
+          </p>
+          <button 
+            onClick={() => setMostrarInativos(!mostrarInativos)}
+            className="text-[11px] font-bold text-sky-500 active:scale-95 transition-transform"
+          >
+            {mostrarInativos ? 'Ver apenas ativos' : 'Ver inativos'}
+          </button>
+        </section>
 
-              {/* ── DADOS ── */}
-              <div className="px-4 py-3 space-y-2">
-                <Row label="Valor mensal" value={formatMoney(c.valor_mensal)} />
-                <Row label="Visitas/mês" value={`${c.visitas_previstas_mes} regulares`} />
-
-                {c.valor_visita_extra != null && (
-                  <Row label="Visita extra" value={formatMoney(c.valor_visita_extra)} />
-                )}
-
-                {c.inclui_relatorio && (
-                  <Row label="Relatório" value="Incluso" />
-                )}
-
-                {c.motivo_alteracao && (
-                  <Row
-                    label="Última alteração"
-                    value={c.motivo_alteracao}
-                    small
-                  />
-                )}
-
-                {/* ── FATURAMENTO DO MÊS ── */}
-                <div className="flex items-center justify-between pt-2 border-t border-gray-50">
-                  <span className="text-sm text-gray-500">Faturamento {mesAtual}</span>
-                  {fat ? (
-                    <div className="flex items-center gap-2">
-                      <span className={`text-sm font-medium ${
-                        fat.status === 'pago' ? 'text-green-700' : 'text-amber-700'
-                      }`}>
-                        {formatMoney(fat.valor_total)}
-                      </span>
-                      <StatusBadge variant={fat.status as StatusVariant} />
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium px-2 py-0.5 rounded bg-gray-100 text-gray-500">
-                        Aguardando emissão
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* ── AÇÕES ── */}
-              <div className="flex border-t border-gray-50">
-                <Link
-                  href={`/contratos/${c.id}`}
-                  className="flex-1 py-3 text-sm text-gray-500 font-medium text-center active:bg-gray-50 border-r border-gray-50"
-                >
-                  Ver detalhe
-                </Link>
-                <button className="flex-1 py-3 text-sm text-[#0466C8] font-medium active:bg-blue-50">
-                  Editar valor
-                </button>
-              </div>
-            </div>
-          )
-        })}
-
-        {/* ── TOGGLE INATIVOS ── */}
-        <button
-          onClick={() => setMostrarInativos(v => !v)}
-          className="w-full py-3 text-sm text-gray-400 font-medium text-center active:text-gray-600"
-        >
-          {mostrarInativos ? 'Ocultar inativos' : 'Mostrar contratos inativos'}
-        </button>
+        {/* ── GRID DE CARDS ── */}
+        {listaFiltrada.length > 0 ? (
+          <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {listaFiltrada.map(contrato => (
+              <ContratoCard 
+                key={contrato.id} 
+                contrato={contrato} 
+                faturamento={getFaturamentoMaisRecente(faturamentos, contrato.id)} 
+              />
+            ))}
+          </section>
+        ) : (
+          <div className="py-20 text-center">
+            <p className="text-zinc-600 text-sm font-medium italic">Nenhum contrato encontrado</p>
+          </div>
+        )}
       </div>
     </main>
   )
 }
 
-function Row({
-  label,
-  value,
-  valueClass = 'text-gray-900',
-  small = false,
-}: {
-  label: string
-  value: string
-  valueClass?: string
-  small?: boolean
-}) {
+function ContratoCard({ contrato, faturamento }: { contrato: ContratoComCliente; faturamento?: FaturamentoCliente }) {
+  const formatMoney = (n: number) => `R$\u2009${n.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+
   return (
-    <div className="flex items-center justify-between">
-      <span className={`text-gray-500 ${small ? 'text-xs' : 'text-sm'}`}>{label}</span>
-      <span className={`font-medium ${small ? 'text-xs text-gray-600 text-right max-w-[55%]' : `text-sm ${valueClass}`}`}>
-        {value}
-      </span>
+    <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5 hover:border-zinc-700 transition-all group active:scale-[0.99] flex flex-col justify-between min-h-[180px]">
+      <div>
+        <div className="flex justify-between items-start mb-4 gap-2">
+          <div className="min-w-0">
+            <h3 className="text-white font-bold text-lg leading-tight truncate group-hover:text-sky-400 transition-colors">
+              {contrato.clienteNome}
+            </h3>
+            <p className="text-zinc-500 text-xs font-medium uppercase tracking-wide mt-0.5">
+              {contrato.tipo_cobranca}
+            </p>
+          </div>
+          <StatusBadgeLocal variant={contrato.status} />
+        </div>
+
+        <div className="flex items-baseline justify-between mt-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-0.5">Valor Mensal</p>
+            <p className="text-white text-xl font-black tabular-nums">
+              {formatMoney(contrato.valor_mensal)}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-0.5">Visitas</p>
+            <p className="text-zinc-300 font-bold tabular-nums">
+              {contrato.visitas_previstas_mes} <span className="text-zinc-600 text-[10px]">/mês</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="pt-4 mt-5 border-t border-zinc-800/50 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">Faturamento:</p>
+          {faturamento ? (
+            <StatusBadgeLocal variant={faturamento.status} />
+          ) : (
+            <span className="text-[9px] font-black uppercase tracking-widest bg-zinc-800 text-zinc-600 px-2 py-0.5 rounded-lg">
+              Sem dados
+            </span>
+          )}
+        </div>
+        
+        <button className="text-[11px] font-black uppercase tracking-widest text-sky-500 flex items-center gap-1 group/btn">
+          Detalhes
+          <svg className="group-hover/btn:translate-x-0.5 transition-transform" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </button>
+      </div>
     </div>
+  )
+}
+
+/** Badge local seguindo a estética Dark/Glass do Dashboard */
+function StatusBadgeLocal({ variant }: { variant: string }) {
+  const styles: Record<string, string> = {
+    ativo:     'bg-emerald-900/40 text-emerald-400 border-emerald-800/30',
+    pago:      'bg-emerald-900/40 text-emerald-400 border-emerald-800/30',
+    pendente:  'bg-amber-900/40 text-amber-400 border-amber-800/30',
+    atrasado:  'bg-red-900/40 text-red-400 border-red-800/30',
+    inativo:   'bg-zinc-800/50 text-zinc-500 border-zinc-700/30',
+    suspenso:  'bg-red-950/60 text-red-500 border-red-900/40',
+  }
+
+  const labels: Record<string, string> = {
+    ativo:     'Ativo',
+    pago:      '✓ Pago',
+    pendente:  'Pendente',
+    atrasado:  'Atrasado',
+    inativo:   'Inativo',
+    suspenso:  'Suspenso',
+  }
+
+  const style = styles[variant] || 'bg-zinc-800 text-zinc-400'
+  const label = labels[variant] || variant
+
+  return (
+    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border ${style} whitespace-nowrap`}>
+      {label}
+    </span>
+  )
+}
+
+function LoadingSkeleton() {
+  return (
+    <main className="min-h-screen bg-[#07090D] pb-32">
+      <header className="px-5 pt-10 pb-4 border-b border-zinc-800/50">
+        <div className="h-6 w-32 bg-zinc-900 rounded animate-pulse" />
+      </header>
+      <div className="px-5 pt-6 space-y-8">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="h-20 bg-zinc-900/50 rounded-2xl animate-pulse" />
+          <div className="h-20 bg-zinc-900/50 rounded-2xl animate-pulse" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="h-44 bg-zinc-900/40 border border-zinc-800 rounded-2xl animate-pulse" />
+          ))}
+        </div>
+      </div>
+    </main>
   )
 }

@@ -9,7 +9,7 @@ import Link from 'next/link'
 import { getClientes } from '@/mappers/cliente.mapper'
 import { getContratos } from '@/mappers/contrato.mapper'
 import { getFaturamentos } from '@/mappers/faturamento.mapper'
-import { getFaturamentoMaisRecente } from '@/domain/faturamento'
+import { getFaturamentoMaisRecente, getStatusFaturamento } from '@/domain/faturamento'
 import type { Contrato } from '@/domain/contrato'
 import type { FaturamentoCliente } from '@/domain/faturamento'
 import type { Cliente } from '@/domain/cliente'
@@ -170,7 +170,7 @@ function ContratoCard({ contrato, faturamento }: { contrato: ContratoComCliente;
         <div className="flex items-center gap-2">
           <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">Faturamento:</p>
           {faturamento ? (
-            <StatusBadgeLocal variant={faturamento.status} />
+            <StatusBadgeLocal variant={getStatusFaturamento(faturamento)} />
           ) : (
             <span className="text-[9px] font-black uppercase tracking-widest bg-zinc-800 text-zinc-600 px-2 py-0.5 rounded-lg">
               Sem dados

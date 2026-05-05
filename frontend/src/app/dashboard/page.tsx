@@ -4,8 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import type { Pendencia } from '@/domain/pendencia'
 import type { Visita } from '@/domain/visita'
-import type { StatusFaturamento } from '@/domain/faturamento'
-import { getFaturamentoMaisRecente } from '@/domain/faturamento'
+import { getFaturamentoMaisRecente, getStatusFaturamento } from '@/domain/faturamento'
 import { getTopPrioridade } from '@/lib/prioritizer'
 import type { InsightPrioridade } from '@/domain/insight'
 import { DashboardService, type DashboardResponse } from '@/services/dashboard.service'
@@ -187,7 +186,7 @@ function VisitaRotinaCard({
   v: Visita
   clienteNome: string
   pendenciasAbertas: Pendencia[]
-  statusPagamento?: StatusFaturamento
+  statusPagamento?: 'pago' | 'pendente' | 'atrasado'
 }) {
   const temPendencias = pendenciasAbertas.length > 0
   const temUrgente    = pendenciasAbertas.some(p => getPrioridade(p) === 'urgente')
@@ -339,10 +338,10 @@ export default function DashboardPage() {
   })
 
   // Status de pagamento vem de FaturamentoCliente, não de Contrato
-  const pagamentoPorCliente = new Map<string, StatusFaturamento>()
+  const pagamentoPorCliente = new Map<string, 'pago' | 'pendente' | 'atrasado'>()
   contratos.forEach(c => {
     const fat = getFaturamentoMaisRecente(faturamentos, c.id)
-    if (fat) pagamentoPorCliente.set(c.clienteId, fat.status)
+    if (fat) pagamentoPorCliente.set(c.clienteId, getStatusFaturamento(fat))
   })
 
   /* ── TOP 1 ── */

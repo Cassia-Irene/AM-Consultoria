@@ -1,21 +1,21 @@
 // src/types/faturamento.raw.ts
 //
 // Shape do JSON que a API retornará de GET /faturamento-cliente
-// Espelha a futura tabela faturamento_cliente no banco
+// Espelha exatamente a tabela faturamento_cliente no banco
 
 export interface FaturamentoRaw {
-  id_faturamento: string | number
-  id_cliente: number
+  id_faturamento: number
   id_contrato: number
 
-  mes_referencia: string      // "YYYY-MM"
+  mes_ano: string
 
-  valor_base: string          // Decimal vem como string do FastAPI
-  valor_visitas_extra: string // Decimal
-  valor_total: string         // Decimal
+  visitas_realizadas: number | null
 
-  status: string              // 'pendente' | 'pago' | 'atrasado'
+  valor_base: string
+  valor_extra: string
+  desconto: string
+  valor_total: string
 
-  data_vencimento: string     // ISO 8601: "YYYY-MM-DD"
+  pago: boolean
   data_pagamento: string | null
 }

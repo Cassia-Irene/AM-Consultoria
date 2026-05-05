@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import type { Pendencia } from '@/domain/pendencia'
 import type { Visita } from '@/domain/visita'
-import { getFaturamentoMaisRecente, type StatusFaturamento } from '@/domain/faturamento'
+import { getFaturamentoMaisRecente, getStatusFaturamento } from '@/domain/faturamento'
 import { DashboardService, type DashboardResponse } from '@/services/dashboard.service'
 
 /* ─────────────────────────────────────────────
@@ -128,7 +128,7 @@ function VisitaAgendaCard({
   v: Visita
   clienteNome: string
   pendenciasAbertas: Pendencia[]
-  statusPagamento?: StatusFaturamento
+  statusPagamento?: 'pago' | 'pendente' | 'atrasado'
   valorMes?: number
 }) {
   const temPendencias = pendenciasAbertas.length > 0
@@ -242,7 +242,7 @@ export default function DashboardPlanejamentoPage() {
   // Financeiro — via mapper tipado
   const totalPendente = contratos.reduce((acc, c) => {
     const fat = getFaturamentoMaisRecente(faturamentos, c.id)
-    return fat?.status === 'pendente' ? acc + fat.valor_total : acc
+    return fat && getStatusFaturamento(fat) !== 'pago' ? acc + fat.valor_total : acc
   }, 0)
 
   const totalMes = contratos.reduce((acc, c) => {
@@ -258,12 +258,12 @@ export default function DashboardPlanejamentoPage() {
     pendenciasPorCliente.set(p.clienteId, lista)
   })
 
-  const pagamentoPorCliente = new Map<string, StatusFaturamento>()
+  const pagamentoPorCliente = new Map<string, 'pago' | 'pendente' | 'atrasado'>()
   const valorPorCliente     = new Map<string, number>()
   contratos.forEach(c => {
     const fat = getFaturamentoMaisRecente(faturamentos, c.id)
     if (fat) {
-      pagamentoPorCliente.set(c.clienteId, fat.status)
+      pagamentoPorCliente.set(c.clienteId, getStatusFaturamento(fat))
       valorPorCliente.set(c.clienteId, fat.valor_total)
     }
   })

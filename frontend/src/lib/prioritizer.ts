@@ -63,7 +63,8 @@ function scorePendencia(p: Pendencia): number {
  * Recebe apenas pendências abertas.
  */
 export function getTopPrioridade(
-  abertas: Pendencia[]
+  abertas: Pendencia[],
+  clienteNomePorId?: Map<string, string>
 ): InsightPrioridade | null {
   if (abertas.length === 0) return null
 
@@ -81,7 +82,7 @@ export function getTopPrioridade(
     tipo: 'top1',
     titulo: p.titulo,
     descricao: '',
-    clienteNome: p.clienteId, // clienteId = nome do cliente nos mocks atuais
+    clienteNome: clienteNomePorId?.get(p.clienteId) || p.clienteId,
     entidadeId: p.id,
     href: `/pendencias/${p.id}`,
     prazoLabel: labelPrazo(p.prazo!),

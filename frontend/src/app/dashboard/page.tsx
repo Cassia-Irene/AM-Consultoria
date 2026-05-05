@@ -1,15 +1,14 @@
 'use client'
 
 import Link from 'next/link'
-import { getPendencias } from '@/mappers/pendencia.mapper'
+import { useEffect, useState } from 'react'
 import type { Pendencia } from '@/domain/pendencia'
-import { getVisitas } from '@/mappers/visita.mapper'
 import type { Visita } from '@/domain/visita'
-import { getContratos } from '@/mappers/contrato.mapper'
 import type { Contrato } from '@/domain/contrato'
-import { getClientes } from '@/mappers/cliente.mapper'
+import type { Cliente } from '@/domain/cliente'
 import { getTopPrioridade } from '@/lib/prioritizer'
 import type { InsightPrioridade } from '@/domain/insight'
+import { DashboardService, type DashboardResponse } from '@/services/dashboard.service'
 
 /* ─────────────────────────────────────────────
    HELPERS
@@ -98,13 +97,13 @@ function DecisaoCard({ insight }: { insight: InsightPrioridade }) {
 ───────────────────────────────────────────── */
 
 /** Card compacto de urgência com botão de ação inline */
-function AcaoCard({ p }: { p: Pendencia }) {
+function AcaoCard({ p, clienteNome }: { p: Pendencia; clienteNome: string }) {
   return (
     <Link href={`/pendencias/${p.id}`} className="block active:scale-[0.98] transition-transform">
       <div className="flex items-center gap-3 bg-[#0d1117] border-l-4 border-red-500 rounded-r-2xl px-4 py-3.5 min-h-[64px]">
         <div className="flex-1 min-w-0">
           <p className="text-white font-semibold text-[14px] leading-tight truncate">{p.titulo}</p>
-          <p className="text-[#7D8597] text-xs mt-0.5 truncate">{p.clienteId}</p>
+          <p className="text-[#7D8597] text-xs mt-0.5 truncate">{clienteNome}</p>
         </div>
         <div className="shrink-0 text-right flex items-center gap-2">
           <span className="text-red-400 text-xs font-bold tabular-nums">
@@ -120,14 +119,14 @@ function AcaoCard({ p }: { p: Pendencia }) {
 }
 
 /** Grupo de pendências por cliente — reduz carga cognitiva */
-function GrupoCliente({ cliente, pendencias }: { cliente: string; pendencias: Pendencia[] }) {
+function GrupoCliente({ clienteId, clienteNome, pendencias }: { clienteId: string; clienteNome: string; pendencias: Pendencia[] }) {
   return (
     <div>
       <p className="text-[10px] font-bold uppercase tracking-widest text-[#7D8597] px-1 mb-1.5">
-        {cliente}
+        {clienteNome}
       </p>
       <div className="space-y-1.5">
-        {pendencias.map(p => <AcaoCard key={p.id} p={p} />)}
+        {pendencias.map(p => <AcaoCard key={p.id} p={p} clienteNome={clienteNome} />)}
       </div>
     </div>
   )
@@ -137,13 +136,13 @@ function GrupoCliente({ cliente, pendencias }: { cliente: string; pendencias: Pe
    BLOCO 3 — ALERTAS (vencendo em breve)
 ───────────────────────────────────────────── */
 
-function AlertaCard({ p }: { p: Pendencia }) {
+function AlertaCard({ p, clienteNome }: { p: Pendencia; clienteNome: string }) {
   return (
     <Link href={`/pendencias/${p.id}`} className="block active:scale-[0.98] transition-transform">
       <div className="flex items-center gap-3 bg-[#0d1117] border-l-4 border-amber-400 rounded-r-2xl px-4 py-3 min-h-[56px]">
         <div className="flex-1 min-w-0">
           <p className="text-white text-[14px] font-semibold leading-tight truncate">{p.titulo}</p>
-          <p className="text-[#7D8597] text-xs mt-0.5 truncate">{p.clienteId}</p>
+          <p className="text-[#7D8597] text-xs mt-0.5 truncate">{clienteNome}</p>
         </div>
         <span className="shrink-0 text-amber-400 text-xs font-bold tabular-nums">
           {p.prazo ? labelPrazo(p.prazo) : '—'}
@@ -202,7 +201,7 @@ function VisitaRotinaCard({
             <span className="size-1.5 rounded-full bg-sky-400" /> Hoje
           </span>
           <p className="text-white font-semibold text-[15px] leading-tight truncate">{clienteNome}</p>
-          {v.horario && <p className="text-[#7D8597] text-xs mt-0.5">{v.horario}</p>}
+          {v.data_visita && <p className="text-[#7D8597] text-xs mt-0.5">{new Date(v.data_visita).toLocaleDateString('pt-BR')}</p>}
         </div>
 
         <div className="flex flex-col items-end gap-1 shrink-0">
@@ -288,8 +287,29 @@ function SectionHeader({ label, count, cor }: { label: string; count?: number; c
 ───────────────────────────────────────────── */
 
 export default function DashboardPage() {
+  const [data, setData] = useState<DashboardResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    DashboardService.getDashboardData().then(res => {
+      setData(res)
+      setLoading(false)
+    }).catch(err => {
+      console.error(err)
+      setLoading(false)
+    })
+  }, [])
+
+  if (loading || !data) {
+    return (
+      <main className="min-h-screen bg-[#07090D] flex items-center justify-center">
+        <p className="text-[#7D8597]">Carregando dashboard...</p>
+      </main>
+    )
+  }
+
   /* ── dados ── */
-  const pendencias = getPendencias()
+  const { pendencias, visitas, contratos, clientes } = data
   const abertas    = pendencias.filter(p => p.status !== 'concluida')
 
   const urgentes = abertas
@@ -300,12 +320,9 @@ export default function DashboardPage() {
     .filter(p => getPrioridade(p) === 'atencao')
     .sort((a, b) => getDiffDias(a.prazo ?? '') - getDiffDias(b.prazo ?? ''))
 
-  const visitas   = getVisitas()
-  const contratos = getContratos()
-
   /* ── lookups ── */
   const clienteNomePorId = new Map<string, string>()
-  getClientes().forEach(c => clienteNomePorId.set(c.id, c.nome))
+  clientes.forEach(c => clienteNomePorId.set(c.id, c.nome_instituicao))
 
   const pendenciasPorCliente = new Map<string, Pendencia[]>()
   abertas.forEach(p => {
@@ -318,7 +335,7 @@ export default function DashboardPage() {
   contratos.forEach(c => pagamentoPorCliente.set(c.clienteId, c.faturamento.status))
 
   /* ── TOP 1 ── */
-  const top1 = getTopPrioridade(abertas)
+  const top1 = getTopPrioridade(abertas, clienteNomePorId)
 
   /* ── urgentes restantes (sem o top1) ── */
   const urgentesRest = urgentes.filter(p => p.id !== top1?.entidadeId)
@@ -363,8 +380,13 @@ export default function DashboardPage() {
           <section>
             <SectionHeader label="Ação imediata" count={urgentesRest.length} cor="red" />
             <div className="space-y-4">
-              {Array.from(urgentesGrupo.entries()).map(([cliente, items]) => (
-                <GrupoCliente key={cliente} cliente={cliente} pendencias={items} />
+              {Array.from(urgentesGrupo.entries()).map(([clienteId, items]) => (
+                <GrupoCliente 
+                  key={clienteId} 
+                  clienteId={clienteId} 
+                  clienteNome={clienteNomePorId.get(clienteId) || clienteId} 
+                  pendencias={items} 
+                />
               ))}
             </div>
           </section>
@@ -375,7 +397,7 @@ export default function DashboardPage() {
           <section>
             <SectionHeader label="Vencem em breve" count={atencao.length} cor="amber" />
             <div className="space-y-1.5">
-              {atencao.map(p => <AlertaCard key={p.id} p={p} />)}
+              {atencao.map(p => <AlertaCard key={p.id} p={p} clienteNome={clienteNomePorId.get(p.clienteId) || p.clienteId} />)}
             </div>
           </section>
         )}
@@ -392,8 +414,8 @@ export default function DashboardPage() {
                     key={v.id}
                     v={v}
                     clienteNome={nome}
-                    pendenciasAbertas={pendenciasPorCliente.get(nome) ?? []}
-                    statusPagamento={pagamentoPorCliente.get(nome)}
+                    pendenciasAbertas={pendenciasPorCliente.get(v.clienteId) ?? []}
+                    statusPagamento={pagamentoPorCliente.get(v.clienteId)}
                   />
                 )
               })}

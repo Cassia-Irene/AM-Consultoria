@@ -25,15 +25,27 @@ export default function PendenciasPage() {
   const [filtro, setFiltro] = useState<Filtro>('todas')
 
   // Mapeia clienteId → nome do cliente e garante campo 'cliente' exigido pelo tipo
-  const pendenciasComCliente: Pendencia[] = Pendencias.map(p => ({
-    id: p.id,
-    titulo: p.titulo,
-    cliente: Clientes.find(c => c.id === p.clienteId)?.nome ?? p.clienteId,
-    prazo: p.prazo,
-    status: p.status as Pendencia['status'],
-    diasAtraso: (p as { diasAtraso?: number }).diasAtraso,
-    descricao: p.descricao,
-  }))
+  const pendenciasComCliente: Pendencia[] = Pendencias.map(p => {
+    // Mapeia o status do mock/domínio para o status visual do PendenciaCard
+    let statusVisual: Pendencia['status'] = 'andamento'
+    if (p.status === 'concluida') {
+      statusVisual = 'resolvida'
+    } else if (p.prioridade === 'urgente') {
+      statusVisual = 'urgente'
+    } else if (p.prioridade === 'atencao') {
+      statusVisual = 'atencao'
+    }
+
+    return {
+      id: p.id,
+      titulo: p.titulo,
+      cliente: Clientes.find(c => c.id === p.clienteId)?.nome_instituicao ?? p.clienteId,
+      prazo: p.prazo,
+      status: statusVisual,
+      diasAtraso: (p as { diasAtraso?: number }).diasAtraso,
+      descricao: p.descricao,
+    }
+  })
 
   const [pendencias, setPendencias] = useState<Pendencia[]>(pendenciasComCliente)
 

@@ -93,7 +93,7 @@ function MetricCard({
 }
 
 /** Card de pendência — compacto para modo planejamento */
-function PriorityCard({ p }: { p: Pendencia }) {
+function PriorityCard({ p, clienteNome }: { p: Pendencia; clienteNome: string }) {
   const prio = getPrioridade(p)
   const isUrgente = prio === 'urgente'
   const borderColor = isUrgente ? 'border-red-500' : prio === 'atencao' ? 'border-amber-400' : 'border-[#23272F]'
@@ -104,7 +104,7 @@ function PriorityCard({ p }: { p: Pendencia }) {
       <div className={`flex items-center gap-3 bg-[#0d1117] border-l-4 ${borderColor} rounded-r-2xl px-4 py-3 min-h-[60px]`}>
         <div className="flex-1 min-w-0">
           <p className="text-white font-semibold text-[14px] leading-tight truncate">{p.titulo}</p>
-          <p className="text-[#7D8597] text-xs mt-0.5 truncate">{p.clienteId}</p>
+          <p className="text-[#7D8597] text-xs mt-0.5 truncate">{clienteNome}</p>
         </div>
         {p.prazo && (
           <p className={`shrink-0 text-xs font-bold tabular-nums ${prazoColor}`}>
@@ -144,7 +144,7 @@ function VisitaAgendaCard({
           <div className="min-w-0">
             <p className="text-white font-semibold text-[15px] leading-tight truncate">{clienteNome}</p>
             <p className="text-[#7D8597] text-xs mt-0.5">
-              📍 {v.horario ?? 'Sem horário'}
+              📍 {v.data_visita ? new Date(v.data_visita).toLocaleDateString('pt-BR') : 'Sem data'}
             </p>
           </div>
 
@@ -210,7 +210,7 @@ export default function DashboardPlanejamentoPage() {
   // Lookup: ID numérico do cliente → nome
   const clientesLista = getClientes()
   const clienteNomePorId = new Map<string, string>()
-  clientesLista.forEach(c => clienteNomePorId.set(c.id, c.nome))
+  clientesLista.forEach(c => clienteNomePorId.set(c.id, c.nome_instituicao))
 
   const clientesAtivos = clientesLista.filter(c => c.status === 'ativo').length
 
@@ -312,7 +312,13 @@ export default function DashboardPlanejamentoPage() {
           <section>
             <SectionHeader label="Atrasados" sub={`${urgentes.length}`} />
             <div className="space-y-2">
-              {urgentes.map(p => <PriorityCard key={p.id} p={p} />)}
+              {urgentes.map(p => (
+                <PriorityCard 
+                  key={p.id} 
+                  p={p} 
+                  clienteNome={clienteNomePorId.get(p.clienteId) || p.clienteId} 
+                />
+              ))}
             </div>
           </section>
         )}
@@ -322,7 +328,13 @@ export default function DashboardPlanejamentoPage() {
           <section>
             <SectionHeader label="Vencem em breve" sub={`${atencao.length}`} />
             <div className="space-y-2">
-              {atencao.map(p => <PriorityCard key={p.id} p={p} />)}
+              {atencao.map(p => (
+                <PriorityCard 
+                  key={p.id} 
+                  p={p} 
+                  clienteNome={clienteNomePorId.get(p.clienteId) || p.clienteId} 
+                />
+              ))}
             </div>
           </section>
         )}
@@ -332,7 +344,13 @@ export default function DashboardPlanejamentoPage() {
           <section>
             <SectionHeader label="Demais pendências" sub={`${normais.length}`} />
             <div className="space-y-2">
-              {normais.map(p => <PriorityCard key={p.id} p={p} />)}
+              {normais.map(p => (
+                <PriorityCard 
+                  key={p.id} 
+                  p={p} 
+                  clienteNome={clienteNomePorId.get(p.clienteId) || p.clienteId} 
+                />
+              ))}
             </div>
           </section>
         )}

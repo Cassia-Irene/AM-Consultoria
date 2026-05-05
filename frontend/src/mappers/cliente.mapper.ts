@@ -15,10 +15,17 @@ export function getClientes(): Cliente[] {
 }
 
 export function mapCliente(raw: ClienteRaw): Cliente {
+  const nome_instituicao = raw.nome_instituicao || raw.nome
+  if (!nome_instituicao) throw new Error(`ClienteRaw (ID: ${raw.id}) missing required field: nome_instituicao`)
+
   return {
     id: String(raw.id),
-    nome: raw.nome,
-    tipo: raw.tipo,
+    nome_instituicao,
+    tipo_instituicao: raw.tipo || 'Padrão',
+    cidade: raw.cidade || 'Não informada',
+    nivel_complexidade: raw.nivel_complexidade,
+    modalidade_atendimento: raw.modalidade_atendimento,
+    observacoes_gerais: raw.observacoes_gerais,
     status: normalizeStatus(raw.status),
   }
 }

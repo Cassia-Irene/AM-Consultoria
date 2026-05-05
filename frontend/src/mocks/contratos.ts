@@ -1,6 +1,7 @@
 export const Contratos = [
   {
     id: 1,
+    clienteId: '1',
     cliente: 'Lar São Francisco',
     status: 'ativo',
     tipo: 'Retentor',
@@ -22,6 +23,7 @@ export const Contratos = [
   },
   {
     id: 2,
+    clienteId: '3',
     cliente: 'CAPS Centro',
     status: 'ativo',
     tipo: 'Projeto Especial',

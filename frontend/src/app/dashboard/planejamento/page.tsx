@@ -2,14 +2,8 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { getPendencias } from '@/mappers/pendencia.mapper'
 import type { Pendencia } from '@/domain/pendencia'
-import { getVisitas } from '@/mappers/visita.mapper'
 import type { Visita } from '@/domain/visita'
-import { getContratos } from '@/mappers/contrato.mapper'
-
-import { getClientes } from '@/mappers/cliente.mapper'
-import { getFaturamentos } from '@/mappers/faturamento.mapper'
 import { getFaturamentoMaisRecente, type StatusFaturamento } from '@/domain/faturamento'
 import { DashboardService, type DashboardResponse } from '@/services/dashboard.service'
 

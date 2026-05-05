@@ -16,7 +16,6 @@ import { getFaturamentos } from '@/mappers/faturamento.mapper'
 import { getVisitas } from '@/mappers/visita.mapper'
 
 import { safeArray } from '@/utils/safe'
-import { AppError } from '@/utils/errors'
 
 export interface DashboardResponse {
   pendencias: Pendencia[]

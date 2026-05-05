@@ -12,7 +12,6 @@
  * NÃO define DTOs — todos definidos em visita.adapter.ts.
  */
 
-import { fetchApi } from './api'
 import { AppError } from '@/utils/errors'
 import {
   toVisitaPayload,

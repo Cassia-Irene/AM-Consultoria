@@ -21,24 +21,37 @@ export default function ContratosPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    try {
-      const todosContratos = getContratos()
-      const clientes = getClientes()
-      const clienteNomePorId = new Map(clientes.map(c => [c.id, c.nome_instituicao]))
+    let isMounted = true
 
-      const comNome: ContratoComCliente[] = todosContratos.map(c => ({
-        ...c,
-        clienteNome: clienteNomePorId.get(c.clienteId) ?? `Cliente ${c.clienteId}`,
-      }))
+    async function loadData() {
+      try {
+        await new Promise(resolve => setTimeout(resolve, 100))
 
-      setContratos(comNome)
-      setFaturamentos(getFaturamentos())
-    } catch (err) {
-      console.warn('[WARN][CONTRATOS] Erro ao carregar dados:', err)
-      setError('Algumas informações não puderam ser carregadas. O painel está em modo seguro.')
-    } finally {
-      setLoading(false)
+        const todosContratos = getContratos()
+        const clientes = getClientes()
+        const clienteNomePorId = new Map(clientes.map(c => [c.id, c.nome_instituicao]))
+
+        const comNome: ContratoComCliente[] = todosContratos.map(c => ({
+          ...c,
+          clienteNome: clienteNomePorId.get(c.clienteId) ?? `Cliente ${c.clienteId}`,
+        }))
+
+        if (isMounted) {
+          setContratos(comNome)
+          setFaturamentos(getFaturamentos())
+        }
+      } catch (err) {
+        if (isMounted) {
+          console.warn('[WARN][CONTRATOS] Erro ao carregar dados:', err)
+          setError('Algumas informações não puderam ser carregadas. O painel está em modo seguro.')
+        }
+      } finally {
+        if (isMounted) setLoading(false)
+      }
     }
+
+    loadData()
+    return () => { isMounted = false }
   }, [])
 
   if (loading) {

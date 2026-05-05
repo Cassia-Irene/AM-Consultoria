@@ -650,10 +650,11 @@ export default function NovaVisitaPage() {
       setSaved(true)
       // Usa variável local — state async pode não refletir o valor atualizado aqui
       setTimeout(() => router.push('/dashboard'), shouldWarn ? 3000 : 1400)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[ERROR][API] Erro ao submeter visita:', error)
       setSaving(false)
-      setErrorSubmit(error?.message || 'Ocorreu um erro ao salvar. Tente novamente.')
+      const msg = error instanceof Error ? error.message : 'Ocorreu um erro ao salvar. Tente novamente.'
+      setErrorSubmit(msg)
     }
   }
 

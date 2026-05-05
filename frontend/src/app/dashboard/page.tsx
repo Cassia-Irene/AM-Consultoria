@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react'
 import type { Pendencia } from '@/domain/pendencia'
 import type { Visita } from '@/domain/visita'
 import type { StatusFaturamento } from '@/domain/faturamento'
-import type { Cliente } from '@/domain/cliente'
 import { getFaturamentoMaisRecente } from '@/domain/faturamento'
 import { getTopPrioridade } from '@/lib/prioritizer'
 import type { InsightPrioridade } from '@/domain/insight'
@@ -120,7 +119,7 @@ function AcaoCard({ p, clienteNome }: { p: Pendencia; clienteNome: string }) {
 }
 
 /** Grupo de pendências por cliente — reduz carga cognitiva */
-function GrupoCliente({ clienteId, clienteNome, pendencias }: { clienteId: string; clienteNome: string; pendencias: Pendencia[] }) {
+function GrupoCliente({ clienteNome, pendencias }: { clienteNome: string; pendencias: Pendencia[] }) {
   return (
     <div>
       <p className="text-[10px] font-bold uppercase tracking-widest text-[#7D8597] px-1 mb-1.5">
@@ -402,7 +401,6 @@ export default function DashboardPage() {
               {Array.from(urgentesGrupo.entries()).map(([clienteId, items]) => (
                 <GrupoCliente 
                   key={clienteId} 
-                  clienteId={clienteId} 
                   clienteNome={clienteNomePorId.get(clienteId) || clienteId} 
                   pendencias={items} 
                 />

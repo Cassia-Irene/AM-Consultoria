@@ -1,8 +1,8 @@
 'use client'
 // app/contratos/page.tsx
 //
-// Refatoração estética completa para alinhar com o Dashboard Caos/Planejamento.
-// Mantém lógica de integração híbrida e resiliência.
+// Refatoração estrutural completa para alinhar com o novo mapa lógico.
+// Focado em registro contratual puro, sem lógica financeira (agora em FaturamentoCliente).
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
@@ -18,7 +18,6 @@ import { fetchApi } from '@/services/api'
 type ContratoComCliente = Contrato & { clienteNome: string }
 
 export default function ContratosPage() {
-  const [mostrarInativos, setMostrarInativos] = useState(false)
   const [contratos, setContratos] = useState<ContratoComCliente[]>([])
   const [faturamentos, setFaturamentos] = useState<FaturamentoCliente[]>([])
   const [loading, setLoading] = useState(true)
@@ -60,24 +59,6 @@ export default function ContratosPage() {
     return () => { isMounted = false }
   }, [])
 
-  const listaFiltrada = mostrarInativos
-    ? contratos
-    : contratos.filter(c => c.status === 'ativo')
-
-  const totalReceber = listaFiltrada.reduce((sum, c) => {
-    const fat = getFaturamentoMaisRecente(faturamentos, c.id)
-    return fat?.status === 'pendente' ? sum + fat.valor_total : sum
-  }, 0)
-
-  const totalPago = listaFiltrada.reduce((sum, c) => {
-    const fat = getFaturamentoMaisRecente(faturamentos, c.id)
-    return fat?.status === 'pago' ? sum + fat.valor_total : sum
-  }, 0)
-
-  function formatMoney(n: number) {
-    return `R$\u2009${n.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-  }
-
   const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })
 
   if (loading) {
@@ -111,35 +92,10 @@ export default function ContratosPage() {
           </div>
         )}
 
-        {/* ── RESUMO MÉTRICAS ── */}
-        <section className="grid grid-cols-2 gap-3">
-          <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-4">
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">A Receber</p>
-            <p className="text-white text-lg font-black tabular-nums">{formatMoney(totalReceber)}</p>
-          </div>
-          <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-4">
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Pago (mês)</p>
-            <p className="text-emerald-500 text-lg font-black tabular-nums">{formatMoney(totalPago)}</p>
-          </div>
-        </section>
-
-        {/* ── FILTROS E CONTAGEM ── */}
-        <section className="flex items-center justify-between px-1">
-          <p className="text-[11px] font-black uppercase tracking-widest text-zinc-500">
-            {listaFiltrada.length} Contratos {mostrarInativos ? 'Totais' : 'Ativos'}
-          </p>
-          <button 
-            onClick={() => setMostrarInativos(!mostrarInativos)}
-            className="text-[11px] font-bold text-sky-500 active:scale-95 transition-transform"
-          >
-            {mostrarInativos ? 'Ver apenas ativos' : 'Ver inativos'}
-          </button>
-        </section>
-
         {/* ── GRID DE CARDS ── */}
-        {listaFiltrada.length > 0 ? (
-          <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {listaFiltrada.map(contrato => (
+        {contratos.length > 0 ? (
+          <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {contratos.map(contrato => (
               <ContratoCard 
                 key={contrato.id} 
                 contrato={contrato} 
@@ -158,40 +114,59 @@ export default function ContratosPage() {
 }
 
 function ContratoCard({ contrato, faturamento }: { contrato: ContratoComCliente; faturamento?: FaturamentoCliente }) {
-  const formatMoney = (n: number) => `R$\u2009${n.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+  const formatDate = (iso?: string) => iso ? new Date(iso).toLocaleDateString('pt-BR') : 'Indeterminado'
 
   return (
-    <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5 hover:border-zinc-700 transition-all group active:scale-[0.99] flex flex-col justify-between min-h-[180px]">
+    <div className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-6 hover:border-zinc-700 transition-all group active:scale-[0.99] flex flex-col justify-between min-h-[220px]">
       <div>
-        <div className="flex justify-between items-start mb-4 gap-2">
+        <div className="flex justify-between items-start mb-6 gap-3">
           <div className="min-w-0">
-            <h3 className="text-white font-bold text-lg leading-tight truncate group-hover:text-sky-400 transition-colors">
+            <h3 className="text-white font-bold text-xl leading-tight truncate group-hover:text-sky-400 transition-colors">
               {contrato.clienteNome}
             </h3>
-            <p className="text-zinc-500 text-xs font-medium uppercase tracking-wide mt-0.5">
-              {contrato.tipo_cobranca}
-            </p>
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Serviços:</span>
+              <p className="text-zinc-400 text-xs font-medium truncate">
+                {contrato.servicos_contratados}
+              </p>
+            </div>
           </div>
-          <StatusBadgeLocal variant={contrato.status} />
+          {contrato.inclui_relatorio && (
+            <span className="shrink-0 bg-blue-900/40 text-blue-400 border border-blue-800/30 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg">
+              Relatório
+            </span>
+          )}
         </div>
 
-        <div className="flex items-baseline justify-between mt-4">
+        <div className="grid grid-cols-2 gap-6 mt-6">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-0.5">Valor Mensal</p>
-            <p className="text-white text-xl font-black tabular-nums">
-              {formatMoney(contrato.valor_mensal)}
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">Visitas Mensais</p>
+            <p className="text-white font-black tabular-nums text-lg">
+              {contrato.visitas_previstas_mes} <span className="text-zinc-600 text-xs font-bold tracking-normal">visitas</span>
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-0.5">Visitas</p>
-            <p className="text-zinc-300 font-bold tabular-nums">
-              {contrato.visitas_previstas_mes} <span className="text-zinc-600 text-[10px]">/mês</span>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">Vigência</p>
+            <p className="text-zinc-300 text-sm font-bold tabular-nums">
+              {formatDate(contrato.data_inicio)}
+            </p>
+            <p className="text-zinc-600 text-[10px] font-medium mt-0.5">
+              até {formatDate(contrato.data_fim)}
             </p>
           </div>
         </div>
+
+        {contrato.observacoes_gerais && (
+          <div className="mt-6 pt-4 border-t border-zinc-800/50">
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">Observações</p>
+            <p className="text-zinc-500 text-xs leading-relaxed italic line-clamp-2">
+              &quot;{contrato.observacoes_gerais}&quot;
+            </p>
+          </div>
+        )}
       </div>
 
-      <div className="pt-4 mt-5 border-t border-zinc-800/50 flex items-center justify-between">
+      <div className="pt-6 mt-6 border-t border-zinc-800/50 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">Faturamento:</p>
           {faturamento ? (
@@ -204,7 +179,7 @@ function ContratoCard({ contrato, faturamento }: { contrato: ContratoComCliente;
         </div>
         
         <button className="text-[11px] font-black uppercase tracking-widest text-sky-500 flex items-center gap-1 group/btn">
-          Detalhes
+          Ver detalhes
           <svg className="group-hover/btn:translate-x-0.5 transition-transform" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 18l6-6-6-6" />
           </svg>
@@ -214,24 +189,17 @@ function ContratoCard({ contrato, faturamento }: { contrato: ContratoComCliente;
   )
 }
 
-/** Badge local seguindo a estética Dark/Glass do Dashboard */
 function StatusBadgeLocal({ variant }: { variant: string }) {
   const styles: Record<string, string> = {
-    ativo:     'bg-emerald-900/40 text-emerald-400 border-emerald-800/30',
     pago:      'bg-emerald-900/40 text-emerald-400 border-emerald-800/30',
     pendente:  'bg-amber-900/40 text-amber-400 border-amber-800/30',
     atrasado:  'bg-red-900/40 text-red-400 border-red-800/30',
-    inativo:   'bg-zinc-800/50 text-zinc-500 border-zinc-700/30',
-    suspenso:  'bg-red-950/60 text-red-500 border-red-900/40',
   }
 
   const labels: Record<string, string> = {
-    ativo:     'Ativo',
     pago:      '✓ Pago',
     pendente:  'Pendente',
     atrasado:  'Atrasado',
-    inativo:   'Inativo',
-    suspenso:  'Suspenso',
   }
 
   const style = styles[variant] || 'bg-zinc-800 text-zinc-400'
@@ -251,13 +219,9 @@ function LoadingSkeleton() {
         <div className="h-6 w-32 bg-zinc-900 rounded animate-pulse" />
       </header>
       <div className="px-5 pt-6 space-y-8">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="h-20 bg-zinc-900/50 rounded-2xl animate-pulse" />
-          <div className="h-20 bg-zinc-900/50 rounded-2xl animate-pulse" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-44 bg-zinc-900/40 border border-zinc-800 rounded-2xl animate-pulse" />
+            <div key={i} className="h-56 bg-zinc-900/40 border border-zinc-800 rounded-3xl animate-pulse" />
           ))}
         </div>
       </div>

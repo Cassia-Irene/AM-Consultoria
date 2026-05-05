@@ -796,7 +796,7 @@ export default function NovaVisitaPage() {
               >
                 <option value="" className="bg-[#0d1117]">Selecione o contrato...</option>
                 {contratosDoCliente.map(c => (
-                  <option key={c.id} value={c.id} className="bg-[#0d1117]">{c.tipo_cobranca}</option>
+                  <option key={c.id} value={c.id} className="bg-[#0d1117]">{c.servicos_contratados}</option>
                 ))}
               </select>
               {errors.contratoId && <p className="mt-1 text-xs text-red-400">{errors.contratoId}</p>}

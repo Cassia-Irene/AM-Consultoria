@@ -1,11 +1,10 @@
 // src/mappers/contrato.mapper.ts
 //
 // Converte ContratoRaw (shape da API) → Contrato (domain).
-// SEM fallbacks silenciosos. SEM campos inventados.
-// Campos obrigatórios ausentes = erro explícito.
+// Validação estrita conforme novo mapa lógico.
 
-import { Contratos as ContratosMock } from '@/lib/mocks'
-import type { Contrato, StatusContrato } from '@/domain/contrato'
+import { Contratos as ContratosMock } from '@/mocks/contratos'
+import type { Contrato } from '@/domain/contrato'
 import type { ContratoRaw } from '@/types/contrato.raw'
 import { validateShape } from '@/utils/schemaGuard'
 
@@ -17,63 +16,28 @@ export function mapContrato(raw: ContratoRaw): Contrato {
   validateShape<ContratoRaw>('ContratoRaw', raw, [
     'id_contrato',
     'id_cliente',
-    'tipo_cobranca',
-    'data_inicio',
-    'valor_mensal'
+    'servicos_contratados',
+    'visitas_previstas_mes',
+    'inclui_relatorio',
+    'data_inicio'
   ])
 
-  // Validação de campos obrigatórios — falha explícita, sem fallback
   if (!raw.id_contrato) throw new Error(`ContratoRaw missing required field: id_contrato`)
   if (!raw.id_cliente) throw new Error(`ContratoRaw missing required field: id_cliente`)
-  if (!raw.tipo_cobranca) throw new Error(`ContratoRaw (ID: ${raw.id_contrato}) missing required field: tipo_cobranca`)
+  if (!raw.servicos_contratados) throw new Error(`ContratoRaw (ID: ${raw.id_contrato}) missing required field: servicos_contratados`)
   if (!raw.data_inicio) throw new Error(`ContratoRaw (ID: ${raw.id_contrato}) missing required field: data_inicio`)
-
-  const status = normalizeStatusContrato(raw.status, raw.id_contrato)
 
   return {
     id: String(raw.id_contrato),
     clienteId: String(raw.id_cliente),
 
-    tipo_cobranca: raw.tipo_cobranca,
-    valor_mensal: parseDecimal(raw.valor_mensal, 'valor_mensal', raw.id_contrato),
+    servicos_contratados: raw.servicos_contratados,
     visitas_previstas_mes: raw.visitas_previstas_mes,
-    valor_visita_extra: raw.valor_visita_extra != null
-      ? parseDecimal(raw.valor_visita_extra, 'valor_visita_extra', raw.id_contrato)
-      : undefined,
-
     inclui_relatorio: raw.inclui_relatorio,
 
     data_inicio: raw.data_inicio,
     data_fim: raw.data_fim ?? undefined,
 
-    status,
-
-    motivo_alteracao: raw.motivo_alteracao ?? undefined,
-    observacoes: raw.observacoes ?? undefined,
+    observacoes_gerais: raw.observacoes_gerais ?? undefined,
   }
-}
-
-/* ───────── helpers ───────── */
-
-function normalizeStatusContrato(
-  status: string | undefined,
-  id: number
-): StatusContrato {
-  if (status === 'ativo') return 'ativo'
-  if (status === 'inativo') return 'inativo'
-  if (status === 'suspenso') return 'suspenso'
-
-  throw new Error(`ContratoRaw (ID: ${id}) has unknown status: "${status}"`)
-}
-
-/**
- * FastAPI serializa Decimal como string — converte para number.
- * Lança erro se o valor não for parseável.
- */
-function parseDecimal(value: string | number, field: string, id: number): number {
-  const n = typeof value === 'number' ? value : parseFloat(value)
-  if (isNaN(n)) {
-    throw new Error(`ContratoRaw (ID: ${id}) invalid decimal for field "${field}": "${value}"`)
-  }
-  return n
 }

@@ -1,46 +1,36 @@
+// src/mocks/contratos.ts
+//
+// Shape = exatamente o que a API retornará (modelo SQLAlchemy Contrato).
+// Sem adaptação no mapper — dados aqui já devem estar corretos.
+// Campos alinhados a: backend/src/models/contrato.py
+
 export const Contratos = [
   {
-    id: 1,
-    clienteId: '1',
-    cliente: 'Lar São Francisco',
+    id_contrato: 1,
+    id_cliente: 1,               // FK para cliente — int como vem da API
+    tipo_cobranca: 'Retentor',
+    valor_mensal: 3500,
+    visitas_previstas_mes: 3,
+    valor_visita_extra: null,
+    inclui_relatorio: false,
+    data_inicio: '2025-12-01',
+    data_fim: null,
     status: 'ativo',
-    tipo: 'Retentor',
-    criadoEm: '2025-12-01',
-    valorMensal: 3500,
-    valor: 3500,
-    valorBase: 3500,
-    valorAtual: 3500,
-    visitasMes: 3,
-    faturamentoMes: {
-      status: 'pago',
-      valor: 3500,
-      vencimento: '2026-04-10',
-    },
-    MudancaValor: {
-      ultimaAlteracao: '2026-02-20',
-      motivoAlteracao: 'Ajuste anual conforme contrato',
-    }
+    motivo_alteracao: 'Ajuste anual conforme contrato',
+    observacoes: null,
   },
   {
-    id: 2,
-    clienteId: '3',
-    cliente: 'CAPS Centro',
+    id_contrato: 2,
+    id_cliente: 3,               // FK para cliente id=3
+    tipo_cobranca: 'Projeto Especial',
+    valor_mensal: 2800,
+    visitas_previstas_mes: 2,
+    valor_visita_extra: 350,
+    inclui_relatorio: true,
+    data_inicio: '2026-01-15',
+    data_fim: null,
     status: 'ativo',
-    tipo: 'Projeto Especial',
-    criadoEm: '2026-01-15',
-    valorMensal: 2800,
-    valor: 2800,
-    valorBase: 2800,
-    valorAtual: 2800,
-    visitasMes: 2,
-    faturamentoMes: {
-      status: 'pendente',
-      valor: 2800,
-      vencimento: '2026-04-30',
-    },
-    MudancaValor: {
-      ultimaAlteracao: '2026-02-20',
-      motivoAlteracao: 'Ajuste anual conforme contrato',
-    }
+    motivo_alteracao: null,
+    observacoes: null,
   },
 ]

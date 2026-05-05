@@ -8,6 +8,8 @@ import type { Visita } from '@/domain/visita'
 import { getContratos } from '@/mappers/contrato.mapper'
 import type { Contrato } from '@/domain/contrato'
 import { getClientes } from '@/mappers/cliente.mapper'
+import { getFaturamentos } from '@/mappers/faturamento.mapper'
+import { getFaturamentoMaisRecente, type StatusFaturamento } from '@/domain/faturamento'
 
 /* ─────────────────────────────────────────────
    HELPERS (mesmo do modo caos)
@@ -130,7 +132,7 @@ function VisitaAgendaCard({
   v: Visita
   clienteNome: string
   pendenciasAbertas: Pendencia[]
-  statusPagamento?: Contrato['faturamento']['status']
+  statusPagamento?: StatusFaturamento
   valorMes?: number
 }) {
   const temPendencias = pendenciasAbertas.length > 0
@@ -216,13 +218,17 @@ export default function DashboardPlanejamentoPage() {
 
   // Financeiro — via mapper tipado
   const contratos = getContratos()
-  const totalPendente = contratos
-    .filter(c => c.faturamento.status === 'pendente')
-    .reduce((acc, c) => acc + c.faturamento.valor, 0)
+  const faturamentos = getFaturamentos()
+  
+  const totalPendente = contratos.reduce((acc, c) => {
+    const fat = getFaturamentoMaisRecente(faturamentos, c.id)
+    return fat?.status === 'pendente' ? acc + fat.valor_total : acc
+  }, 0)
 
-  const totalMes = contratos
-    .filter(c => c.status === 'ativo')
-    .reduce((acc, c) => acc + c.faturamento.valor, 0)
+  const totalMes = contratos.filter(c => c.status === 'ativo').reduce((acc, c) => {
+    const fat = getFaturamentoMaisRecente(faturamentos, c.id)
+    return fat ? acc + fat.valor_total : acc
+  }, 0)
 
   // Índices cruzados — chave = nome do cliente
   const pendenciasPorCliente = new Map<string, Pendencia[]>()
@@ -232,11 +238,14 @@ export default function DashboardPlanejamentoPage() {
     pendenciasPorCliente.set(p.clienteId, lista)
   })
 
-  const pagamentoPorCliente = new Map<string, Contrato['faturamento']['status']>()
+  const pagamentoPorCliente = new Map<string, StatusFaturamento>()
   const valorPorCliente     = new Map<string, number>()
   contratos.forEach(c => {
-    pagamentoPorCliente.set(c.clienteId, c.faturamento.status)
-    valorPorCliente.set(c.clienteId, c.faturamento.valor)
+    const fat = getFaturamentoMaisRecente(faturamentos, c.id)
+    if (fat) {
+      pagamentoPorCliente.set(c.clienteId, fat.status)
+      valorPorCliente.set(c.clienteId, fat.valor_total)
+    }
   })
 
   const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })

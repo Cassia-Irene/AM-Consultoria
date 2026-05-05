@@ -10,7 +10,7 @@
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Clientes } from '../../../mocks/clientes'
-import { Contratos } from '../../../mocks/contratos'
+import { getContratos } from '@/mappers/contrato.mapper'
 import { VisitasService } from '../../../services/visitas.service'
 
 /* ─────────────────────────────────────────────
@@ -664,7 +664,7 @@ export default function NovaVisitaPage() {
   const nomeCliente = clientesAtivos.find(c => c.id === form.clienteId)?.nome_instituicao ?? ''
   
   const contratosDoCliente = form.clienteId 
-    ? Contratos.filter(c => String(c.clienteId) === form.clienteId) 
+    ? getContratos().filter(c => c.clienteId === form.clienteId) 
     : []
 
   /* ────────── TELA DE CONFIRMAÇÃO ────────── */
@@ -794,7 +794,7 @@ export default function NovaVisitaPage() {
               >
                 <option value="" className="bg-[#0d1117]">Selecione o contrato...</option>
                 {contratosDoCliente.map(c => (
-                  <option key={c.id} value={String(c.id)} className="bg-[#0d1117]">{c.tipo}</option>
+                  <option key={c.id} value={c.id} className="bg-[#0d1117]">{c.tipo_cobranca}</option>
                 ))}
               </select>
               {errors.contratoId && <p className="mt-1 text-xs text-red-400">{errors.contratoId}</p>}

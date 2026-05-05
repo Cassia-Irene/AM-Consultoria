@@ -1,29 +1,58 @@
 'use client'
 // app/contratos/page.tsx
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { StatusBadge, type StatusVariant } from '../../components/StatusBadge'
-import { Contratos } from '../../lib/mocks'
+import { getContratos } from '@/mappers/contrato.mapper'
+import { getClientes } from '@/mappers/cliente.mapper'
+import { getFaturamentos } from '@/mappers/faturamento.mapper'
+import { getFaturamentoMaisRecente } from '@/domain/faturamento'
+import type { Contrato } from '@/domain/contrato'
+import type { FaturamentoCliente } from '@/domain/faturamento'
+
+type ContratoComCliente = Contrato & { clienteNome: string }
 
 export default function ContratosPage() {
   const [mostrarInativos, setMostrarInativos] = useState(false)
+  const [contratos, setContratos] = useState<ContratoComCliente[]>([])
+  const [faturamentos, setFaturamentos] = useState<FaturamentoCliente[]>([])
 
-  const contratos = mostrarInativos
-    ? Contratos
-    : Contratos.filter(c => c.status === 'ativo')
+  useEffect(() => {
+    const todosContratos = getContratos()
+    const clientes = getClientes()
+    const clienteNomePorId = new Map(clientes.map(c => [c.id, c.nome_instituicao]))
 
-  const totalReceber = contratos
-    .filter(c => c.faturamentoMes.status === 'pendente')
-    .reduce((sum, c) => sum + c.faturamentoMes.valor, 0)
+    const comNome: ContratoComCliente[] = todosContratos.map(c => ({
+      ...c,
+      clienteNome: clienteNomePorId.get(c.clienteId) ?? `Cliente ${c.clienteId}`,
+    }))
 
-  const totalPago = contratos
-    .filter(c => c.faturamentoMes.status === 'pago')
-    .reduce((sum, c) => sum + c.faturamentoMes.valor, 0)
+    setContratos(comNome)
+    setFaturamentos(getFaturamentos())
+  }, [])
+
+  const listaFiltrada = mostrarInativos
+    ? contratos
+    : contratos.filter(c => c.status === 'ativo')
+
+  // Totais calculados sobre faturamento real — não sobre contrato
+  const totalReceber = listaFiltrada.reduce((sum, c) => {
+    const fat = getFaturamentoMaisRecente(faturamentos, c.id)
+    return fat?.status === 'pendente' ? sum + fat.valor_total : sum
+  }, 0)
+
+  const totalPago = listaFiltrada.reduce((sum, c) => {
+    const fat = getFaturamentoMaisRecente(faturamentos, c.id)
+    return fat?.status === 'pago' ? sum + fat.valor_total : sum
+  }, 0)
 
   function formatMoney(n: number) {
-    return `R$\u2009${n.toLocaleString('pt-BR')}`
+    return `R$\u2009${n.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
   }
+
+  // Mês de referência atual (para exibição)
+  const mesAtual = new Date().toLocaleString('pt-BR', { month: 'short' })
 
   return (
     <main className="min-h-screen bg-white pb-24">
@@ -37,11 +66,11 @@ export default function ContratosPage() {
         {/* ── RESUMO FATURAMENTO MÊS ── */}
         <div className="grid grid-cols-2 gap-2">
           <div className="bg-white/10 rounded-xl p-3">
-            <p className="text-xs text-blue-200 mb-0.5">Pago em mai</p>
+            <p className="text-xs text-blue-200 mb-0.5">Pago em {mesAtual}</p>
             <p className="text-lg font-medium text-green-300">{formatMoney(totalPago)}</p>
           </div>
           <div className="bg-white/10 rounded-xl p-3">
-            <p className="text-xs text-blue-200 mb-0.5">A receber em mai</p>
+            <p className="text-xs text-blue-200 mb-0.5">A receber em {mesAtual}</p>
             <p className={`text-lg font-medium ${totalReceber > 0 ? 'text-amber-300' : 'text-green-300'}`}>
               {formatMoney(totalReceber)}
             </p>
@@ -50,63 +79,75 @@ export default function ContratosPage() {
       </div>
 
       <div className="px-4 pt-4 space-y-3">
-        {contratos.map(c => (
-          <div key={c.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-            {/* ── CARD HEADER ── */}
-            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gray-50">
-              <div>
-                <p className="text-[15px] font-medium text-gray-900">{c.cliente}</p>
-                <p className="text-xs text-gray-400">{c.tipo} · desde {c.criadoEm}</p>
+        {listaFiltrada.map(c => {
+          const fat = getFaturamentoMaisRecente(faturamentos, c.id)
+          return (
+            <div key={c.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+              {/* ── CARD HEADER ── */}
+              <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gray-50">
+                <div>
+                  <p className="text-[15px] font-medium text-gray-900">{c.clienteNome}</p>
+                  <p className="text-xs text-gray-400">
+                    {c.tipo_cobranca} · desde {c.data_inicio}
+                  </p>
+                </div>
+                <StatusBadge variant={c.status as StatusVariant} />
               </div>
-              <StatusBadge variant={c.status as StatusVariant} />
-            </div>
 
-            {/* ── DADOS ── */}
-            <div className="px-4 py-3 space-y-2">
-              <Row label="Valor base" value={formatMoney(c.valorBase)} />
+              {/* ── DADOS ── */}
+              <div className="px-4 py-3 space-y-2">
+                <Row label="Valor mensal" value={formatMoney(c.valor_mensal)} />
+                <Row label="Visitas/mês" value={`${c.visitas_previstas_mes} regulares`} />
 
-              {c.valorAtual !== c.valorBase && (
-                <Row
-                  label="Valor atual"
-                  value={formatMoney(c.valorAtual)}
-                  valueClass="text-[#0353A4] font-medium"
-                />
-              )}
+                {c.valor_visita_extra != null && (
+                  <Row label="Visita extra" value={formatMoney(c.valor_visita_extra)} />
+                )}
 
-              {c.MudancaValor?.motivoAlteracao && (
-                <Row
-                  label="Última alteração"
-                  value={`${c.MudancaValor.ultimaAlteracao} — ${c.MudancaValor.motivoAlteracao}`}
-                  small
-                />
-              )}
+                {c.inclui_relatorio && (
+                  <Row label="Relatório" value="Incluso" />
+                )}
 
-              <Row label="Visitas/mês" value={`${c.visitasMes} regulares`} />
+                {c.motivo_alteracao && (
+                  <Row
+                    label="Última alteração"
+                    value={c.motivo_alteracao}
+                    small
+                  />
+                )}
 
-              <div className="flex items-center justify-between pt-2 border-t border-gray-50">
-                <span className="text-sm text-gray-500">Faturamento mai</span>
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-medium ${
-                    c.faturamentoMes.status === 'pago' ? 'text-green-700' : 'text-amber-700'
-                  }`}>
-                    {formatMoney(c.faturamentoMes.valor)}
-                  </span>
-                  <StatusBadge variant={c.faturamentoMes.status as StatusVariant} />
+                {/* ── FATURAMENTO DO MÊS ── */}
+                <div className="flex items-center justify-between pt-2 border-t border-gray-50">
+                  <span className="text-sm text-gray-500">Faturamento {mesAtual}</span>
+                  {fat ? (
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm font-medium ${
+                        fat.status === 'pago' ? 'text-green-700' : 'text-amber-700'
+                      }`}>
+                        {formatMoney(fat.valor_total)}
+                      </span>
+                      <StatusBadge variant={fat.status as StatusVariant} />
+                    </div>
+                  ) : (
+                    <span className="text-xs text-gray-400">Sem registro</span>
+                  )}
                 </div>
               </div>
-            </div>
 
-            {/* ── AÇÕES ── */}
-            <div className="flex border-t border-gray-50">
-              <button className="flex-1 py-3 text-sm text-gray-500 font-medium active:bg-gray-50 border-r border-gray-50">
-                Histórico
-              </button>
-              <button className="flex-1 py-3 text-sm text-[#0466C8] font-medium active:bg-blue-50">
-                Editar valor
-              </button>
+              {/* ── AÇÕES ── */}
+              <div className="flex border-t border-gray-50">
+                <Link
+                  href={`/contratos/${c.id}`}
+                  className="flex-1 py-3 text-sm text-gray-500 font-medium text-center active:bg-gray-50 border-r border-gray-50"
+                >
+                  Ver detalhe
+                </Link>
+                <button className="flex-1 py-3 text-sm text-[#0466C8] font-medium active:bg-blue-50">
+                  Editar valor
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
 
         {/* ── TOGGLE INATIVOS ── */}
         <button
@@ -116,11 +157,6 @@ export default function ContratosPage() {
           {mostrarInativos ? 'Ocultar inativos' : 'Mostrar contratos inativos'}
         </button>
       </div>
-
-      {/* ── FAB ── */}
-      <button className="fixed bottom-6 right-4 bg-[#001845] text-white rounded-2xl px-5 py-4 text-[15px] font-medium shadow-lg active:scale-95 transition-transform z-20">
-        + Novo contrato
-      </button>
     </main>
   )
 }

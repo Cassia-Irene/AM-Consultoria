@@ -4,8 +4,9 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import type { Pendencia } from '@/domain/pendencia'
 import type { Visita } from '@/domain/visita'
-import type { Contrato } from '@/domain/contrato'
+import type { StatusFaturamento } from '@/domain/faturamento'
 import type { Cliente } from '@/domain/cliente'
+import { getFaturamentoMaisRecente } from '@/domain/faturamento'
 import { getTopPrioridade } from '@/lib/prioritizer'
 import type { InsightPrioridade } from '@/domain/insight'
 import { DashboardService, type DashboardResponse } from '@/services/dashboard.service'
@@ -187,7 +188,7 @@ function VisitaRotinaCard({
   v: Visita
   clienteNome: string
   pendenciasAbertas: Pendencia[]
-  statusPagamento?: Contrato['faturamento']['status']
+  statusPagamento?: StatusFaturamento
 }) {
   const temPendencias = pendenciasAbertas.length > 0
   const temUrgente    = pendenciasAbertas.some(p => getPrioridade(p) === 'urgente')
@@ -309,7 +310,7 @@ export default function DashboardPage() {
   }
 
   /* ── dados ── */
-  const { pendencias, visitas, contratos, clientes } = data
+  const { pendencias, visitas, contratos, faturamentos, clientes } = data
   const abertas    = pendencias.filter(p => p.status !== 'concluida')
 
   const urgentes = abertas
@@ -331,8 +332,12 @@ export default function DashboardPage() {
     pendenciasPorCliente.set(p.clienteId, lista)
   })
 
-  const pagamentoPorCliente = new Map<string, Contrato['faturamento']['status']>()
-  contratos.forEach(c => pagamentoPorCliente.set(c.clienteId, c.faturamento.status))
+  // Status de pagamento vem de FaturamentoCliente, não de Contrato
+  const pagamentoPorCliente = new Map<string, StatusFaturamento>()
+  contratos.forEach(c => {
+    const fat = getFaturamentoMaisRecente(faturamentos, c.id)
+    if (fat) pagamentoPorCliente.set(c.clienteId, fat.status)
+  })
 
   /* ── TOP 1 ── */
   const top1 = getTopPrioridade(abertas, clienteNomePorId)

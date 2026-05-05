@@ -1,64 +1,70 @@
 // src/mappers/contrato.mapper.ts
+//
+// Converte ContratoRaw (shape da API) → Contrato (domain).
+// SEM fallbacks silenciosos. SEM campos inventados.
+// Campos obrigatórios ausentes = erro explícito.
 
 import { Contratos as ContratosMock } from '@/lib/mocks'
-import type { Contrato } from '@/domain/contrato'
+import type { Contrato, StatusContrato } from '@/domain/contrato'
 import type { ContratoRaw } from '@/types/contrato.raw'
 
 export function getContratos(): Contrato[] {
-  return (ContratosMock as ContratoRaw[]).map(mapContrato)
+  return (ContratosMock as unknown as ContratoRaw[]).map(mapContrato)
 }
 
 export function mapContrato(raw: ContratoRaw): Contrato {
-  const clienteId = raw.clienteId || raw.cliente
-  if (!clienteId) throw new Error(`ContratoRaw (ID: ${raw.id}) missing required field: clienteId`)
+  // Validação de campos obrigatórios — falha explícita, sem fallback
+  if (!raw.id_contrato) throw new Error(`ContratoRaw missing required field: id_contrato`)
+  if (!raw.id_cliente) throw new Error(`ContratoRaw missing required field: id_cliente`)
+  if (!raw.tipo_cobranca) throw new Error(`ContratoRaw (ID: ${raw.id_contrato}) missing required field: tipo_cobranca`)
+  if (!raw.data_inicio) throw new Error(`ContratoRaw (ID: ${raw.id_contrato}) missing required field: data_inicio`)
+
+  const status = normalizeStatusContrato(raw.status, raw.id_contrato)
 
   return {
-    id: String(raw.id),
-    clienteId: String(clienteId),
+    id: String(raw.id_contrato),
+    clienteId: String(raw.id_cliente),
 
-    status: normalizeStatusContrato(raw.status),
+    tipo_cobranca: raw.tipo_cobranca,
+    valor_mensal: parseDecimal(raw.valor_mensal, 'valor_mensal', raw.id_contrato),
+    visitas_previstas_mes: raw.visitas_previstas_mes,
+    valor_visita_extra: raw.valor_visita_extra != null
+      ? parseDecimal(raw.valor_visita_extra, 'valor_visita_extra', raw.id_contrato)
+      : undefined,
 
-    tipo_cobranca: raw.tipo_cobranca || 'Mensalidade',
-    valorMensal: raw.valorMensal ?? 0,
-    visitas_previstas_mes: raw.visitas_previstas_mes || 1,
-    valor_visita_extra: raw.valor_visita_extra,
-    
-    inclui_relatorio: raw.inclui_relatorio ?? false,
-    data_inicio: raw.data_inicio || '2026-01-01',
-    data_fim: raw.data_fim,
+    inclui_relatorio: raw.inclui_relatorio,
 
-    faturamento: {
-      status: normalizeStatusFaturamento(raw.faturamentoMes?.status),
-      valor: raw.faturamentoMes?.valor ?? 0,
-      vencimento: raw.faturamentoMes?.vencimento,
-    },
+    data_inicio: raw.data_inicio,
+    data_fim: raw.data_fim ?? undefined,
 
-    motivo_alteracao: raw.motivo_alteracao,
-    observacoes: raw.observacoes,
+    status,
 
-    criadoEm: raw.criadoEm ?? new Date().toISOString(),
+    motivo_alteracao: raw.motivo_alteracao ?? undefined,
+    observacoes: raw.observacoes ?? undefined,
   }
 }
 
 /* ───────── helpers ───────── */
 
 function normalizeStatusContrato(
-  status?: string
-): 'ativo' | 'inativo' {
+  status: string | undefined,
+  id: number
+): StatusContrato {
   if (status === 'ativo') return 'ativo'
   if (status === 'inativo') return 'inativo'
+  if (status === 'suspenso') return 'suspenso'
 
-  console.warn('Status contrato desconhecido:', status)
-  return 'ativo'
+  throw new Error(`ContratoRaw (ID: ${id}) has unknown status: "${status}"`)
 }
 
-function normalizeStatusFaturamento(
-  status?: string
-): 'pago' | 'pendente' | 'atrasado' {
-  if (status === 'pago') return 'pago'
-  if (status === 'pendente') return 'pendente'
-  if (status === 'atrasado') return 'atrasado'
-
-  console.warn('Status faturamento desconhecido:', status)
-  return 'pendente'
+/**
+ * FastAPI serializa Decimal como string — converte para number.
+ * Lança erro se o valor não for parseável.
+ */
+function parseDecimal(value: string | number, field: string, id: number): number {
+  const n = typeof value === 'number' ? value : parseFloat(value)
+  if (isNaN(n)) {
+    throw new Error(`ContratoRaw (ID: ${id}) invalid decimal for field "${field}": "${value}"`)
+  }
+  return n
 }

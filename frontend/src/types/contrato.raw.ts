@@ -1,24 +1,23 @@
+// src/types/contrato.raw.ts
+//
+// Shape do JSON que a API retorna — espelha exatamente o ContratoRead (backend/src/schemas/contrato.py)
+// Sem campos extras, sem campos opcionais que não existem no banco.
+
 export interface ContratoRaw {
-  id: number | string
-  cliente: string
-  clienteId?: number | string
-  status?: string
+  id_contrato: number
+  id_cliente: number
 
-  faturamentoMes?: {
-    status?: string
-    valor?: number
-    vencimento?: string
-  }
+  tipo_cobranca: string
+  valor_mensal: string        // Decimal vem como string do FastAPI/JSON
+  visitas_previstas_mes: number
+  valor_visita_extra: string | null
 
-  valorMensal?: number
-  criadoEm?: string
+  inclui_relatorio: boolean
 
-  tipo_cobranca?: string
-  visitas_previstas_mes?: number
-  valor_visita_extra?: number
-  inclui_relatorio?: boolean
-  data_inicio?: string
-  data_fim?: string
-  motivo_alteracao?: string
-  observacoes?: string
+  data_inicio: string         // ISO 8601: "YYYY-MM-DD"
+  data_fim: string | null
+
+  status: string
+  motivo_alteracao: string | null
+  observacoes: string | null
 }

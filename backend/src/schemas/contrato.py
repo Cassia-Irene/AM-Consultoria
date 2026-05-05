@@ -23,3 +23,9 @@ class ContratoRead(ContratoBase):
     id_contrato: int
     
     model_config = ConfigDict(from_attributes=True)
+
+class ContratoReplaceRequest(BaseModel):
+    contrato_id: int
+    novo_valor_mensal: Decimal
+    visitas_previstas_mes: int
+    motivo_alteracao: str

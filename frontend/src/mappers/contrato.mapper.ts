@@ -19,7 +19,8 @@ export function mapContrato(raw: ContratoRaw): Contrato {
     'servicos_contratados',
     'visitas_previstas_mes',
     'inclui_relatorio',
-    'data_inicio'
+    'data_inicio',
+    'status'
   ])
 
   if (!raw.id_contrato) throw new Error(`ContratoRaw missing required field: id_contrato`)
@@ -37,6 +38,7 @@ export function mapContrato(raw: ContratoRaw): Contrato {
 
     data_inicio: raw.data_inicio,
     data_fim: raw.data_fim ?? undefined,
+    status: raw.status as any, // Cast temporário ou normalização
 
     observacoes_gerais: raw.observacoes_gerais ?? undefined,
   }

@@ -117,75 +117,77 @@ function ContratoCard({ contrato, faturamento }: { contrato: ContratoComCliente;
   const formatDate = (iso?: string) => iso ? new Date(iso).toLocaleDateString('pt-BR') : 'Indeterminado'
 
   return (
-    <div className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-6 hover:border-zinc-700 transition-all group active:scale-[0.99] flex flex-col justify-between min-h-[220px]">
-      <div>
-        <div className="flex justify-between items-start mb-6 gap-3">
-          <div className="min-w-0">
-            <h3 className="text-white font-bold text-xl leading-tight truncate group-hover:text-sky-400 transition-colors">
-              {contrato.clienteNome}
-            </h3>
-            <div className="flex items-center gap-2 mt-1.5">
-              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Serviços:</span>
-              <p className="text-zinc-400 text-xs font-medium truncate">
-                {contrato.servicos_contratados}
+    <Link href={`/contratos/${contrato.id}`} className="block h-full">
+      <div className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-6 hover:border-zinc-700 transition-all group active:scale-[0.99] flex flex-col justify-between h-full min-h-[220px]">
+        <div>
+          <div className="flex justify-between items-start mb-6 gap-3">
+            <div className="min-w-0">
+              <h3 className="text-white font-bold text-xl leading-tight truncate group-hover:text-sky-400 transition-colors">
+                {contrato.clienteNome}
+              </h3>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Serviços:</span>
+                <p className="text-zinc-400 text-xs font-medium truncate">
+                  {contrato.servicos_contratados}
+                </p>
+              </div>
+            </div>
+            {contrato.inclui_relatorio && (
+              <span className="shrink-0 bg-blue-900/40 text-blue-400 border border-blue-800/30 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg">
+                Relatório
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-6 mt-6">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">Visitas Mensais</p>
+              <p className="text-white font-black tabular-nums text-lg">
+                {contrato.visitas_previstas_mes} <span className="text-zinc-600 text-xs font-bold tracking-normal">visitas</span>
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">Vigência</p>
+              <p className="text-zinc-300 text-sm font-bold tabular-nums">
+                {formatDate(contrato.data_inicio)}
+              </p>
+              <p className="text-zinc-600 text-[10px] font-medium mt-0.5">
+                até {formatDate(contrato.data_fim)}
               </p>
             </div>
           </div>
-          {contrato.inclui_relatorio && (
-            <span className="shrink-0 bg-blue-900/40 text-blue-400 border border-blue-800/30 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg">
-              Relatório
-            </span>
+
+          {contrato.observacoes_gerais && (
+            <div className="mt-6 pt-4 border-t border-zinc-800/50">
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">Observações</p>
+              <p className="text-zinc-500 text-xs leading-relaxed italic line-clamp-2">
+                &quot;{contrato.observacoes_gerais}&quot;
+              </p>
+            </div>
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-6 mt-6">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">Visitas Mensais</p>
-            <p className="text-white font-black tabular-nums text-lg">
-              {contrato.visitas_previstas_mes} <span className="text-zinc-600 text-xs font-bold tracking-normal">visitas</span>
-            </p>
+        <div className="pt-6 mt-6 border-t border-zinc-800/50 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">Faturamento:</p>
+            {faturamento ? (
+              <StatusBadgeLocal variant={getStatusFaturamento(faturamento)} />
+            ) : (
+              <span className="text-[9px] font-black uppercase tracking-widest bg-zinc-800 text-zinc-600 px-2 py-0.5 rounded-lg">
+                Sem dados
+              </span>
+            )}
           </div>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">Vigência</p>
-            <p className="text-zinc-300 text-sm font-bold tabular-nums">
-              {formatDate(contrato.data_inicio)}
-            </p>
-            <p className="text-zinc-600 text-[10px] font-medium mt-0.5">
-              até {formatDate(contrato.data_fim)}
-            </p>
+          
+          <div className="text-[11px] font-black uppercase tracking-widest text-sky-500 flex items-center gap-1 group/btn">
+            Ver detalhes
+            <svg className="group-hover/btn:translate-x-0.5 transition-transform" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
           </div>
         </div>
-
-        {contrato.observacoes_gerais && (
-          <div className="mt-6 pt-4 border-t border-zinc-800/50">
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">Observações</p>
-            <p className="text-zinc-500 text-xs leading-relaxed italic line-clamp-2">
-              &quot;{contrato.observacoes_gerais}&quot;
-            </p>
-          </div>
-        )}
       </div>
-
-      <div className="pt-6 mt-6 border-t border-zinc-800/50 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">Faturamento:</p>
-          {faturamento ? (
-            <StatusBadgeLocal variant={getStatusFaturamento(faturamento)} />
-          ) : (
-            <span className="text-[9px] font-black uppercase tracking-widest bg-zinc-800 text-zinc-600 px-2 py-0.5 rounded-lg">
-              Sem dados
-            </span>
-          )}
-        </div>
-        
-        <button className="text-[11px] font-black uppercase tracking-widest text-sky-500 flex items-center gap-1 group/btn">
-          Ver detalhes
-          <svg className="group-hover/btn:translate-x-0.5 transition-transform" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 18l6-6-6-6" />
-          </svg>
-        </button>
-      </div>
-    </div>
+    </Link>
   )
 }
 

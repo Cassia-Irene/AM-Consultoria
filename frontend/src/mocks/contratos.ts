@@ -11,6 +11,7 @@ export const Contratos = [
     inclui_relatorio: true,
     data_inicio: '2025-12-01',
     data_fim: null,
+    status: 'ativo',
     observacoes_gerais: 'Contrato padrão anual'
   },
   {
@@ -21,6 +22,7 @@ export const Contratos = [
     inclui_relatorio: false,
     data_inicio: '2026-01-15',
     data_fim: null,
+    status: 'ativo',
     observacoes_gerais: null
   }
 ]

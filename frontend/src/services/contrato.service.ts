@@ -54,5 +54,22 @@ export const ContratoService = {
       console.error('[ERROR][CONTRATO_SERVICE] Falha ao compor detalhes do contrato:', err)
       throw err
     }
+  },
+
+  async replace(input: {
+    contratoId: string
+    novoValorMensal: number
+    visitas: number
+    motivo: string
+  }): Promise<Contrato> {
+    return fetchApi<Contrato>('/contratos/replace', {
+      method: 'POST',
+      body: JSON.stringify({
+        contrato_id: Number(input.contratoId),
+        novo_valor_mensal: input.novoValorMensal,
+        visitas_previstas_mes: input.visitas,
+        motivo_alteracao: input.motivo
+      })
+    })
   }
 }

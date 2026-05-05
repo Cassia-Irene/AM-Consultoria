@@ -1,32 +1,52 @@
 'use client'
 // app/contratos/[id]/page.tsx
 //
-// Página de detalhes do contrato.
+// Página de detalhes do contrato com fluxo de versionamento.
 // Estética Premium Dark/Glass alinhada ao Dashboard.
 
 import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ContratoService, type ContratoDetail } from '@/services/contrato.service'
 import { getStatusFaturamento } from '@/domain/faturamento'
 import type { Visita } from '@/domain/visita'
 
 export default function ContratoDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
+  const router = useRouter()
+  
   const [data, setData] = useState<ContratoDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // Modal State
+  const [showModal, setShowModal] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [formData, setFormData] = useState({
+    valorMensal: 0,
+    visitas: 0,
+    motivo: ''
+  })
 
   useEffect(() => {
     let isMounted = true
     ContratoService.getContratoDetail(id)
       .then(res => {
         if (isMounted) {
-          if (res) setData(res)
-          else setError('Contrato não encontrado.')
+          if (res) {
+            setData(res)
+            setFormData({
+              valorMensal: res.faturamentoAtual?.valor_base || 0,
+              visitas: res.contrato.visitas_previstas_mes,
+              motivo: ''
+            })
+          } else {
+            setError('Contrato não encontrado.')
+          }
           setLoading(false)
         }
       })
-      .catch(err => {
+      .catch(() => {
         if (isMounted) {
           setError('Erro ao carregar detalhes do contrato.')
           setLoading(false)
@@ -34,6 +54,29 @@ export default function ContratoDetailPage({ params }: { params: Promise<{ id: s
       })
     return () => { isMounted = false }
   }, [id])
+
+  async function handleReplace(e: React.FormEvent) {
+    e.preventDefault()
+    if (!data || !formData.motivo) return
+    
+    setSubmitting(true)
+    try {
+      const novo = await ContratoService.replace({
+        contratoId: id,
+        novoValorMensal: formData.valorMensal,
+        visitas: formData.visitas,
+        motivo: formData.motivo
+      })
+      
+      // Sucesso: Redireciona para a nova versão
+      setShowModal(false)
+      router.push(`/contratos/${novo.id}`)
+    } catch (err) {
+      alert('Falha ao atualizar contrato. Tente novamente.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   if (loading) return <LoadingSkeleton />
   if (error || !data) return <ErrorState message={error || 'Dados indisponíveis'} />
@@ -45,18 +88,32 @@ export default function ContratoDetailPage({ params }: { params: Promise<{ id: s
     <main className="min-h-screen bg-[#07090D] pb-32 text-zinc-300">
       {/* ── HEADER ── */}
       <header className="sticky top-0 z-10 bg-[#07090D]/95 backdrop-blur-sm px-5 pt-10 pb-4 border-b border-zinc-800/50">
-        <div className="flex items-center gap-4 mb-2">
-          <Link href="/contratos" className="text-zinc-500 hover:text-white transition-colors">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </Link>
-          <div className="min-w-0">
-            <h1 className="text-white text-xl font-black tracking-tight truncate">{cliente.nome_instituicao}</h1>
-            <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mt-0.5">
-              Detalhes do Contrato Operational
-            </p>
+        <div className="flex items-center justify-between gap-4 mb-2">
+          <div className="flex items-center gap-4 min-w-0">
+            <Link href="/contratos" className="text-zinc-500 hover:text-white transition-colors">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </Link>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="text-white text-xl font-black tracking-tight truncate">{cliente.nome_instituicao}</h1>
+                <StatusBadge variant={contrato.status} />
+              </div>
+              <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mt-0.5">
+                Gestão de Contrato · Versão {contrato.id}
+              </p>
+            </div>
           </div>
+
+          {contrato.status === 'ativo' && (
+            <button 
+              onClick={() => setShowModal(true)}
+              className="shrink-0 bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-xl transition-colors shadow-lg shadow-sky-950/20"
+            >
+              Atualizar
+            </button>
+          )}
         </div>
       </header>
 
@@ -144,6 +201,72 @@ export default function ContratoDetailPage({ params }: { params: Promise<{ id: s
           <p className="text-[9px] text-zinc-700 mt-2 italic">* Dados simulados - integração pendente</p>
         </section>
       </div>
+
+      {/* ── MODAL DE ATUALIZAÇÃO ── */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => !submitting && setShowModal(false)} />
+          <div className="relative bg-[#0d1117] border border-zinc-800 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl">
+            <div className="px-6 pt-6 pb-4 border-b border-zinc-800">
+              <h2 className="text-white text-lg font-black tracking-tight">Atualizar Contrato</h2>
+              <p className="text-zinc-500 text-xs mt-1">Gera uma nova versão e encerra a atual.</p>
+            </div>
+            
+            <form onSubmit={handleReplace} className="p-6 space-y-5">
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Novo Valor Mensal (R$)</label>
+                <input 
+                  type="number" 
+                  required
+                  value={formData.valorMensal}
+                  onChange={e => setFormData({...formData, valorMensal: Number(e.target.value)})}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-hidden focus:border-sky-500 transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Visitas Previstas / Mês</label>
+                <input 
+                  type="number" 
+                  required
+                  value={formData.visitas}
+                  onChange={e => setFormData({...formData, visitas: Number(e.target.value)})}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-hidden focus:border-sky-500 transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Motivo da Alteração</label>
+                <textarea 
+                  required
+                  placeholder="Ex: Reajuste anual ou expansão de escopo"
+                  value={formData.motivo}
+                  onChange={e => setFormData({...formData, motivo: e.target.value})}
+                  className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-hidden focus:border-sky-500 transition-colors min-h-[100px]"
+                />
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button 
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white text-[11px] font-black uppercase tracking-widest py-4 rounded-2xl transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 bg-sky-600 hover:bg-sky-500 text-white text-[11px] font-black uppercase tracking-widest py-4 rounded-2xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {submitting ? 'Processando...' : 'Confirmar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
@@ -206,6 +329,9 @@ function HistoryItem({ date, text }: { date: string; text: string }) {
 
 function StatusBadge({ variant }: { variant: string }) {
   const styles: Record<string, string> = {
+    ativo:     'bg-emerald-900/40 text-emerald-400 border-emerald-800/30',
+    inativo:   'bg-zinc-800 text-zinc-500 border-zinc-700/30',
+    suspenso:  'bg-red-900/40 text-red-400 border-red-800/30',
     pago:      'bg-emerald-900/40 text-emerald-400 border-emerald-800/30',
     pendente:  'bg-amber-900/40 text-amber-400 border-amber-800/30',
     atrasado:  'bg-red-900/40 text-red-400 border-red-800/30',

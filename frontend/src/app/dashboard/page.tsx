@@ -206,13 +206,17 @@ function VisitaRotinaCard({
         </div>
 
         <div className="flex flex-col items-end gap-1 shrink-0">
-          {statusPagamento && (
+          {statusPagamento ? (
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${
               statusPagamento === 'pago'
                 ? 'bg-emerald-900/50 text-emerald-400'
                 : 'bg-amber-900/50 text-amber-400'
             }`}>
               {statusPagamento === 'pago' ? '✓ Pago' : '$ Pendente'}
+            </span>
+          ) : (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-[#23272F] text-[#7D8597]">
+              Sem dados
             </span>
           )}
           {temPendencias && (
@@ -290,13 +294,16 @@ function SectionHeader({ label, count, cor }: { label: string; count?: number; c
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     DashboardService.getDashboardData().then(res => {
       setData(res)
       setLoading(false)
     }).catch(err => {
-      console.error(err)
+      console.error('[ERROR][UI] Falha ao carregar dashboard modo caos:', err)
+      setError('Não foi possível carregar alguns dados. O painel está operando em modo de segurança.')
+      setData({ pendencias: [], clientes: [], contratos: [], faturamentos: [], visitas: [] })
       setLoading(false)
     })
   }, [])
@@ -370,6 +377,13 @@ export default function DashboardPage() {
           </Link>
         </div>
       </header>
+
+      {error && (
+        <div className="mx-4 mt-4 bg-amber-950/40 border border-amber-700/50 rounded-xl px-4 py-3 text-amber-400 text-sm">
+          <p className="font-bold uppercase tracking-widest text-[10px] mb-1">Aviso</p>
+          {error}
+        </div>
+      )}
 
       <div className="px-4 pt-5 space-y-6">
 

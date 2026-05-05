@@ -1,15 +1,17 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import { getPendencias } from '@/mappers/pendencia.mapper'
 import type { Pendencia } from '@/domain/pendencia'
 import { getVisitas } from '@/mappers/visita.mapper'
 import type { Visita } from '@/domain/visita'
 import { getContratos } from '@/mappers/contrato.mapper'
-import type { Contrato } from '@/domain/contrato'
+
 import { getClientes } from '@/mappers/cliente.mapper'
 import { getFaturamentos } from '@/mappers/faturamento.mapper'
 import { getFaturamentoMaisRecente, type StatusFaturamento } from '@/domain/faturamento'
+import { DashboardService, type DashboardResponse } from '@/services/dashboard.service'
 
 /* ─────────────────────────────────────────────
    HELPERS (mesmo do modo caos)
@@ -152,13 +154,17 @@ function VisitaAgendaCard({
 
           {/* Sinais rápidos à direita */}
           <div className="flex flex-col items-end gap-1 shrink-0">
-            {statusPagamento && (
+            {statusPagamento ? (
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${
                 statusPagamento === 'pago'
                   ? 'bg-emerald-900/50 text-emerald-400'
                   : 'bg-amber-900/50 text-amber-400'
               }`}>
                 {statusPagamento === 'pago' ? '✓ Pago' : `$ ${valorMes ? formatValor(valorMes) : 'Pendente'}`}
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-[#23272F] text-[#7D8597]">
+                Sem dados
               </span>
             )}
             {temPendencias && (
@@ -202,30 +208,50 @@ function VisitaAgendaCard({
 ───────────────────────────────────────────── */
 
 export default function DashboardPlanejamentoPage() {
-  const pendencias = getPendencias()
+  const [data, setData] = useState<DashboardResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    DashboardService.getDashboardData().then(res => {
+      setData(res)
+      setLoading(false)
+    }).catch(err => {
+      console.error('[ERROR][UI] Falha ao carregar dashboard planejamento:', err)
+      setError('Não foi possível carregar alguns dados. O painel está operando em modo de segurança.')
+      setData({ pendencias: [], clientes: [], contratos: [], faturamentos: [], visitas: [] })
+      setLoading(false)
+    })
+  }, [])
+
+  if (loading || !data) {
+    return (
+      <main className="min-h-screen bg-[#07090D] flex items-center justify-center">
+        <p className="text-[#7D8597] text-sm animate-pulse">Carregando planejamento...</p>
+      </main>
+    )
+  }
+
+  const { pendencias, visitas, contratos, faturamentos, clientes } = data
   const abertas    = pendencias.filter(p => p.status !== 'concluida')
   const urgentes   = abertas.filter(p => getPrioridade(p) === 'urgente')
   const atencao    = abertas.filter(p => getPrioridade(p) === 'atencao')
   const normais    = abertas.filter(p => getPrioridade(p) === 'normal')
-  const visitas    = getVisitas()
 
   // Lookup: ID numérico do cliente → nome
-  const clientesLista = getClientes()
+  const clientesLista = clientes
   const clienteNomePorId = new Map<string, string>()
   clientesLista.forEach(c => clienteNomePorId.set(c.id, c.nome_instituicao))
 
-  const clientesAtivos = clientesLista.filter(c => c.status === 'ativo').length
+  const clientesAtivos = clientesLista.length // Simples count pra mock
 
   // Financeiro — via mapper tipado
-  const contratos = getContratos()
-  const faturamentos = getFaturamentos()
-  
   const totalPendente = contratos.reduce((acc, c) => {
     const fat = getFaturamentoMaisRecente(faturamentos, c.id)
     return fat?.status === 'pendente' ? acc + fat.valor_total : acc
   }, 0)
 
-  const totalMes = contratos.filter(c => c.status === 'ativo').reduce((acc, c) => {
+  const totalMes = contratos.reduce((acc, c) => {
     const fat = getFaturamentoMaisRecente(faturamentos, c.id)
     return fat ? acc + fat.valor_total : acc
   }, 0)
@@ -263,6 +289,13 @@ export default function DashboardPlanejamentoPage() {
         </div>
         <p className="text-[#7D8597] text-xs capitalize mt-0.5">{hoje}</p>
       </header>
+
+      {error && (
+        <div className="mx-4 mt-4 bg-amber-950/40 border border-amber-700/50 rounded-xl px-4 py-3 text-amber-400 text-sm">
+          <p className="font-bold uppercase tracking-widest text-[10px] mb-1">Aviso</p>
+          {error}
+        </div>
+      )}
 
       <div className="px-4 pt-5 space-y-6">
 

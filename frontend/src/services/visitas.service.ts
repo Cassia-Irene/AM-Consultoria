@@ -13,6 +13,7 @@
  */
 
 import { fetchApi } from './api'
+import { AppError } from '@/utils/errors'
 import {
   toVisitaPayload,
   validateNovaVisitaInput,
@@ -22,19 +23,6 @@ import {
 
 export type { NovaVisitaInput, CriarVisitaResponse } from '@/adapters/visita.adapter'
 
-// ─── Erro tipado do service ───────────────────────────────────────────────────
-
-export class VisitaServiceError extends Error {
-  constructor(
-    message: string,
-    public readonly code: 'VALIDATION_ERROR' | 'API_ERROR' | 'UNKNOWN',
-    public readonly details?: unknown
-  ) {
-    super(message)
-    this.name = 'VisitaServiceError'
-  }
-}
-
 // ─── Service ─────────────────────────────────────────────────────────────────
 
 export const VisitasService = {
@@ -42,7 +30,7 @@ export const VisitasService = {
     // 1. Validar antes de chamar a API — falha rápida, mensagem clara
     const { valid, errors } = validateNovaVisitaInput(input)
     if (!valid) {
-      throw new VisitaServiceError(
+      throw new AppError(
         `Dados inválidos: ${errors.join('; ')}`,
         'VALIDATION_ERROR',
         errors
@@ -66,7 +54,7 @@ export const VisitasService = {
 
     } catch (err) {
       // Nunca repassa o erro bruto da API — UI recebe mensagem de domínio
-      throw new VisitaServiceError(
+      throw new AppError(
         'Falha ao comunicar com o servidor. Tente novamente.',
         'API_ERROR',
         err

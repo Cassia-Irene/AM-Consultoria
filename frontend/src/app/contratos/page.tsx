@@ -17,20 +17,37 @@ export default function ContratosPage() {
   const [mostrarInativos, setMostrarInativos] = useState(false)
   const [contratos, setContratos] = useState<ContratoComCliente[]>([])
   const [faturamentos, setFaturamentos] = useState<FaturamentoCliente[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const todosContratos = getContratos()
-    const clientes = getClientes()
-    const clienteNomePorId = new Map(clientes.map(c => [c.id, c.nome_instituicao]))
+    try {
+      const todosContratos = getContratos()
+      const clientes = getClientes()
+      const clienteNomePorId = new Map(clientes.map(c => [c.id, c.nome_instituicao]))
 
-    const comNome: ContratoComCliente[] = todosContratos.map(c => ({
-      ...c,
-      clienteNome: clienteNomePorId.get(c.clienteId) ?? `Cliente ${c.clienteId}`,
-    }))
+      const comNome: ContratoComCliente[] = todosContratos.map(c => ({
+        ...c,
+        clienteNome: clienteNomePorId.get(c.clienteId) ?? `Cliente ${c.clienteId}`,
+      }))
 
-    setContratos(comNome)
-    setFaturamentos(getFaturamentos())
+      setContratos(comNome)
+      setFaturamentos(getFaturamentos())
+    } catch (err) {
+      console.warn('[WARN][CONTRATOS] Erro ao carregar dados:', err)
+      setError('Algumas informações não puderam ser carregadas. O painel está em modo seguro.')
+    } finally {
+      setLoading(false)
+    }
   }, [])
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-gray-400 text-sm animate-pulse">Carregando contratos...</p>
+      </main>
+    )
+  }
 
   const listaFiltrada = mostrarInativos
     ? contratos
@@ -62,6 +79,12 @@ export default function ContratosPage() {
           <Link href="/dashboard" className="text-blue-200 text-2xl leading-none">‹</Link>
           <h1 className="text-lg font-medium text-white">Contratos</h1>
         </div>
+
+        {error && (
+          <div className="mb-4 bg-amber-900/30 border border-amber-500/50 rounded-xl px-3 py-2">
+            <p className="text-amber-400 text-xs">{error}</p>
+          </div>
+        )}
 
         {/* ── RESUMO FATURAMENTO MÊS ── */}
         <div className="grid grid-cols-2 gap-2">
@@ -128,7 +151,11 @@ export default function ContratosPage() {
                       <StatusBadge variant={fat.status as StatusVariant} />
                     </div>
                   ) : (
-                    <span className="text-xs text-gray-400">Sem registro</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium px-2 py-0.5 rounded bg-gray-100 text-gray-500">
+                        Aguardando emissão
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>

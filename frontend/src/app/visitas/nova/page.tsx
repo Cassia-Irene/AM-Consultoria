@@ -650,10 +650,10 @@ export default function NovaVisitaPage() {
       setSaved(true)
       // Usa variável local — state async pode não refletir o valor atualizado aqui
       setTimeout(() => router.push('/dashboard'), shouldWarn ? 3000 : 1400)
-    } catch (error) {
-      console.error(error)
+    } catch (error: any) {
+      console.error('[ERROR][API] Erro ao submeter visita:', error)
       setSaving(false)
-      setErrorSubmit('Ocorreu um erro ao salvar. Tente novamente.')
+      setErrorSubmit(error?.message || 'Ocorreu um erro ao salvar. Tente novamente.')
     }
   }
 
@@ -742,7 +742,8 @@ export default function NovaVisitaPage() {
       </div>
 
       {errorSubmit && (
-        <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm p-4 text-center">
+        <div className="mx-4 mt-4 bg-red-950/40 border border-red-700/50 rounded-xl px-4 py-3 text-red-400 text-sm">
+          <p className="font-bold uppercase tracking-widest text-[10px] mb-1">Erro</p>
           {errorSubmit}
         </div>
       )}

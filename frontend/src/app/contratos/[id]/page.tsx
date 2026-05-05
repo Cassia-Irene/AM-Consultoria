@@ -1,0 +1,260 @@
+'use client'
+// app/contratos/[id]/page.tsx
+//
+// Página de detalhes do contrato.
+// Estética Premium Dark/Glass alinhada ao Dashboard.
+
+import { useState, useEffect, use } from 'react'
+import Link from 'next/link'
+import { ContratoService, type ContratoDetail } from '@/services/contrato.service'
+import { getStatusFaturamento } from '@/domain/faturamento'
+import type { Visita } from '@/domain/visita'
+
+export default function ContratoDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const [data, setData] = useState<ContratoDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let isMounted = true
+    ContratoService.getContratoDetail(id)
+      .then(res => {
+        if (isMounted) {
+          if (res) setData(res)
+          else setError('Contrato não encontrado.')
+          setLoading(false)
+        }
+      })
+      .catch(err => {
+        if (isMounted) {
+          setError('Erro ao carregar detalhes do contrato.')
+          setLoading(false)
+        }
+      })
+    return () => { isMounted = false }
+  }, [id])
+
+  if (loading) return <LoadingSkeleton />
+  if (error || !data) return <ErrorState message={error || 'Dados indisponíveis'} />
+
+  const { contrato, cliente, faturamentoAtual, visitas } = data
+  const statusFat = faturamentoAtual ? getStatusFaturamento(faturamentoAtual) : null
+
+  return (
+    <main className="min-h-screen bg-[#07090D] pb-32 text-zinc-300">
+      {/* ── HEADER ── */}
+      <header className="sticky top-0 z-10 bg-[#07090D]/95 backdrop-blur-sm px-5 pt-10 pb-4 border-b border-zinc-800/50">
+        <div className="flex items-center gap-4 mb-2">
+          <Link href="/contratos" className="text-zinc-500 hover:text-white transition-colors">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </Link>
+          <div className="min-w-0">
+            <h1 className="text-white text-xl font-black tracking-tight truncate">{cliente.nome_instituicao}</h1>
+            <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mt-0.5">
+              Detalhes do Contrato Operational
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <div className="px-5 pt-8 space-y-10">
+        {/* ── SEÇÃO 1: INFO CONTRATO ── */}
+        <section>
+          <SectionHeader label="Informações Contratuais" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <InfoCard label="Serviços" value={contrato.servicos_contratados} />
+            <InfoCard label="Visitas Previstas" value={`${contrato.visitas_previstas_mes} visitas/mês`} />
+            <InfoCard label="Relatório Técnico" value={contrato.inclui_relatorio ? 'Incluso' : 'Não incluso'} accent={contrato.inclui_relatorio ? 'blue' : 'default'} />
+            <InfoCard label="Data Início" value={new Date(contrato.data_inicio).toLocaleDateString('pt-BR')} />
+            <InfoCard label="Data Fim" value={contrato.data_fim ? new Date(contrato.data_fim).toLocaleDateString('pt-BR') : 'Indeterminado'} />
+            {contrato.observacoes_gerais && (
+              <div className="md:col-span-2 bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-2">Observações Gerais</p>
+                <p className="text-zinc-400 text-sm leading-relaxed italic">&quot;{contrato.observacoes_gerais}&quot;</p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ── SEÇÃO 2: FATURAMENTO ATUAL ── */}
+        <section>
+          <SectionHeader label="Faturamento do Mês" sub={faturamentoAtual?.mes_ano} />
+          {faturamentoAtual ? (
+            <div className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-6">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">Valor Total</p>
+                  <p className="text-white text-3xl font-black tabular-nums">
+                    R$&nbsp;{faturamentoAtual.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <StatusBadge variant={statusFat || 'pendente'} />
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-6 border-t border-zinc-800/50">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Base</p>
+                  <p className="text-zinc-300 font-bold text-sm">R$&nbsp;{faturamentoAtual.valor_base.toLocaleString('pt-BR')}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Extras</p>
+                  <p className="text-zinc-300 font-bold text-sm">R$&nbsp;{faturamentoAtual.valor_extra.toLocaleString('pt-BR')}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Desconto</p>
+                  <p className="text-red-400/80 font-bold text-sm">- R$&nbsp;{faturamentoAtual.desconto.toLocaleString('pt-BR')}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Pagamento</p>
+                  <p className="text-zinc-300 font-bold text-sm">
+                    {faturamentoAtual.pago ? (faturamentoAtual.data_pagamento ? new Date(faturamentoAtual.data_pagamento).toLocaleDateString('pt-BR') : 'Confirmado') : 'Pendente'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <EmptyState message="Sem faturamento disponível para este período." />
+          )}
+        </section>
+
+        {/* ── SEÇÃO 3: HISTÓRICO DE VISITAS ── */}
+        <section>
+          <SectionHeader label="Histórico de Visitas" count={visitas.length} />
+          <div className="space-y-3">
+            {visitas.length > 0 ? (
+              visitas.map(v => <VisitaCard key={v.id} v={v} />)
+            ) : (
+              <EmptyState message="Nenhuma visita registrada para este contrato." />
+            )}
+          </div>
+        </section>
+
+        {/* ── SEÇÃO 4: HISTÓRICO DE ALTERAÇÕES (MOCK) ── */}
+        <section className="opacity-60">
+          <SectionHeader label="Histórico de Alterações" />
+          <div className="space-y-2">
+            {/* BACKEND_DEPENDENCY: integrar com historico_contrato */}
+            <HistoryItem date="05/05/2026" text="Contrato ativado pelo sistema" />
+            <HistoryItem date="01/05/2026" text="Ajuste de visitas mensais: 2 → 3" />
+            <HistoryItem date="20/04/2026" text="Criação do registro contratual" />
+          </div>
+          <p className="text-[9px] text-zinc-700 mt-2 italic">* Dados simulados - integração pendente</p>
+        </section>
+      </div>
+    </main>
+  )
+}
+
+/* ── COMPONENTES INTERNOS ── */
+
+function SectionHeader({ label, sub, count }: { label: string; sub?: string; count?: number }) {
+  return (
+    <div className="flex items-baseline justify-between mb-4 px-1">
+      <h2 className="text-[11px] font-black uppercase tracking-widest text-zinc-500">{label}</h2>
+      {(sub || count !== undefined) && (
+        <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-wide">
+          {sub || `${count} registros`}
+        </span>
+      )}
+    </div>
+  )
+}
+
+function InfoCard({ label, value, accent }: { label: string; value: string | number; accent?: 'blue' | 'default' }) {
+  return (
+    <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-4">
+      <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">{label}</p>
+      <p className={`text-sm font-bold truncate ${accent === 'blue' ? 'text-sky-400' : 'text-zinc-200'}`}>{value}</p>
+    </div>
+  )
+}
+
+function VisitaCard({ v }: { v: Visita }) {
+  return (
+    <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-4 flex items-center justify-between group hover:border-zinc-700 transition-colors">
+      <div className="flex items-center gap-4">
+        <div className="bg-zinc-800 rounded-xl p-2 group-hover:bg-zinc-700 transition-colors">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-500">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </div>
+        <div>
+          <p className="text-white text-sm font-bold">{new Date(v.data_visita).toLocaleDateString('pt-BR')}</p>
+          <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mt-0.5">
+            {v.tipo} · {v.status}
+          </p>
+        </div>
+      </div>
+      <svg className="text-zinc-700 group-hover:text-sky-500 transition-colors" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 18l6-6-6-6" />
+      </svg>
+    </div>
+  )
+}
+
+function HistoryItem({ date, text }: { date: string; text: string }) {
+  return (
+    <div className="flex gap-4 items-start py-1">
+      <span className="text-[10px] font-black tabular-nums text-zinc-600 pt-0.5">{date}</span>
+      <p className="text-xs text-zinc-500">{text}</p>
+    </div>
+  )
+}
+
+function StatusBadge({ variant }: { variant: string }) {
+  const styles: Record<string, string> = {
+    pago:      'bg-emerald-900/40 text-emerald-400 border-emerald-800/30',
+    pendente:  'bg-amber-900/40 text-amber-400 border-amber-800/30',
+    atrasado:  'bg-red-900/40 text-red-400 border-red-800/30',
+  }
+  const style = styles[variant] || 'bg-zinc-800 text-zinc-500'
+  return (
+    <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg border ${style} uppercase tracking-widest`}>
+      {variant === 'pago' ? '✓ Pago' : variant}
+    </span>
+  )
+}
+
+function LoadingSkeleton() {
+  return (
+    <main className="min-h-screen bg-[#07090D] px-5 pt-10">
+      <div className="h-6 w-48 bg-zinc-900 rounded animate-pulse mb-8" />
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="h-20 bg-zinc-900/50 rounded-2xl animate-pulse" />
+          <div className="h-20 bg-zinc-900/50 rounded-2xl animate-pulse" />
+        </div>
+        <div className="h-44 bg-zinc-900/50 rounded-3xl animate-pulse" />
+        <div className="space-y-3">
+          {[1, 2, 3].map(i => <div key={i} className="h-16 bg-zinc-900/50 rounded-2xl animate-pulse" />)}
+        </div>
+      </div>
+    </main>
+  )
+}
+
+function ErrorState({ message }: { message: string }) {
+  return (
+    <main className="min-h-screen bg-[#07090D] flex flex-col items-center justify-center px-10 text-center">
+      <div className="bg-red-950/20 border border-red-900/50 rounded-3xl p-8 max-w-sm">
+        <p className="text-4xl mb-4">⚠️</p>
+        <h2 className="text-white font-bold text-lg mb-2">Ops! Algo deu errado</h2>
+        <p className="text-zinc-500 text-sm mb-6">{message}</p>
+        <Link href="/contratos" className="inline-block bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold px-6 py-3 rounded-xl transition-colors">
+          Voltar para Contratos
+        </Link>
+      </div>
+    </main>
+  )
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="bg-zinc-900/20 border border-dashed border-zinc-800 rounded-2xl py-8 text-center">
+      <p className="text-zinc-600 text-xs italic font-medium">{message}</p>
+    </div>
+  )
+}

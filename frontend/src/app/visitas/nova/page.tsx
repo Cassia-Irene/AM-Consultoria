@@ -9,7 +9,7 @@
 
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { Clientes } from '../../../mocks/clientes'
+import { getClientes } from '@/mappers/cliente.mapper'
 import { getContratos } from '@/mappers/contrato.mapper'
 import { VisitasService } from '../../../services/visitas.service'
 
@@ -264,7 +264,7 @@ function sugerirPendencias(resumo: string): PendenciaSugerida[] {
    HELPERS
 ───────────────────────────────────────────── */
 
-const clientesAtivos = Clientes.filter(c => c.status === 'ativo')
+const clientesAtivos = getClientes().filter(c => c.status === 'ativo')
 
 function uid() {
   return Math.random().toString(36).slice(2, 9)

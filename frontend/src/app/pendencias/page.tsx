@@ -5,7 +5,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { PendenciaCard, Pendencia } from '../../components/PendenciaCard'
 import { Pendencias } from '../../lib/mocks'
-import { Clientes } from '../../mocks/clientes'
+import { getClientes } from '@/mappers/cliente.mapper'
 
 type Filtro = 'todas' | 'urgente' | 'atencao' | 'andamento' | 'resolvida'
 
@@ -39,7 +39,7 @@ export default function PendenciasPage() {
     return {
       id: p.id,
       titulo: p.titulo,
-      cliente: Clientes.find(c => c.id === p.clienteId)?.nome_instituicao ?? p.clienteId,
+      cliente: getClientes().find(c => c.id === p.clienteId)?.nome_instituicao ?? p.clienteId,
       prazo: p.prazo,
       status: statusVisual,
       diasAtraso: (p as { diasAtraso?: number }).diasAtraso,

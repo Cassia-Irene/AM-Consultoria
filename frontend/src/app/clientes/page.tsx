@@ -14,9 +14,26 @@ export default function ClientesPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Simula carregamento do mapper
-    setClientes(getClientes())
-    setLoading(false)
+    let isMounted = true
+
+    async function loadData() {
+      try {
+        // Simula latência de rede para evitar cascading render síncrono
+        await new Promise(resolve => setTimeout(resolve, 10))
+        const data = getClientes()
+        
+        if (isMounted) {
+          setClientes(data)
+          setLoading(false)
+        }
+      } catch (err) {
+        console.error('[ERROR][UI] Erro ao carregar clientes:', err)
+        if (isMounted) setLoading(false)
+      }
+    }
+
+    loadData()
+    return () => { isMounted = false }
   }, [])
 
   const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -86,7 +103,7 @@ export default function ClientesPage() {
                 <div className="mt-4 pt-4 border-t border-zinc-800/50">
                   <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">Notas Operacionais</p>
                   <p className="text-zinc-500 text-xs leading-relaxed italic line-clamp-2">
-                    "{cliente.observacoes_gerais}"
+                    &quot;{cliente.observacoes_gerais}&quot;
                   </p>
                 </div>
               )}

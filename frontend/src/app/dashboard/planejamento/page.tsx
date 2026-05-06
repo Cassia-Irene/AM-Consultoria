@@ -213,7 +213,7 @@ export default function DashboardPlanejamentoPage() {
     }).catch(err => {
       console.error('[ERROR][UI] Falha ao carregar dashboard planejamento:', err)
       setError('Não foi possível carregar alguns dados. O painel está operando em modo de segurança.')
-      setData({ pendencias: [], clientes: [], contratos: [], faturamentos: [], visitas: [] })
+      setData({ pendencias: [], clientes: [], contratos: [], faturamentos: [], visitas: [], projetos: [] })
       setLoading(false)
     })
   }, [])

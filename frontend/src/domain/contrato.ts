@@ -13,6 +13,7 @@ export type Contrato = {
 
   data_inicio: string              // Date ISO 8601: YYYY-MM-DD
   data_fim?: string                // Nullable — null = contrato indeterminado
+  valor_mensal: number
   status: 'ativo' | 'inativo' | 'suspenso'
 
   observacoes_gerais?: string      // Text nullable

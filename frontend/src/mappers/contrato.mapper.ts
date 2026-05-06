@@ -20,6 +20,7 @@ export function mapContrato(raw: ContratoRaw): Contrato {
     'visitas_previstas_mes',
     'inclui_relatorio',
     'data_inicio',
+    'valor_mensal',
     'status'
   ])
 
@@ -38,6 +39,7 @@ export function mapContrato(raw: ContratoRaw): Contrato {
 
     data_inicio: raw.data_inicio,
     data_fim: raw.data_fim ?? undefined,
+    valor_mensal: parseFloat(raw.valor_mensal),
     status: raw.status as 'ativo' | 'inativo' | 'suspenso',
 
     observacoes_gerais: raw.observacoes_gerais ?? undefined,

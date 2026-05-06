@@ -12,6 +12,7 @@ export interface ContratoRaw {
 
   data_inicio: string         // ISO 8601: "YYYY-MM-DD"
   data_fim: string | null
+  valor_mensal: string
   status: string
 
   observacoes_gerais: string | null

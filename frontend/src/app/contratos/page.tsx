@@ -70,11 +70,6 @@ export default function ContratosPage() {
       {/* ── HEADER ── */}
       <header className="sticky top-0 z-10 bg-[#07090D]/95 backdrop-blur-sm px-5 pt-10 pb-4 border-b border-zinc-800/50">
         <div className="flex items-center gap-4 mb-1">
-          <Link href="/dashboard" className="text-zinc-500 hover:text-white transition-colors">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </Link>
           <h1 className="text-white text-xl font-black tracking-tight">Contratos</h1>
         </div>
         <div className="flex items-center justify-between ml-10">

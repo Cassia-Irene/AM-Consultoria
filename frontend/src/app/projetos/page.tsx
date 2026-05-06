@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react'
 import { getProjetos } from '@/mappers/projeto.mapper'
 import { fetchApi } from '@/services/api'
+import Link from 'next/link'
 import type { Projeto, StatusProjeto } from '@/domain/projeto'
 
 export default function ProjetosPage() {
@@ -60,7 +61,11 @@ export default function ProjetosPage() {
         {projetos.length === 0 ? (
           <EmptyState />
         ) : (
-          projetos.map(p => <ProjetoCard key={p.id} projeto={p} />)
+          projetos.map(p => (
+            <Link key={p.id} href={`/projetos/${p.id}`} className="block">
+              <ProjetoCard projeto={p} />
+            </Link>
+          ))
         )}
       </section>
     </main>

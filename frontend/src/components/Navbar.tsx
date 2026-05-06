@@ -41,7 +41,7 @@ export function Navbar() {
                 >
                   {link.label}
                   {isActive && (
-                    <span className="absolute -bottom-[21px] inset-x-0 h-0.5 bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.5)]" />
+                    <span className="absolute bottom-0 inset-x-0 h-0.5 bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.5)]" />
                   )}
                 </Link>
               )

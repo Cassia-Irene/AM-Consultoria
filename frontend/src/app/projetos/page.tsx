@@ -48,7 +48,7 @@ export default function ProjetosPage() {
         <h1 className="text-white text-3xl font-black tracking-tight">Projetos</h1>
         <p className="text-zinc-500 text-sm mt-1">Entregas e iniciativas vinculadas a contratos</p>
 
-        <div className="mt-6 flex items-center gap-3">
+        <div className="mt-6 flex items-center justify-center gap-3">
           <StatPill label="Total" value={projetos.length} />
           <StatPill label="Em andamento" value={projetos.filter(p => p.status === 'em_andamento').length} color="sky" />
           <StatPill label="Concluídos" value={projetos.filter(p => p.status === 'concluido').length} color="emerald" />

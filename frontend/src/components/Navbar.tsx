@@ -28,19 +28,21 @@ export function Navbar() {
             <span className="text-white font-black tracking-tighter text-sm uppercase">Consultoria</span>
           </Link>
 
-          {/* Desktop menu */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-6 h-full">
             {links.map(link => {
               const isActive = pathname === link.href || (link.href !== '/dashboard' && pathname.startsWith(link.href))
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`text-[11px] font-black uppercase tracking-widest transition-colors ${
-                    isActive ? 'text-sky-400' : 'text-zinc-500 hover:text-white'
+                  className={`text-[11px] font-black uppercase tracking-widest transition-all relative py-2 ${
+                    isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-200'
                   }`}
                 >
                   {link.label}
+                  {isActive && (
+                    <span className="absolute -bottom-[21px] inset-x-0 h-0.5 bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.5)]" />
+                  )}
                 </Link>
               )
             })}
@@ -81,10 +83,11 @@ export function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setOpen(false)}
-                className={`text-[12px] font-black uppercase tracking-[0.2em] transition-colors py-2 ${
-                  isActive ? 'text-sky-400' : 'text-zinc-500'
+                className={`text-[12px] font-black uppercase tracking-[0.2em] transition-colors py-2 flex items-center gap-3 ${
+                  isActive ? 'text-white' : 'text-zinc-500'
                 }`}
               >
+                {isActive && <span className="w-1 h-4 bg-sky-500 rounded-full" />}
                 {link.label}
               </Link>
             )

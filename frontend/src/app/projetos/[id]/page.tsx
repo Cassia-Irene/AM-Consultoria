@@ -124,7 +124,7 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
             {entregas.length > 0 ? (
               entregas.map(e => (
                 <div key={e.id} className="relative pl-6 border-l border-zinc-800 pb-2 last:pb-0">
-                  <div className={`absolute -left-[5px] top-1.5 size-2.5 rounded-full border-2 border-[#07090D] ${e.entregue ? 'bg-emerald-500' : 'bg-zinc-700'}`} />
+                  <div className={`absolute left-[-5px] top-1.5 size-2.5 rounded-full border-2 border-[#07090D] ${e.entregue ? 'bg-emerald-500' : 'bg-zinc-700'}`} />
                   <p className="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
                     {new Date(e.data_entrega_prevista).toLocaleDateString('pt-BR')}
                   </p>

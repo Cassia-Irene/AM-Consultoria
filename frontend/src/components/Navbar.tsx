@@ -12,6 +12,7 @@ export function Navbar() {
   const links = [
     { href: '/dashboard', label: 'Início' },
     { href: '/dashboard/financeiro', label: 'Financeiro' },
+    { href: '/clientes', label: 'Clientes' },
     { href: '/contratos', label: 'Contratos' },
     { href: '/projetos', label: 'Projetos' },
     { href: '/pendencias', label: 'Pendências' },

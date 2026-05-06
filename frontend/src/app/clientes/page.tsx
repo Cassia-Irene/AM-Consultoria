@@ -67,56 +67,58 @@ export default function ClientesPage() {
       <div className="px-5 pt-6 space-y-4">
         {clientes.length > 0 ? (
           clientes.map((cliente) => (
-            <div key={cliente.id} className="bg-zinc-900/60 border border-zinc-800 p-5 rounded-2xl hover:border-zinc-700 transition-all group active:scale-[0.99]">
-              <div className="flex justify-between items-start mb-2 gap-3">
-                <div className="min-w-0">
-                  <h2 className="text-white font-bold text-lg leading-tight truncate group-hover:text-sky-400 transition-colors">
-                    {cliente.nome_instituicao}
-                  </h2>
-                  <p className="text-zinc-500 text-xs font-medium uppercase tracking-wide mt-0.5">
-                    {cliente.tipo_instituicao}
-                  </p>
+            <Link key={cliente.id} href={`/clientes/${cliente.id}`} className="block">
+              <div className="bg-zinc-900/60 border border-zinc-800 p-5 rounded-2xl hover:border-zinc-700 transition-all group active:scale-[0.99]">
+                <div className="flex justify-between items-start mb-2 gap-3">
+                  <div className="min-w-0">
+                    <h2 className="text-white font-bold text-lg leading-tight truncate group-hover:text-sky-400 transition-colors">
+                      {cliente.nome_instituicao}
+                    </h2>
+                    <p className="text-zinc-500 text-xs font-medium uppercase tracking-wide mt-0.5">
+                      {cliente.tipo_instituicao}
+                    </p>
+                  </div>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border shrink-0 ${
+                    cliente.status === 'ativo' 
+                      ? 'bg-emerald-900/40 text-emerald-400 border-emerald-800/30' 
+                      : 'bg-zinc-800/50 text-zinc-500 border-zinc-700/30'
+                  }`}>
+                    {cliente.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                  </span>
                 </div>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border shrink-0 ${
-                  cliente.status === 'ativo' 
-                    ? 'bg-emerald-900/40 text-emerald-400 border-emerald-800/30' 
-                    : 'bg-zinc-800/50 text-zinc-500 border-zinc-700/30'
-                }`}>
-                  {cliente.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                </span>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 mt-5 pt-4 border-t border-zinc-800/50">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-0.5">Localização</p>
-                  <p className="text-zinc-300 text-sm font-bold truncate">{cliente.cidade}</p>
-                </div>
-                {cliente.nivel_complexidade && (
+                
+                <div className="grid grid-cols-2 gap-4 mt-5 pt-4 border-t border-zinc-800/50">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-0.5">Complexidade</p>
-                    <p className="text-zinc-300 text-sm font-bold">{cliente.nivel_complexidade}</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-0.5">Localização</p>
+                    <p className="text-zinc-300 text-sm font-bold truncate">{cliente.cidade}</p>
+                  </div>
+                  {cliente.nivel_complexidade && (
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-0.5">Complexidade</p>
+                      <p className="text-zinc-300 text-sm font-bold">{cliente.nivel_complexidade}</p>
+                    </div>
+                  )}
+                </div>
+
+                {cliente.observacoes_gerais && (
+                  <div className="mt-4 pt-4 border-t border-zinc-800/50">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">Notas Operacionais</p>
+                    <p className="text-zinc-500 text-xs leading-relaxed italic line-clamp-2">
+                      &quot;{cliente.observacoes_gerais}&quot;
+                    </p>
                   </div>
                 )}
-              </div>
 
-              {cliente.observacoes_gerais && (
-                <div className="mt-4 pt-4 border-t border-zinc-800/50">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">Notas Operacionais</p>
-                  <p className="text-zinc-500 text-xs leading-relaxed italic line-clamp-2">
-                    &quot;{cliente.observacoes_gerais}&quot;
-                  </p>
+                <div className="mt-5 flex justify-end">
+                  <div className="text-[11px] font-black uppercase tracking-widest text-sky-500 flex items-center gap-1 group/btn">
+                    Ver prontuário
+                    <svg className="group-hover/btn:translate-x-0.5 transition-transform" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 18l6-6-6-6" />
+                    </svg>
+                  </div>
                 </div>
-              )}
-
-              <div className="mt-5 flex justify-end">
-                <button className="text-[11px] font-black uppercase tracking-widest text-sky-500 flex items-center gap-1 group/btn">
-                  Ver prontuário
-                  <svg className="group-hover/btn:translate-x-0.5 transition-transform" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                </button>
               </div>
-            </div>
+            </Link>
           ))
         ) : (
           <div className="py-20 text-center">

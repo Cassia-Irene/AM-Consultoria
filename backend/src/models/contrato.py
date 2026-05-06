@@ -1,26 +1,34 @@
-from sqlalchemy import Column, Integer, String, Numeric, Boolean, Date, Text, ForeignKey
+from sqlalchemy import Column, Integer, Boolean, Date, Text, ForeignKey
 from sqlalchemy.orm import relationship
 from src.database import Base
 
 class Contrato(Base):
-    __tablename__ = "contrato" # Nome singular conforme o DBeaver
+    __tablename__ = "contratos"  # ✅ Ajustado para plural conforme V003
 
     id_contrato = Column(Integer, primary_key=True, index=True)
-    id_cliente = Column(Integer, ForeignKey("cliente.id_cliente"), nullable=False)
+    # ✅ FK apontando para a tabela 'clientes' (plural) que corrigimos antes
+    id_cliente = Column(Integer, ForeignKey("clientes.id_cliente"), nullable=False)
     
-    tipo_cobranca = Column(String(50), nullable=False)
-    valor_mensal = Column(Numeric(10, 2), nullable=False)
-    visitas_previstas_mes = Column(Integer, nullable=False)
-    valor_visita_extra = Column(Numeric(10, 2)) # Pode ser nulo
-    
-    inclui_relatorio = Column(Boolean, nullable=False, default=False)
     data_inicio = Column(Date, nullable=False)
-    data_fim = Column(Date) # Pode ser nulo se o contrato for indeterminado
+    data_fim = Column(Date) # Pode ser nulo
     
-    status = Column(String(20), nullable=False, default="ativo")
-    motivo_alteracao = Column(Text)
-    observacoes = Column(Text)
+    # ✅ Campo obrigatório no SQL que estava faltando no seu backend
+    servicos_contratados = Column(Text, nullable=False)
+    
+    visitas_previstas_mes = Column(Integer, nullable=False)
+    inclui_relatorio = Column(Boolean, nullable=False, default=False)
+    
+    # ✅ Nome corrigido para 'observacoes_gerais' conforme o banco
+    observacoes_gerais = Column(Text)
 
     # Relacionamentos
     cliente = relationship("Cliente", back_populates="contratos")
     visitas = relationship("Visita", back_populates="contrato")
+    projetos = relationship("Projeto", back_populates="contrato")
+    faturamentos = relationship("FaturamentoCliente", back_populates="contrato")
+    historicos = relationship("HistoricoContrato", back_populates="contrato")
+    pagamentos = relationship("ContratoPagamento", back_populates="contrato")
+    visitas = relationship("Visita", back_populates="contrato")
+    
+
+

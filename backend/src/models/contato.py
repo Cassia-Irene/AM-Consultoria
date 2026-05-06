@@ -1,25 +1,19 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from src.database import Base
 
 class Contato(Base):
-    __tablename__ = "contato" # Ajustado para o singular conforme o banco
+    __tablename__ = "contatos"  
 
-    # Definindo as colunas com base no DBeaver
     id_contato = Column(Integer, primary_key=True, index=True)
-    
-    # FK apontando para a tabela cliente
-    id_cliente = Column(Integer, ForeignKey("cliente.id_cliente"), nullable=False)
-    
+    id_cliente = Column(Integer, ForeignKey("clientes.id_cliente"), nullable=False)
     nome = Column(String(100), nullable=False)
-    cargo = Column(String(100))
-    papel = Column(String(50), nullable=False) # Marcado como [v] não nulo no banco
+    cargo = Column(String(50))
+    papel = Column(String(30), nullable=False)
     telefone_whatsapp = Column(String(20))
-    email = Column(String(100))
-    
-    # Campos booleanos corrigidos
-    contato_emergencia = Column(Boolean, default=False, nullable=False)
-    contato_financeiro = Column(Boolean, default=False, nullable=False)
+    email = Column(String(50))
+    observacoes_gerais = Column(Text)
 
-    # Relacionamento para facilitar buscas no Backend
+    # Relacionamento com Cliente (muitos contatos para um cliente)
     cliente = relationship("Cliente", back_populates="contatos")
+    

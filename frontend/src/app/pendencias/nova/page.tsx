@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { getClientes } from '@/mappers/cliente.mapper'
-import { getContratos } from '@/mappers/contrato.mapper'
+import { ClientesService } from '@/services/clientes.service'
+import { ContratoService } from '@/services/contrato.service'
 import { PendenciasService, type NovaPendenciaInput } from '@/services/pendencias.service'
 import { AppError } from '@/utils/errors'
 
@@ -19,22 +19,44 @@ export default function NovaPendenciaPage() {
     resolvida: false
   })
   
-  const [loading, setLoading] = useState(false)
+  const [contratosOpcoes, setContratosOpcoes] = useState<{id: string, label: string}[]>([])
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Prepara dados de contratos combinados com nomes de clientes
-  const clientes = getClientes()
-  const contratos = getContratos().filter(c => c.status === 'ativo')
-  
-  const contratosOpcoes = contratos.map(contrato => {
-    const cliente = clientes.find(c => c.id === contrato.clienteId)
-    const nomeCliente = cliente ? cliente.nome_instituicao : 'Cliente Desconhecido'
-    const tipoContrato = contrato.servicos_contratados || 'Serviço'
-    return {
-      id: contrato.id,
-      label: `[${nomeCliente}] — ${tipoContrato}`
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadData() {
+      try {
+        const [allCli, allCont] = await Promise.all([
+          ClientesService.getAll(),
+          ContratoService.getAll()
+        ])
+
+        if (!isMounted) return
+
+        const activeContratos = allCont.filter(c => c.status === 'ativo')
+        const cliMap = new Map(allCli.map(c => [c.id, c.nome_instituicao]))
+
+        const options = activeContratos.map(c => {
+          const nome = cliMap.get(c.clienteId) || 'Cliente Desconhecido'
+          return {
+            id: c.id,
+            label: `[${nome}] — ${c.servicos_contratados}`
+          }
+        }).sort((a, b) => a.label.localeCompare(b.label))
+
+        setContratosOpcoes(options)
+      } catch {
+        if (isMounted) setError('Erro ao carregar dados de contratos.')
+      } finally {
+        if (isMounted) setLoading(false)
+      }
     }
-  }).sort((a, b) => a.label.localeCompare(b.label))
+
+    loadData()
+    return () => { isMounted = false }
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

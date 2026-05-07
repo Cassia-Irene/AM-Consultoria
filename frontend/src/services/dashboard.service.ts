@@ -12,6 +12,11 @@ import type { Projeto } from '@/domain/projeto'
 
 import { mapPendencia } from '@/mappers/pendencia.mapper'
 import { mapVisita } from '@/mappers/visita.mapper'
+import { mapCliente } from '@/mappers/cliente.mapper'
+import { mapContrato } from '@/mappers/contrato.mapper'
+import { mapFaturamento } from '@/mappers/faturamento.mapper'
+import { mapProjeto } from '@/mappers/projeto.mapper'
+
 import { Pendencias as MockPendencias } from '@/mocks/pendencias'
 import { Visitas as MockVisitas } from '@/mocks/visitas'
 import { Clientes as MockClientes } from '@/mocks/clientes'
@@ -30,7 +35,7 @@ import { fetchApi } from './api'
 
 export interface DashboardResponse {
   pendencias: Pendencia[]
-  clientes: Pick<Cliente, 'id' | 'nome_instituicao'>[]
+  clientes: Cliente[]
   contratos: Contrato[]
   faturamentos: FaturamentoCliente[]
   visitas: Visita[]
@@ -51,14 +56,11 @@ export const DashboardService = {
 
       return {
         pendencias: safeArray(pendRaw).map(mapPendencia),
-        clientes: safeArray(cliRaw).map(c => ({ 
-          id: String(c.id_cliente ?? c.id), 
-          nome_instituicao: c.nome_instituicao ?? c.nome ?? 'Sem nome' 
-        })),
-        contratos: safeArray(conRaw).map(c => ({ ...c, id: String(c.id_contrato), clienteId: String(c.id_cliente) } as unknown as Contrato)),
-        faturamentos: safeArray(fatRaw).map(f => ({ ...f, id: String(f.id_faturamento), contratoId: String(f.id_contrato) } as unknown as FaturamentoCliente)),
+        clientes: safeArray(cliRaw).map(mapCliente),
+        contratos: safeArray(conRaw).map(mapContrato),
+        faturamentos: safeArray(fatRaw).map(mapFaturamento),
         visitas: safeArray(visRaw).map(mapVisita),
-        projetos: safeArray(proRaw).map(p => ({ ...p, id: String(p.id_projeto), contratoId: String(p.id_contrato) } as unknown as Projeto)),
+        projetos: safeArray(proRaw).map(mapProjeto),
       }
     } catch (err) {
       console.warn('[WARN][DASHBOARD] Fallback ativado. Erro ao carregar dados:', err)

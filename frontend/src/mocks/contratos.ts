@@ -34,5 +34,32 @@ export const Contratos = [
     valor_mensal: 2500,
     status: 'ativo',
     data_inicio: '2024-10-01'
+  },
+  {
+    id: '5',
+    clienteId: '5',
+    servicos_contratados: 'Gestão Financeira e Faturamento',
+    visitas_previstas_mes: 4,
+    valor_mensal: 5000,
+    status: 'ativo',
+    data_inicio: '2025-01-15'
+  },
+  {
+    id: '6',
+    clienteId: '6',
+    servicos_contratados: 'Conformidade Regulatória e Treinamento',
+    visitas_previstas_mes: 2,
+    valor_mensal: 1800,
+    status: 'ativo',
+    data_inicio: '2025-02-01'
+  },
+  {
+    id: '7',
+    clienteId: '7',
+    servicos_contratados: 'Assessoria Farmácia Popular',
+    visitas_previstas_mes: 1,
+    valor_mensal: 1200,
+    status: 'ativo',
+    data_inicio: '2025-03-01'
   }
 ]

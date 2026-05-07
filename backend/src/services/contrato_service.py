@@ -1,7 +1,8 @@
 # Lógica de versionamento
 from sqlalchemy.orm import Session
 from datetime import date
-from src.models.contrato import Contrato, HistoricoContrato
+from src.models.contrato import Contrato
+from src.models.historico_contrato import HistoricoContrato
 from src.schemas.contrato import ContratoReplaceRequest
 from fastapi import HTTPException
 

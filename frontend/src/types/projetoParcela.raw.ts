@@ -2,6 +2,10 @@ export interface ProjetoParcelaRaw {
   id_parcela: number
   id_projeto: number
 
+  // Aliases para compatibilidade híbrida
+  id?: number | string
+  projetoId?: number | string
+
   numero_parcela: number
   valor_parcela: string
 

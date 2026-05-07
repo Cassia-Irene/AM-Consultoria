@@ -6,6 +6,10 @@ export interface ContratoRaw {
   id_contrato: number
   id_cliente: number
 
+  // Aliases para compatibilidade híbrida
+  id?: number | string
+  clienteId?: number | string
+
   servicos_contratados: string
   visitas_previstas_mes: number
   inclui_relatorio: boolean

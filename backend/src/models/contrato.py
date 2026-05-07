@@ -31,4 +31,5 @@ class Contrato(Base):
     projetos = relationship("Projeto", back_populates="contrato")
     faturamentos = relationship("FaturamentoCliente", back_populates="contrato")
     pagamentos = relationship("ContratoPagamento", back_populates="contrato")
+    eventos_criticos = relationship("EventoCritico", back_populates="contrato")
 

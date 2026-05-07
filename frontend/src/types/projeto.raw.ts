@@ -6,6 +6,10 @@ export interface ProjetoRaw {
   id_projeto: number
   id_contrato: number
 
+  // Aliases para compatibilidade híbrida
+  id?: number | string
+  contratoId?: number | string
+
   titulo: string
   descricao: string | null
 

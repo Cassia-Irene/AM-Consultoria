@@ -1,69 +1,54 @@
-/**
- * pendencias.service.ts
- *
- * Orquestra o fluxo de criação manual de pendências.
- */
-
-import { AppError } from '@/utils/errors'
-import {
-  toPendenciaPayload,
-  validateNovaPendenciaInput,
-  type NovaPendenciaInput,
-  type CriarPendenciaResponse,
-} from '@/adapters/pendencia.adapter'
 import { fetchApi } from './api'
-import { USE_MOCKS } from '@/config/env'
-import { Pendencias as PendenciasMock } from '@/mocks/pendencias'
-import { mapPendencia } from '@/mappers/pendencia.mapper'
+import { mapPendencia, getPendencias } from '@/mappers/pendencia.mapper'
 import type { Pendencia } from '@/domain/pendencia'
 import type { PendenciaRaw } from '@/types/pendencia.raw'
+import { USE_MOCKS } from '@/config/env'
 
-export type { NovaPendenciaInput, CriarPendenciaResponse } from '@/adapters/pendencia.adapter'
+export interface NovaPendenciaInput {
+  contratoId: string
+  visitaId?: string
+  descricao: string
+  responsavel: string
+  data_prazo?: string
+  resolvida?: boolean
+}
 
 export const PendenciasService = {
   async getAll(): Promise<Pendencia[]> {
-    if (USE_MOCKS) {
-      return (PendenciasMock as unknown as PendenciaRaw[]).map(mapPendencia)
-    }
-
+    if (USE_MOCKS) return getPendencias()
     try {
       const data = await fetchApi<PendenciaRaw[]>('/pendencias/')
       return data.map(mapPendencia)
-    } catch (err) {
-      console.error('[SERVICE][ERROR] Falha ao buscar pendências:', err)
-      return (PendenciasMock as unknown as PendenciaRaw[]).map(mapPendencia)
+    } catch (error) {
+      console.error('[SERVICE][ERROR] Falha ao buscar pendências:', error)
+      return getPendencias()
     }
   },
 
-  async criar(input: NovaPendenciaInput): Promise<CriarPendenciaResponse> {
-    const { valid, errors } = validateNovaPendenciaInput(input)
-    if (!valid) {
-      throw new AppError(
-        `Dados inválidos: ${errors.join('; ')}`,
-        'VALIDATION_ERROR',
-        errors
-      )
-    }
+  async getByContratoId(contratoId: string): Promise<Pendencia[]> {
+    const all = await this.getAll()
+    return all.filter(p => p.contratoId === contratoId)
+  },
 
-    const payload = toPendenciaPayload(input)
+  async criar(input: NovaPendenciaInput): Promise<{ id: string }> {
+    const payload = {
+      id_contrato: Number(input.contratoId),
+      id_visita: input.visitaId ? Number(input.visitaId) : null,
+      descricao: input.descricao,
+      responsavel: input.responsavel,
+      data_prazo: input.data_prazo || null,
+      resolvida: !!input.resolvida,
+      data_resolucao: input.resolvida ? new Date().toISOString() : null
+    }
 
     if (USE_MOCKS) {
-      console.log('[SERVICE] Simulando POST /pendencias (MOCK):', payload)
-      await new Promise(resolve => setTimeout(resolve, 800))
-      return { id: `p-${Math.random()}`, message: 'Pendência (MOCK) criada com sucesso' }
+      console.log('[MOCK][PENDENCIA] Criando:', payload)
+      return { id: `p-mock-${Math.random()}` }
     }
 
-    try {
-      return await fetchApi<CriarPendenciaResponse>('/pendencias/', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      })
-    } catch (err) {
-      throw new AppError(
-        'Falha ao registrar pendência no servidor.',
-        'API_ERROR',
-        err
-      )
-    }
+    return fetchApi<{ id: string }>('/pendencias/', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
   }
 }

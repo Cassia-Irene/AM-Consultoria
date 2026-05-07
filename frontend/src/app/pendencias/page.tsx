@@ -1,11 +1,11 @@
 'use client'
 // app/pendencias/page.tsx
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { getPendencias } from '@/mappers/pendencia.mapper'
-import { getClientes } from '@/mappers/cliente.mapper'
-import { getClienteFromContratoId } from '@/mappers/contrato.mapper'
+import { PendenciasService } from '@/services/pendencias.service'
+import { ClientesService } from '@/services/clientes.service'
+import { ContratoService } from '@/services/contrato.service'
 import { getPendenciaSeveridade, getPendenciaStatus } from '@/utils/pendencia'
 import type { Pendencia } from '@/domain/pendencia'
 import { displayDate } from '@/utils/date'
@@ -28,31 +28,61 @@ const FILTROS: { value: Filtro; label: string }[] = [
 
 export default function PendenciasPage() {
   const [filtro, setFiltro] = useState<Filtro>('todas')
+  const [pendencias, setPendencias] = useState<PendenciaView[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const [pendencias] = useState<Pendencia[]>(getPendencias())
-  
-  const pendenciasView: PendenciaView[] = pendencias.map(p => {
-    const clienteId = getClienteFromContratoId(p.contratoId)
-    const clienteNome = clienteId 
-      ? getClientes().find(c => c.id === clienteId)?.nome_instituicao ?? 'Desconhecido'
-      : 'Desconhecido'
-      
-    return {
-      p,
-      clienteNome,
-      status: getPendenciaStatus(p),
-      severidade: getPendenciaSeveridade(p)
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadData() {
+      try {
+        const [allPend, allCli, allCont] = await Promise.all([
+          PendenciasService.getAll(),
+          ClientesService.getAll(),
+          ContratoService.getAll()
+        ])
+
+        if (!isMounted) return
+
+        const cliMap = new Map(allCli.map(c => [c.id, c.nome_instituicao]))
+        const contToCli = new Map(allCont.map(c => [c.id, c.clienteId]))
+
+        const views: PendenciaView[] = allPend.map(p => {
+          const cliId = contToCli.get(p.contratoId)
+          const cliNome = cliId ? (cliMap.get(cliId) || `Cliente ${cliId}`) : 'Desconhecido'
+          
+          return {
+            p,
+            clienteNome: cliNome,
+            status: getPendenciaStatus(p),
+            severidade: getPendenciaSeveridade(p)
+          }
+        })
+
+        setPendencias(views)
+      } catch {
+        if (isMounted) setError('Erro ao carregar pendências.')
+      } finally {
+        if (isMounted) setLoading(false)
+      }
     }
-  })
+
+    loadData()
+    return () => { isMounted = false }
+  }, [])
+
+  if (loading) return <LoadingSkeleton />
+  if (error) return <ErrorBanner message={error} />
 
   // KPIs
-  const kpiAbertas = pendenciasView.filter(v => v.status === 'aberta').length
-  const kpiAtrasadas = pendenciasView.filter(v => v.status === 'atrasada').length
-  const kpiConcluidas = pendenciasView.filter(v => v.status === 'concluida').length
-  const kpiUrgentes = pendenciasView.filter(v => v.severidade === 'urgente' && v.status !== 'concluida').length
+  const kpiAbertas = pendencias.filter(v => v.status === 'aberta').length
+  const kpiAtrasadas = pendencias.filter(v => v.status === 'atrasada').length
+  const kpiConcluidas = pendencias.filter(v => v.status === 'concluida').length
+  const kpiUrgentes = pendencias.filter(v => v.severidade === 'urgente' && v.status !== 'concluida').length
 
   // Filtragem
-  const filtradas = pendenciasView.filter(v => {
+  const filtradas = pendencias.filter(v => {
     if (filtro === 'todas') return true
     if (filtro === 'abertas') return v.status === 'aberta'
     if (filtro === 'atrasadas') return v.status === 'atrasada'
@@ -211,6 +241,35 @@ export default function PendenciasPage() {
             {renderGrupo('Resolvidas', resolvidas)}
           </div>
         )}
+      </div>
+    </main>
+  )
+}
+
+function LoadingSkeleton() {
+  return (
+    <main className="min-h-screen bg-[#07090D] p-10 space-y-8 animate-pulse">
+      <div className="h-10 w-48 bg-zinc-900 rounded-xl" />
+      <div className="grid grid-cols-4 gap-4">
+        {[1,2,3,4].map(i => <div key={i} className="h-24 bg-zinc-900 rounded-2xl" />)}
+      </div>
+      <div className="space-y-4">
+        {[1,2,3].map(i => <div key={i} className="h-32 bg-zinc-900 rounded-2xl" />)}
+      </div>
+    </main>
+  )
+}
+
+function ErrorBanner({ message }: { message: string }) {
+  return (
+    <main className="min-h-screen bg-[#07090D] flex items-center justify-center p-10">
+      <div className="bg-red-950/20 border border-red-900/40 rounded-3xl p-10 text-center max-w-sm">
+        <p className="text-4xl mb-4">⚠️</p>
+        <h2 className="text-white font-black text-xl mb-2">Erro</h2>
+        <p className="text-zinc-500 text-sm mb-8">{message}</p>
+        <Link href="/dashboard" className="bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-xl font-bold transition-colors">
+          Voltar ao Dashboard
+        </Link>
       </div>
     </main>
   )

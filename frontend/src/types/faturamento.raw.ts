@@ -7,15 +7,30 @@ export interface FaturamentoRaw {
   id_faturamento: number
   id_contrato: number
 
-  mes_ano: string
+  // Aliases para compatibilidade híbrida
+  id?: number | string
+  contratoId?: number | string
+  mesAno?: string
+  mesReferencia?: string
+  competencia?: string
+  referencia?: string
+  data_emissao?: string
+  quitado?: boolean
+  status?: string
+  valorTotal?: string | number
+  valorBase?: string | number
+  valorExtra?: string | number
+  valor_desconto?: string | number
 
-  visitas_realizadas: number | null
+  mes_ano?: string
 
-  valor_base: string
-  valor_extra: string
-  desconto: string
-  valor_total: string
+  visitas_realizadas?: number | null
 
-  pago: boolean
-  data_pagamento: string | null
+  valor_base?: string | number
+  valor_extra?: string | number
+  desconto?: string | number
+  valor_total?: string | number
+
+  pago?: boolean
+  data_pagamento?: string | null
 }

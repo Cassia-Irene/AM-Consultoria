@@ -38,5 +38,21 @@ export const Clientes = [
     cidade: 'São Luís',
     status: 'ativo',
     nivel_complexidade: 'media'
+  },
+  {
+    id: '6',
+    nome_instituicao: 'Creche Sonho de Criança',
+    tipo_instituicao: 'Escola',
+    cidade: 'São Luís',
+    status: 'ativo',
+    nivel_complexidade: 'baixa'
+  },
+  {
+    id: '7',
+    nome_instituicao: 'FarmaVida',
+    tipo_instituicao: 'Farmácia',
+    cidade: 'São Luís',
+    status: 'ativo',
+    nivel_complexidade: 'baixa'
   }
 ]

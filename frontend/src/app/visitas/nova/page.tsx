@@ -7,11 +7,13 @@
 //   2. O que ficou aberto  (gerador de pendências)
 //   3. Confirmação
 
-import { useState, FormEvent } from 'react'
+import { useState, useEffect, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { getClientes } from '@/mappers/cliente.mapper'
-import { getContratos } from '@/mappers/contrato.mapper'
-import { VisitasService } from '../../../services/visitas.service'
+import { ClientesService } from '@/services/clientes.service'
+import { ContratoService } from '@/services/contrato.service'
+import { VisitasService } from '@/services/visitas.service'
+import type { Cliente } from '@/domain/cliente'
+import type { Contrato } from '@/domain/contrato'
 
 /* ─────────────────────────────────────────────
    TYPES
@@ -248,7 +250,7 @@ function sugerirPendencias(resumo: string): PendenciaSugerida[] {
    HELPERS
 ───────────────────────────────────────────── */
 
-const clientesAtivos = getClientes().filter(c => c.status === 'ativo')
+// Removido clientesAtivos do escopo global
 
 function uid() {
   return Math.random().toString(36).slice(2, 9)
@@ -507,7 +509,29 @@ export default function NovaVisitaPage() {
     pendencias: [],
   })
 
+  const [allClientes, setAllClientes] = useState<Cliente[]>([])
+  const [allContratos, setAllContratos] = useState<Contrato[]>([])
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
+
+  useEffect(() => {
+    let isMounted = true
+    async function loadData() {
+      try {
+        const [cli, cont] = await Promise.all([
+          ClientesService.getAll(),
+          ContratoService.getAll()
+        ])
+        if (isMounted) {
+          setAllClientes(cli.filter(c => c.status === 'ativo'))
+          setAllContratos(cont)
+        }
+      } catch (err) {
+        console.error('Erro ao carregar dados:', err)
+      }
+    }
+    loadData()
+    return () => { isMounted = false }
+  }, [])
 
   /* ── navegação entre etapas ── */
   function avancarEtapa1() {
@@ -611,10 +635,10 @@ export default function NovaVisitaPage() {
     weekday: 'short', day: 'numeric', month: 'short',
   })
 
-  const nomeCliente = clientesAtivos.find(c => c.id === form.clienteId)?.nome_instituicao ?? ''
+  const nomeCliente = allClientes.find(c => c.id === form.clienteId)?.nome_instituicao ?? ''
   
   const contratosDoCliente = form.clienteId 
-    ? getContratos().filter(c => c.clienteId === form.clienteId) 
+    ? allContratos.filter(c => c.clienteId === form.clienteId) 
     : []
 
   /* ────────── TELA DE CONFIRMAÇÃO ────────── */
@@ -711,7 +735,7 @@ export default function NovaVisitaPage() {
               }`}
             >
               <option value="" className="bg-[#0d1117]">Selecione o cliente...</option>
-              {clientesAtivos.map(c => (
+              {allClientes.map(c => (
                 <option key={c.id} value={c.id} className="bg-[#0d1117]">{c.nome_instituicao}</option>
               ))}
             </select>

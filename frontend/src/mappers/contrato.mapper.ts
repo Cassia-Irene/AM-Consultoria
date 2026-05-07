@@ -2,7 +2,7 @@ import { Contratos as ContratosMock } from '@/mocks/contratos'
 import { HistoricosContratos as HistoricosMock } from '@/mocks/historicos'
 import type { Contrato, HistoricoContrato } from '@/domain/contrato'
 import type { ContratoRaw, HistoricoContratoRaw } from '@/types/contrato.raw'
-import { validateShape } from '@/utils/schemaGuard'
+import { validateShape, warnInvalidShape } from '@/utils/schemaGuard'
 
 export function getContratos(): Contrato[] {
   return (ContratosMock as unknown as ContratoRaw[]).map(mapContrato)
@@ -18,37 +18,52 @@ export function getClienteFromContratoId(contratoId: string): string | undefined
 }
 
 export function mapContrato(raw: ContratoRaw): Contrato {
+  const idResolved = raw.id_contrato ?? raw.id
+  const clienteIdResolved = raw.id_cliente ?? raw.clienteId
+
+  // Validação Estrita
+  if (!idResolved) {
+    warnInvalidShape('Contrato:ID_MISSING', raw)
+    throw new Error('[MAPPER][CONTRATO] Campo obrigatório ausente: id_contrato')
+  }
+  if (!clienteIdResolved) {
+    warnInvalidShape('Contrato:CLIENTE_ID_MISSING', raw)
+    throw new Error('[MAPPER][CONTRATO] Campo obrigatório ausente: id_cliente')
+  }
+
   validateShape<ContratoRaw>('ContratoRaw', raw, [
-    'id_contrato',
-    'id_cliente',
     'servicos_contratados',
     'visitas_previstas_mes',
-    'inclui_relatorio',
     'data_inicio',
     'valor_mensal',
     'status'
   ])
 
-  if (!raw.id_contrato) throw new Error(`ContratoRaw missing required field: id_contrato`)
-  if (!raw.id_cliente) throw new Error(`ContratoRaw missing required field: id_cliente`)
-  if (!raw.servicos_contratados) throw new Error(`ContratoRaw (ID: ${raw.id_contrato}) missing required field: servicos_contratados`)
-  if (!raw.data_inicio) throw new Error(`ContratoRaw (ID: ${raw.id_contrato}) missing required field: data_inicio`)
-
   return {
-    id: String(raw.id_contrato),
-    clienteId: String(raw.id_cliente),
+    id: String(idResolved),
+    clienteId: String(clienteIdResolved),
 
-    servicos_contratados: raw.servicos_contratados,
-    visitas_previstas_mes: raw.visitas_previstas_mes,
-    inclui_relatorio: raw.inclui_relatorio,
+    servicos_contratados: raw.servicos_contratados || 'Serviços não informados',
+    visitas_previstas_mes: raw.visitas_previstas_mes ?? 0,
+    inclui_relatorio: !!raw.inclui_relatorio,
 
-    data_inicio: raw.data_inicio,
+    data_inicio: raw.data_inicio || new Date().toISOString().split('T')[0],
     data_fim: raw.data_fim ?? undefined,
-    valor_mensal: parseFloat(raw.valor_mensal),
-    status: raw.status as 'ativo' | 'inativo' | 'suspenso',
+    valor_mensal: parseFloat(String(raw.valor_mensal || '0')),
+    status: normalizeStatus(raw.status || 'ativo'),
 
     observacoes_gerais: raw.observacoes_gerais ?? undefined,
   }
+}
+
+function normalizeStatus(status: string): 'ativo' | 'inativo' | 'suspenso' {
+  const s = String(status || '').toLowerCase()
+  if (s === 'ativo') return 'ativo'
+  if (s === 'inativo') return 'inativo'
+  if (s === 'suspenso') return 'suspenso'
+
+  console.warn('[MAPPER][CONTRATO] Status desconhecido:', status)
+  return 'ativo'
 }
 
 export function mapHistorico(raw: HistoricoContratoRaw): HistoricoContrato {

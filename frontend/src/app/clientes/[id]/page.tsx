@@ -6,12 +6,11 @@
 
 import { use, useState, useEffect } from 'react'
 import Link from 'next/link'
-import { getClientes } from '@/mappers/cliente.mapper'
-import { getContratos } from '@/mappers/contrato.mapper'
-import { getContatos } from '@/mappers/contato.mapper'
-import { getFaturamentos } from '@/mappers/faturamento.mapper'
-import { getProjetos } from '@/mappers/projeto.mapper'
-import { fetchApi } from '@/services/api'
+import { ClientesService } from '@/services/clientes.service'
+import { ContratoService } from '@/services/contrato.service'
+import { ContatosService } from '@/services/contatos.service'
+import { FaturamentosService } from '@/services/faturamento.service'
+import { ProjetosService } from '@/services/projetos.service'
 import { formatCurrency } from '@/utils/finance'
 import { getStatusFaturamento } from '@/domain/faturamento'
 
@@ -42,39 +41,38 @@ export default function ClienteDetalhePage({ params }: PageProps) {
 
     async function loadData() {
       try {
-        const [allClientes, allContratos, allContatos, allFaturamentos, allProjetos] = await Promise.all([
-          fetchApi<Cliente[]>('/clientes', undefined, getClientes()),
-          fetchApi<Contrato[]>('/contratos', undefined, getContratos()),
-          fetchApi<Contato[]>('/contatos', undefined, getContatos()),
-          fetchApi<FaturamentoCliente[]>('/faturamento-cliente', undefined, getFaturamentos()),
-          fetchApi<Projeto[]>('/projetos', undefined, getProjetos())
-        ])
-
+        setLoading(true)
+        
+        // 1. Busca o cliente primeiro para garantir existência
+        const foundCliente = await ClientesService.getById(id)
         if (!isMounted) return
 
-        const foundCliente = allClientes.find(c => c.id === id)
         if (!foundCliente) {
           setError('Cliente não encontrado')
+          setLoading(false)
           return
         }
 
         setCliente(foundCliente)
 
-        const clienteContratos = allContratos.filter(c => c.clienteId === id)
-        setContratos(clienteContratos)
+        // 2. Busca dados relacionados em paralelo usando os Services (que já mapeiam)
+        const [allContratos, allContatos, allFaturamentos, allProjetos] = await Promise.all([
+          ContratoService.getByClienteId(id),
+          ContatosService.getByClienteId(id),
+          FaturamentosService.getAll(), // Faturamento precisa ser filtrado por contrato
+          ProjetosService.getAll()      // Projetos também por contrato
+        ])
 
-        setContatos(allContatos.filter(c => c.clienteId === id))
+        if (!isMounted) return
 
-        // Faturamentos são vinculados a contratos
-        const clienteFaturamentos = allFaturamentos.filter(f => 
-          clienteContratos.some(c => c.id === f.contratoId)
-        )
-        setFaturamentos(clienteFaturamentos)
+        setContratos(allContratos)
+        setContatos(allContatos)
 
-        const clienteProjetos = allProjetos.filter(p => 
-          clienteContratos.some(c => c.id === p.contratoId)
-        )
-        setProjetos(clienteProjetos)
+        // Filtro por contrato (lógica de negócio do domínio)
+        const contratoIds = allContratos.map(c => c.id)
+        
+        setFaturamentos(allFaturamentos.filter(f => contratoIds.includes(f.contratoId)))
+        setProjetos(allProjetos.filter(p => contratoIds.includes(p.contratoId)))
 
       } catch (err) {
         if (isMounted) {

@@ -142,7 +142,7 @@ function VisitaAgendaCard({
           <div className="min-w-0">
             <p className="text-white font-semibold text-[15px] leading-tight truncate">{clienteNome}</p>
             <p className="text-[#7D8597] text-xs mt-0.5">
-              📍 {v.data_visita ? new Date(v.data_visita).toLocaleDateString('pt-BR') : 'Sem data'}
+              📍 {v.data_hora ? new Date(v.data_hora).toLocaleDateString('pt-BR') : 'Sem data'}
             </p>
           </div>
 
@@ -173,19 +173,19 @@ function VisitaAgendaCard({
         </div>
 
         {/* Contexto da última visita */}
-        {v.observacoes && (
+        {v.descricao && (
           <div className="mt-2 bg-[#001845]/60 rounded-xl px-3 py-2">
             <p className="text-[10px] font-bold uppercase tracking-wide text-[#7D8597] mb-0.5">
-              Última {v.ultimaVisitaEm ? `· ${v.ultimaVisitaEm}` : ''}
+              Resumo Operacional
             </p>
-            <p className="text-[#979DAC] text-xs leading-snug">{v.observacoes}</p>
+            <p className="text-[#979DAC] text-xs leading-snug">{v.descricao}</p>
           </div>
         )}
       </div>
 
       {/* Ação */}
       <Link
-        href={`/visitas/nova?clienteId=${v.clienteId}`}
+        href={`/visitas/nova?contratoId=${v.contratoId}`}
         className="block mx-4 mb-4 active:scale-[0.98] transition-transform"
       >
         <div className="bg-[#023E7D] text-white text-sm font-semibold text-center rounded-xl py-2.5">
@@ -327,15 +327,17 @@ export default function DashboardPlanejamentoPage() {
             <SectionHeader label="Agenda de hoje" sub={`${visitas.length} visita${visitas.length > 1 ? 's' : ''}`} />
             <div className="space-y-3">
               {visitas.map(v => {
-                const nome = clienteNomePorId.get(v.clienteId) ?? v.clienteId
+                const contrato = contratos.find(c => c.id === v.contratoId)
+                const clienteId = contrato ? contrato.clienteId : ''
+                const nome = clienteId ? (clienteNomePorId.get(clienteId) ?? clienteId) : 'Desconhecido'
                 return (
                   <VisitaAgendaCard
                     key={v.id}
                     v={v}
                     clienteNome={nome}
-                    pendenciasAbertas={pendenciasPorCliente.get(nome) ?? []}
-                    statusPagamento={pagamentoPorCliente.get(nome)}
-                    valorMes={valorPorCliente.get(nome)}
+                    pendenciasAbertas={pendenciasPorCliente.get(clienteId) ?? []}
+                    statusPagamento={pagamentoPorCliente.get(clienteId)}
+                    valorMes={valorPorCliente.get(clienteId)}
                   />
                 )
               })}

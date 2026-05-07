@@ -1,21 +1,18 @@
 export interface VisitaRaw {
-  id: number | string
-  clienteId: number | string
-  contratoId?: number | string
-  projetoId?: number | string
+  id_visita: number
 
-  data: string
-  horario?: string
-  criadaEm?: string
+  id_contrato: number
+  id_projeto: number | null
 
-  tipo?: string
-  modalidade?: string
-  status?: string
+  status: string
 
-  descricao?: string
-  resultados?: string
-  observacoes?: string
+  data_hora: string
 
-  ultimaVisitaEm?: string
-  duracaoMinutos?: number
+  duracao_minutos: number | null
+
+  tipo_visita: string
+  modalidade: string
+
+  descricao: string
+  resultados: string | null
 }

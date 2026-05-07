@@ -200,7 +200,7 @@ function VisitaRotinaCard({
             <span className="size-1.5 rounded-full bg-sky-400" /> Hoje
           </span>
           <p className="text-white font-semibold text-[15px] leading-tight truncate">{clienteNome}</p>
-          {v.data_visita && <p className="text-[#7D8597] text-xs mt-0.5">{new Date(v.data_visita).toLocaleDateString('pt-BR')}</p>}
+          {v.data_hora && <p className="text-[#7D8597] text-xs mt-0.5">{new Date(v.data_hora).toLocaleDateString('pt-BR')} às {new Date(v.data_hora).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</p>}
         </div>
 
         <div className="flex flex-col items-end gap-1 shrink-0">
@@ -229,12 +229,12 @@ function VisitaRotinaCard({
       </div>
 
       {/* Contexto da última visita */}
-      {v.observacoes && (
+      {v.descricao && (
         <div className="mx-4 mb-3 bg-[#002855]/50 rounded-xl px-3 py-2">
           <p className="text-[10px] font-bold uppercase tracking-wide text-[#7D8597] mb-1">
-            Última visita {v.ultimaVisitaEm ? `· ${v.ultimaVisitaEm}` : ''}
+            Resumo Operacional
           </p>
-          <p className="text-[#979DAC] text-xs leading-snug">{v.observacoes}</p>
+          <p className="text-[#979DAC] text-xs leading-snug">{v.descricao}</p>
         </div>
       )}
 
@@ -253,7 +253,7 @@ function VisitaRotinaCard({
       )}
 
       {/* Ação */}
-      <Link href={`/visitas/nova?clienteId=${v.clienteId}`} className="block mx-4 mb-4 active:scale-[0.98] transition-transform">
+      <Link href={`/visitas/nova?contratoId=${v.contratoId}`} className="block mx-4 mb-4 active:scale-[0.98] transition-transform">
         <div className="bg-[#0466C8] text-white text-sm font-semibold text-center rounded-xl py-3">
           Registrar visita
         </div>
@@ -424,14 +424,16 @@ export default function DashboardPage() {
             <SectionHeader label="Visitas hoje" count={visitas.length} cor="sky" />
             <div className="space-y-3">
               {visitas.map(v => {
-                const nome = clienteNomePorId.get(v.clienteId) ?? v.clienteId
+                const contrato = contratos.find(c => c.id === v.contratoId)
+                const clienteId = contrato ? contrato.clienteId : ''
+                const nome = clienteId ? (clienteNomePorId.get(clienteId) ?? clienteId) : 'Desconhecido'
                 return (
                   <VisitaRotinaCard
                     key={v.id}
                     v={v}
                     clienteNome={nome}
-                    pendenciasAbertas={pendenciasPorCliente.get(v.clienteId) ?? []}
-                    statusPagamento={pagamentoPorCliente.get(v.clienteId)}
+                    pendenciasAbertas={pendenciasPorCliente.get(clienteId) ?? []}
+                    statusPagamento={pagamentoPorCliente.get(clienteId)}
                   />
                 )
               })}

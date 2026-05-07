@@ -45,7 +45,7 @@ export const ContratoService = {
       const faturamentoAtual = getFaturamentoMaisRecente(faturamentos, id)
       const visitasDoContrato = visitas
         .filter(v => v.contratoId === id)
-        .sort((a, b) => new Date(b.data_visita).getTime() - new Date(a.data_visita).getTime())
+        .sort((a, b) => new Date(b.data_hora).getTime() - new Date(a.data_hora).getTime())
 
       return {
         contrato,

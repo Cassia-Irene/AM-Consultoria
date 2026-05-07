@@ -17,15 +17,13 @@ import { VisitasService } from '../../../services/visitas.service'
    TYPES
 ───────────────────────────────────────────── */
 
-type TipoVisita = 'Regular' | 'Extra'
-
-type PrioridadePendencia = 'urgente' | 'atencao' | 'normal'
+import type { TipoVisitaUI, StatusVisitaUI, ModalidadeVisitaUI, PrioridadePendenciaUI } from '@/adapters/visita.adapter'
 
 interface PendenciaGerada {
   id: string
   titulo: string
   prazo: string          // dd/mm/yyyy
-  prioridade: PrioridadePendencia
+  prioridade: PrioridadePendenciaUI
 }
 
 /** Sugestão gerada automaticamente pelo sistema a partir do resumo */
@@ -38,13 +36,13 @@ interface PendenciaSugerida extends PendenciaGerada {
 interface FormState {
   clienteId: string
   contratoId: string
-  tipoVisita: TipoVisita
-  modalidade: string
-  duracao_estimada_minutos: number
-  data_visita: string
+  status: StatusVisitaUI
+  tipo_visita: TipoVisitaUI
+  modalidade: ModalidadeVisitaUI
+  duracao_minutos: number
+  data_hora: string
   descricao: string
-  resultado: string
-  observacoes: string
+  resultados: string
   pendencias: PendenciaGerada[]
 }
 
@@ -58,7 +56,7 @@ interface Regra {
    */
   negadores?: string[]
   titulo: string
-  prioridade: PrioridadePendencia
+  prioridade: PrioridadePendenciaUI
   diasAFrente: number
   gatilho: string
   /**
@@ -237,7 +235,7 @@ function sugerirPendencias(resumo: string): PendenciaSugerida[] {
     const comBoost   = boostGlobal || boostLocal
 
     // 4. Define prioridade final
-    let prioridade: PrioridadePendencia = regra.prioridade
+    let prioridade: PrioridadePendenciaUI = regra.prioridade
     if (comBoost && prioridade === 'normal')   prioridade = 'atencao'
     if (comBoost && prioridade === 'atencao')  prioridade = 'urgente'
     // urgente permanece urgente
@@ -277,7 +275,7 @@ function uid() {
 /** Formulário inline para adicionar pendência manualmente — sem abrir modal */
 function AdicionarPendenciaInline({ onAdd, variant = 'dashed' }: { onAdd: (p: PendenciaGerada) => void, variant?: 'dashed' | 'primary' }) {
   const [titulo, setTitulo] = useState('')
-  const [prioridade, setPrioridade] = useState<PrioridadePendencia>('atencao')
+  const [prioridade, setPrioridade] = useState<PrioridadePendenciaUI>('atencao')
   const [aberto, setAberto] = useState(false)
 
   function submeter() {
@@ -335,7 +333,7 @@ function AdicionarPendenciaInline({ onAdd, variant = 'dashed' }: { onAdd: (p: Pe
       />
 
       <div className="flex gap-2 items-center">
-        {(['urgente', 'atencao', 'normal'] as PrioridadePendencia[]).map(p => {
+        {(['urgente', 'atencao', 'normal'] as PrioridadePendenciaUI[]).map(p => {
           const labels = { urgente: 'Urgente', atencao: 'Atenção', normal: 'Normal' }
           const active = { urgente: 'bg-red-900/50 text-red-400 border-red-700', atencao: 'bg-amber-900/30 text-amber-400 border-amber-700', normal: 'bg-[#23272F] text-[#7D8597] border-[#23272F]' }
           return (
@@ -420,7 +418,7 @@ function PendenciaEditavel({
 
       {/* Prioridade */}
       <div className="flex gap-1.5">
-        {(['urgente', 'atencao', 'normal'] as PrioridadePendencia[]).map(pr => (
+        {(['urgente', 'atencao', 'normal'] as PrioridadePendenciaUI[]).map(pr => (
           <button
             key={pr}
             type="button"
@@ -533,13 +531,13 @@ export default function NovaVisitaPage() {
   const [form, setForm] = useState<FormState>({
     clienteId: '',
     contratoId: '',
-    tipoVisita: 'Regular',
+    status: 'realizada',
+    tipo_visita: 'rotina',
     modalidade: 'presencial',
-    duracao_estimada_minutos: 60,
-    data_visita: new Date().toISOString().slice(0, 16),
+    duracao_minutos: 60,
+    data_hora: new Date().toISOString().slice(0, 16),
     descricao: '',
-    resultado: '',
-    observacoes: '',
+    resultados: '',
     pendencias: [],
   })
 
@@ -551,7 +549,7 @@ export default function NovaVisitaPage() {
     if (!form.clienteId) e.clienteId = 'Selecione o cliente'
     if (!form.contratoId) e.contratoId = 'Selecione o contrato'
     if (!form.descricao.trim()) e.descricao = 'Descreva brevemente o que aconteceu'
-    if (!form.resultado.trim()) e.resultado = 'Informe os resultados'
+    if (form.status === 'realizada' && !form.resultados.trim()) e.resultados = 'Informe os resultados'
     setErrors(e)
     if (Object.keys(e).length === 0) {
       if (sugestoes.length === 0) {
@@ -618,12 +616,13 @@ export default function NovaVisitaPage() {
       const response = await VisitasService.criar({
         clienteId: form.clienteId,
         contratoId: form.contratoId,
-        tipoVisita: form.tipoVisita,
+        status: form.status,
+        tipo_visita: form.tipo_visita,
         modalidade: form.modalidade,
-        duracao_estimada_minutos: form.duracao_estimada_minutos,
-        data_visita: form.data_visita,
+        duracao_minutos: form.duracao_minutos,
+        data_hora: form.data_hora,
         descricao: form.descricao,
-        resultado: form.resultado,
+        resultados: form.resultados,
         pendencias: form.pendencias.map(p => ({
           titulo: p.titulo,
           prazo: p.prazo,
@@ -803,27 +802,47 @@ export default function NovaVisitaPage() {
             </div>
           )}
 
+          {/* Status da Visita */}
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
+              Status *
+            </label>
+            <div className="flex gap-2">
+              {(['agendada', 'realizada', 'cancelada'] as StatusVisitaUI[]).map(status => (
+                <button
+                  type="button"
+                  key={status}
+                  onClick={() => setForm(f => ({ ...f, status: status }))}
+                  className={`flex-1 py-3 rounded-xl text-sm font-semibold border transition-colors capitalize ${
+                    form.status === status
+                      ? 'bg-[#001845] text-white border-[#0466C8]'
+                      : 'bg-[#0d1117] text-[#7D8597] border-[#23272F]'
+                  }`}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Tipo de visita */}
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
               Tipo
             </label>
             <div className="flex gap-2">
-              {(['Regular', 'Extra'] as TipoVisita[]).map(tipo => (
+              {(['rotina', 'extra', 'projeto'] as TipoVisitaUI[]).map(tipo => (
                 <button
                   type="button"
                   key={tipo}
-                  onClick={() => setForm(f => ({ ...f, tipoVisita: tipo }))}
-                  className={`flex-1 py-3 rounded-xl text-sm font-semibold border transition-colors ${
-                    form.tipoVisita === tipo
+                  onClick={() => setForm(f => ({ ...f, tipo_visita: tipo }))}
+                  className={`flex-1 py-3 rounded-xl text-sm font-semibold border transition-colors capitalize ${
+                    form.tipo_visita === tipo
                       ? 'bg-[#001845] text-white border-[#0466C8]'
                       : 'bg-[#0d1117] text-[#7D8597] border-[#23272F]'
                   }`}
                 >
                   {tipo}
-                  {tipo === 'Extra' && (
-                    <span className="block text-[10px] text-white font-normal opacity-80">Fora do contrato</span>
-                  )}
                 </button>
               ))}
             </div>
@@ -850,24 +869,26 @@ export default function NovaVisitaPage() {
           </div>
 
           {/* Resultados detalhados */}
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
-              Resultados *
-            </label>
-            <textarea
-              value={form.resultado}
-              onChange={e => {
-                setForm(f => ({ ...f, resultado: e.target.value }))
-                setErrors(er => ({ ...er, resultado: undefined }))
-              }}
-              rows={4}
-              placeholder="Ex: Tudo conforme, exceto lixeiras sem pedal..."
-              className={`w-full rounded-xl border px-4 py-3.5 text-base text-white bg-[#0d1117] placeholder-[#7D8597] focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40 resize-none ${
-                errors.resultado ? 'border-red-500' : 'border-[#23272F]'
-              }`}
-            />
-            {errors.resultado && <p className="mt-1 text-xs text-red-400">{errors.resultado}</p>}
-          </div>
+          {form.status === 'realizada' && (
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
+                Resultados *
+              </label>
+              <textarea
+                value={form.resultados}
+                onChange={e => {
+                  setForm(f => ({ ...f, resultados: e.target.value }))
+                  setErrors(er => ({ ...er, resultados: undefined }))
+                }}
+                rows={4}
+                placeholder="Ex: Tudo conforme, exceto lixeiras sem pedal..."
+                className={`w-full rounded-xl border px-4 py-3.5 text-base text-white bg-[#0d1117] placeholder-[#7D8597] focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40 resize-none ${
+                  errors.resultados ? 'border-red-500' : 'border-[#23272F]'
+                }`}
+              />
+              {errors.resultados && <p className="mt-1 text-xs text-red-400">{errors.resultados}</p>}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             {/* Data da Visita */}
@@ -877,8 +898,8 @@ export default function NovaVisitaPage() {
               </label>
               <input
                 type="datetime-local"
-                value={form.data_visita}
-                onChange={e => setForm(f => ({ ...f, data_visita: e.target.value }))}
+                value={form.data_hora}
+                onChange={e => setForm(f => ({ ...f, data_hora: e.target.value }))}
                 style={{ colorScheme: 'dark' }}
                 className="w-full rounded-xl border border-[#23272F] px-4 py-3.5 text-base text-white bg-[#0d1117] focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40 transition-all cursor-pointer"
               />
@@ -891,8 +912,8 @@ export default function NovaVisitaPage() {
               </label>
               <input
                 type="number"
-                value={form.duracao_estimada_minutos}
-                onChange={e => setForm(f => ({ ...f, duracao_estimada_minutos: Number(e.target.value) }))}
+                value={form.duracao_minutos}
+                onChange={e => setForm(f => ({ ...f, duracao_minutos: Number(e.target.value) }))}
                 className="w-full rounded-xl border border-[#23272F] px-4 py-3.5 text-base text-white bg-[#0d1117] focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40"
               />
             </div>
@@ -920,23 +941,7 @@ export default function NovaVisitaPage() {
               ))}
             </div>
           </div>
-
-
-          {/* Observações opcionais */}
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
-              Anotação livre
-              <span className="ml-1.5 text-[9px] normal-case font-normal">opcional</span>
-            </label>
-            <textarea
-              value={form.observacoes}
-              onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))}
-              placeholder="Lembretes pessoais, impressões, contexto extra..."
-              rows={3}
-              className="w-full rounded-xl border border-[#23272F] px-4 py-3.5 text-sm text-white bg-[#0d1117] placeholder-[#7D8597] resize-none leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40"
-            />
           </div>
-        </div>
       )}
 
       {/* ════════════════════════════
@@ -1029,16 +1034,27 @@ export default function NovaVisitaPage() {
           </p>
 
           {/* Visita */}
-          <div className="bg-[#0d1117] border border-[#23272F] rounded-2xl px-4 py-4 space-y-2">
+          <div className="bg-[#0d1117] border border-[#23272F] rounded-2xl px-4 py-4 space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-white font-semibold text-sm">{nomeCliente}</p>
-              <span className="text-[10px] font-bold text-sky-400 bg-sky-900/30 px-2 py-0.5 rounded-lg">
-                {form.tipoVisita}
-              </span>
+              <div className="flex gap-1">
+                <span className="text-[10px] font-bold text-sky-400 bg-sky-900/30 px-2 py-0.5 rounded-lg capitalize">
+                  {form.tipo_visita}
+                </span>
+                <span className="text-[10px] font-bold text-zinc-400 bg-zinc-800/50 px-2 py-0.5 rounded-lg capitalize">
+                  {form.status}
+                </span>
+              </div>
             </div>
-            <p className="text-[#979DAC] text-xs leading-snug">{form.descricao}</p>
-            {form.observacoes && (
-              <p className="text-[#7D8597] text-xs italic">{form.observacoes}</p>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-0.5">Descrição</p>
+              <p className="text-[#979DAC] text-xs leading-snug">{form.descricao}</p>
+            </div>
+            {form.status === 'realizada' && form.resultados && (
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-0.5">Resultados</p>
+                <p className="text-[#979DAC] text-xs leading-snug">{form.resultados}</p>
+              </div>
             )}
           </div>
 

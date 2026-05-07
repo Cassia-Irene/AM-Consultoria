@@ -1,34 +1,38 @@
 export const Visitas = [
   {
-    id: 'v1',
-    clienteId: '1',
-    contratoId: '1', 
-    dataHora: '2026-04-28T09:00:00Z',
-    data: '2026-04-28', 
-    criadaEm: '2026-04-20T10:00:00Z',
-    horario: '09:00',
-    tipo: 'rotina', 
-    modalidade: 'presencial',
+    id_visita: 1,
+    id_contrato: 1,
+    id_projeto: null,
+
     status: 'realizada',
-    ultimaVisitaEm: '2026-04-20',
-    observacoes: 'Paciente estável. Sem pendências críticas.',
+
+    data_hora: '2026-04-28T09:00:00',
+
+    duracao_minutos: 90,
+
+    tipo_visita: 'rotina',
+    modalidade: 'presencial',
+
     descricao: 'Acompanhamento mensal.',
-    resultados: 'Sem resultados informados'
+
+    resultados: 'Paciente estável.'
   },
   {
-    id: 'v2',
-    clienteId: '3',
-    contratoId: '3',
-    dataHora: '2026-04-28T14:00:00Z',
-    data: '2026-04-28',
-    criadaEm: '2026-04-22T10:00:00Z',
-    horario: '14:00',
-    tipo: 'rotina',
-    modalidade: 'presencial',
-    status: 'realizada',
-    ultimaVisitaEm: '2026-04-22',
-    observacoes: 'Necessário ajustar rotina de medicação.',
-    descricao: 'Revisão de pacientes.',
-    resultados: 'Medicação ajustada'
-  },
+    id_visita: 2,
+    id_contrato: 2,
+    id_projeto: 1,
+
+    status: 'agendada',
+
+    data_hora: '2026-05-10T14:00:00',
+
+    duracao_minutos: null,
+
+    tipo_visita: 'projeto',
+    modalidade: 'online',
+
+    descricao: 'Reunião de alinhamento do projeto.',
+
+    resultados: null
+  }
 ]

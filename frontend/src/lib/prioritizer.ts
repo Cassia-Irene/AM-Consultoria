@@ -5,25 +5,9 @@
 
 import type { Pendencia } from '@/domain/pendencia'
 import type { InsightPrioridade } from '@/domain/insight'
+import { getDiffDias } from '@/utils/date'
 
 /* ─── helpers internos ─── */
-
-function parsePrazoDate(prazo: string): Date {
-  const parts = prazo.split('/')
-  if (parts.length === 3) {
-    const [dia, mes, ano] = parts.map(Number)
-    return new Date(ano, mes - 1, dia)
-  }
-  return new Date(prazo)
-}
-
-function getDiffDias(prazo: string): number {
-  const hoje = new Date()
-  hoje.setHours(0, 0, 0, 0)
-  const p = parsePrazoDate(prazo)
-  p.setHours(0, 0, 0, 0)
-  return Math.ceil((p.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24))
-}
 
 function labelPrazo(prazo: string): string {
   const diff = getDiffDias(prazo)
@@ -42,13 +26,11 @@ function labelPrazo(prazo: string): string {
  *   3. Vence amanhã (diff 1): 400
  *   4. Vence em 2d  (diff 2): 300
  *   5. Sem prazo:            0 (nunca vira top1 se houver algo com prazo)
- *
- * Ainda não pontuamos impacto financeiro — versão futura.
  */
 function scorePendencia(p: Pendencia): number {
-  if (!p.prazo) return 0
+  if (!p.data_prazo) return 0
 
-  const diff = getDiffDias(p.prazo)
+  const diff = getDiffDias(p.data_prazo)
 
   if (diff < 0)  return 1000 + Math.abs(diff) * 10   // atrasado: escala com atraso
   if (diff === 0) return 500
@@ -64,7 +46,7 @@ function scorePendencia(p: Pendencia): number {
  */
 export function getTopPrioridade(
   abertas: Pendencia[],
-  clienteNomePorId?: Map<string, string>
+  resolveClienteNome: (p: Pendencia) => string
 ): InsightPrioridade | null {
   if (abertas.length === 0) return null
 
@@ -76,16 +58,16 @@ export function getTopPrioridade(
   if (comScore.length === 0) return null
 
   const { p } = comScore[0]
-  const diff = getDiffDias(p.prazo!)
+  const diff = getDiffDias(p.data_prazo!)
 
   return {
     tipo: 'top1',
-    titulo: p.titulo,
+    titulo: p.descricao, // Usando a descrição como titulo para UI
     descricao: '',
-    clienteNome: clienteNomePorId?.get(p.clienteId) || p.clienteId,
+    clienteNome: resolveClienteNome(p),
     entidadeId: p.id,
     href: `/pendencias/${p.id}`,
-    prazoLabel: labelPrazo(p.prazo!),
+    prazoLabel: labelPrazo(p.data_prazo!),
     atraso: diff < 0,
   }
 }

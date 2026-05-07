@@ -17,13 +17,13 @@ import { VisitasService } from '../../../services/visitas.service'
    TYPES
 ───────────────────────────────────────────── */
 
-import type { TipoVisitaUI, StatusVisitaUI, ModalidadeVisitaUI, PrioridadePendenciaUI } from '@/adapters/visita.adapter'
+import type { TipoVisitaUI, StatusVisitaUI, ModalidadeVisitaUI } from '@/adapters/visita.adapter'
 
 interface PendenciaGerada {
   id: string
-  titulo: string
-  prazo: string          // dd/mm/yyyy
-  prioridade: PrioridadePendenciaUI
+  descricao: string
+  data_prazo: string     // YYYY-MM-DD
+  responsavel: string
 }
 
 /** Sugestão gerada automaticamente pelo sistema a partir do resumo */
@@ -55,8 +55,7 @@ interface Regra {
    * Ex: "contrato" bate, mas "assinou" indica que já foi resolvido.
    */
   negadores?: string[]
-  titulo: string
-  prioridade: PrioridadePendenciaUI
+  descricao: string
   diasAFrente: number
   gatilho: string
   /**
@@ -71,8 +70,7 @@ const REGRAS: Regra[] = [
   {
     palavras: ['anvisa', 'vigilância', 'vigilancia', 'sanitária', 'sanitaria', 'inspecão', 'inspecao', 'vistoria', 'auditoria'],
     negadores: ['aprovado', 'aprovada', 'ok', 'passou', 'liberado', 'liberada'],
-    titulo: 'Pendência ANVISA',
-    prioridade: 'urgente',
+    descricao: 'Pendência ANVISA',
     diasAFrente: 3,
     gatilho: 'ANVISA',
     scoreBase: 0.9,
@@ -81,8 +79,7 @@ const REGRAS: Regra[] = [
     palavras: ['relatório', 'relatorio', 'laudo', 'documentar', 'documentação', 'documentacao'],
     // 'documento' removido — ambíguo demais ("o cliente pediu um documento" ≠ pendência)
     negadores: ['enviou', 'enviado', 'mandou', 'entregou', 'pronto', 'concluído', 'concluido'],
-    titulo: 'Enviar relatório',
-    prioridade: 'atencao',
+    descricao: 'Enviar relatório',
     diasAFrente: 7,
     gatilho: 'relatório',
     scoreBase: 0.8,
@@ -91,8 +88,7 @@ const REGRAS: Regra[] = [
     palavras: ['contrato', 'renovação', 'renovacao', 'assinatura'],
     // 'assinar'/'assinou' removidos — indicam conclusão, não pendência
     negadores: ['assinou', 'assinado', 'fechou', 'fechado', 'renovado'],
-    titulo: 'Resolver pendência contratual',
-    prioridade: 'atencao',
+    descricao: 'Resolver pendência contratual',
     diasAFrente: 5,
     gatilho: 'contrato',
     scoreBase: 0.75,
@@ -100,8 +96,7 @@ const REGRAS: Regra[] = [
   {
     palavras: ['fatura', 'pagamento', 'boleto', 'cobrança', 'cobranca', 'cobrar', 'pagar', 'inadimplente', 'inadimplência', 'vencido', 'vencida'],
     negadores: ['pagou', 'pago', 'quitou', 'quitado', 'regularizado'],
-    titulo: 'Regularizar pagamento',
-    prioridade: 'urgente',
+    descricao: 'Regularizar pagamento',
     diasAFrente: 2,
     gatilho: 'pagamento',
     scoreBase: 0.9,
@@ -109,8 +104,7 @@ const REGRAS: Regra[] = [
   {
     palavras: ['treinamento', 'capacitação', 'capacitacao', 'capacitar', 'treinar'],
     negadores: ['fez', 'feito', 'realizado', 'concluído', 'concluido'],
-    titulo: 'Agendar treinamento com equipe',
-    prioridade: 'normal',
+    descricao: 'Agendar treinamento com equipe',
     diasAFrente: 14,
     gatilho: 'treinamento',
     scoreBase: 0.7,
@@ -119,8 +113,7 @@ const REGRAS: Regra[] = [
     // Intenção implícita: "pedir", "marcar", "combinar" indicam ação futura
     palavras: ['retorno', 'reagendar', 'próxima visita', 'proxima visita', 'voltar lá', 'agendar', 'marcar visita', 'pediu pra voltar', 'pediu retorno'],
     negadores: ['cancelou', 'cancelado', 'não quer', 'não precisa'],
-    titulo: 'Agendar próxima visita',
-    prioridade: 'normal',
+    descricao: 'Agendar próxima visita',
     diasAFrente: 7,
     gatilho: 'retorno',
     scoreBase: 0.65,
@@ -128,8 +121,7 @@ const REGRAS: Regra[] = [
   {
     palavras: ['alvará', 'alvara', 'licença', 'licenca'],
     negadores: ['renovado', 'regularizado', 'em dia'],
-    titulo: 'Renovar alvará/licença',
-    prioridade: 'atencao',
+    descricao: 'Renovar alvará/licença',
     diasAFrente: 10,
     gatilho: 'alvará',
     scoreBase: 0.8,
@@ -141,8 +133,7 @@ const REGRAS: Regra[] = [
       'alinhar', 'alinhamento', 'comunicar', 'comunicado', 'reunir', 'reunião',
     ],
     negadores: ['resolvido', 'alinhado', 'alinhada'],
-    titulo: 'Alinhar com equipe do cliente',
-    prioridade: 'atencao',
+    descricao: 'Alinhar com equipe do cliente',
     diasAFrente: 3,
     gatilho: 'equipe',
     scoreBase: 0.65,
@@ -155,8 +146,7 @@ const REGRAS: Regra[] = [
       'ocorrência', 'ocorrencia', 'incidente',
     ],
     negadores: ['resolvido', 'resolvida', 'estavel', 'estável'],
-    titulo: 'Acompanhar situação do paciente/residente',
-    prioridade: 'atencao',
+    descricao: 'Acompanhar situação do paciente/residente',
     diasAFrente: 2,
     gatilho: 'paciente',
     scoreBase: 0.7,
@@ -165,8 +155,7 @@ const REGRAS: Regra[] = [
     // Solicitações diretas do cliente são ações implícitas
     palavras: ['cliente pediu', 'pediu para', 'solicitou', 'precisa de', 'está esperando', 'aguardando'],
     negadores: ['não precisa', 'cancelou', 'desistiu'],
-    titulo: 'Atender solicitação do cliente',
-    prioridade: 'atencao',
+    descricao: 'Atender solicitação do cliente',
     diasAFrente: 3,
     gatilho: 'solicitação',
     scoreBase: 0.65,
@@ -190,10 +179,10 @@ const THRESHOLD_PRE_ACEITAR = 0.7
 /** Janela de caracteres para considerar boost de urgência cirúrgico */
 const JANELA_BOOST = 60
 
-function prazoEmDias(dias: number): string {
+function prazoEmDiasISO(dias: number): string {
   const d = new Date()
   d.setDate(d.getDate() + dias)
-  return d.toLocaleDateString('pt-BR')
+  return d.toISOString().split('T')[0]
 }
 
 /**
@@ -234,20 +223,17 @@ function sugerirPendencias(resumo: string): PendenciaSugerida[] {
     const boostLocal = temBoostProximo(texto, regra.gatilho)
     const comBoost   = boostGlobal || boostLocal
 
-    // 4. Define prioridade final
-    let prioridade: PrioridadePendenciaUI = regra.prioridade
-    if (comBoost && prioridade === 'normal')   prioridade = 'atencao'
-    if (comBoost && prioridade === 'atencao')  prioridade = 'urgente'
-    // urgente permanece urgente
-
-    // 5. Score final (boost sobe o score, dando mais chances de pré-aceitar)
+    // 4. Score final (boost sobe o score, dando mais chances de pré-aceitar)
     const scoreFinal = comBoost ? Math.min(regra.scoreBase + 0.15, 1) : regra.scoreBase
+
+    // 5. Ajusta prazo se for urgente
+    const diasFinal = comBoost ? Math.max(1, Math.ceil(regra.diasAFrente * 0.5)) : regra.diasAFrente
 
     sugestoes.push({
       id: uid(),
-      titulo: regra.titulo,
-      prazo: prazoEmDias(prioridade === 'urgente' ? Math.ceil(regra.diasAFrente * 0.66) : regra.diasAFrente),
-      prioridade,
+      descricao: regra.descricao,
+      data_prazo: prazoEmDiasISO(diasFinal),
+      responsavel: 'Equipe Técnica', // Padrão
       gatilho: regra.gatilho,
       estado: 'pendente',
       // score utilizado pelo chamador para separar opt-out vs opt-in
@@ -272,25 +258,21 @@ function uid() {
    SUB-COMPONENTES
 ───────────────────────────────────────────── */
 
-/** Formulário inline para adicionar pendência manualmente — sem abrir modal */
 function AdicionarPendenciaInline({ onAdd, variant = 'dashed' }: { onAdd: (p: PendenciaGerada) => void, variant?: 'dashed' | 'primary' }) {
-  const [titulo, setTitulo] = useState('')
-  const [prioridade, setPrioridade] = useState<PrioridadePendenciaUI>('atencao')
+  const [descricao, setDescricao] = useState('')
+  const [diasAFrente, setDiasAFrente] = useState(5)
   const [aberto, setAberto] = useState(false)
 
   function submeter() {
-    if (!titulo.trim()) return
-    const dias = prioridade === 'urgente' ? 2 : prioridade === 'atencao' ? 5 : 10
-    const d = new Date()
-    d.setDate(d.getDate() + dias)
+    if (!descricao.trim()) return
     onAdd({
       id: Math.random().toString(36).slice(2, 9),
-      titulo: titulo.trim(),
-      prazo: d.toLocaleDateString('pt-BR'),
-      prioridade,
+      descricao: descricao.trim(),
+      data_prazo: prazoEmDiasISO(diasAFrente),
+      responsavel: 'Equipe Técnica',
     })
-    setTitulo('')
-    setPrioridade('atencao')
+    setDescricao('')
+    setDiasAFrente(5)
     setAberto(false)
   }
 
@@ -324,8 +306,8 @@ function AdicionarPendenciaInline({ onAdd, variant = 'dashed' }: { onAdd: (p: Pe
 
       <input
         type="text"
-        value={titulo}
-        onChange={e => setTitulo(e.target.value)}
+        value={descricao}
+        onChange={e => setDescricao(e.target.value)}
         onKeyDown={e => e.key === 'Enter' && submeter()}
         placeholder="O que ficou em aberto?"
         autoFocus
@@ -333,18 +315,14 @@ function AdicionarPendenciaInline({ onAdd, variant = 'dashed' }: { onAdd: (p: Pe
       />
 
       <div className="flex gap-2 items-center">
-        {(['urgente', 'atencao', 'normal'] as PrioridadePendenciaUI[]).map(p => {
-          const labels = { urgente: 'Urgente', atencao: 'Atenção', normal: 'Normal' }
-          const active = { urgente: 'bg-red-900/50 text-red-400 border-red-700', atencao: 'bg-amber-900/30 text-amber-400 border-amber-700', normal: 'bg-[#23272F] text-[#7D8597] border-[#23272F]' }
-          return (
-            <button key={p} type="button" onClick={() => setPrioridade(p)}
-              className={`text-[10px] font-bold px-3 py-1.5 rounded-lg border transition-all ${
-                prioridade === p ? active[p] : 'bg-transparent text-[#7D8597] border-[#23272F]'
-              }`}>
-              {labels[p]}
-            </button>
-          )
-        })}
+        <span className="text-[10px] text-[#7D8597] shrink-0">Dias p/ prazo:</span>
+        <input
+          type="number"
+          value={diasAFrente}
+          onChange={e => setDiasAFrente(Number(e.target.value))}
+          min={0}
+          className="w-20 bg-[#23272F] text-white text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#0466C8]"
+        />
       </div>
 
       <div className="flex gap-2 pt-1">
@@ -352,7 +330,7 @@ function AdicionarPendenciaInline({ onAdd, variant = 'dashed' }: { onAdd: (p: Pe
           className="flex-1 py-2.5 rounded-xl text-sm text-[#7D8597] bg-[#23272F] active:opacity-70 transition-opacity">
           Cancelar
         </button>
-        <button type="button" onClick={submeter} disabled={!titulo.trim()}
+        <button type="button" onClick={submeter} disabled={!descricao.trim()}
           className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0466C8] disabled:opacity-40 active:bg-[#0353A4] transition-colors">
           Adicionar
         </button>
@@ -373,14 +351,10 @@ function PendenciaEditavel({
 }) {
   const [expandido, setExpandido] = useState(false)
 
-  const cColor = p.prioridade === 'urgente' ? 'border-red-500' : p.prioridade === 'atencao' ? 'border-amber-400' : 'border-[#23272F]'
-  const dest   = p.prioridade === 'urgente' ? '→ Modo Caos' : '→ Planejamento'
-  const dColor = p.prioridade === 'urgente' ? 'text-red-400' : 'text-[#7D8597]'
-  const prioActive = {
-    urgente: 'bg-red-900/50 text-red-400 border-red-700',
-    atencao: 'bg-amber-900/30 text-amber-400 border-amber-700',
-    normal:  'bg-[#23272F] text-[#7D8597] border-[#23272F]',
-  }
+  const urgencia = (new Date(p.data_prazo).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+  const isUrgente = urgencia < 2
+  const cColor = isUrgente ? 'border-red-500' : 'border-[#23272F]'
+  const dColor = isUrgente ? 'text-red-400' : 'text-[#7D8597]'
 
   if (!expandido) {
     return (
@@ -389,8 +363,8 @@ function PendenciaEditavel({
         onClick={() => setExpandido(true)}
       >
         <div className="flex-1 min-w-0">
-          <p className="text-white text-sm font-semibold truncate">{p.titulo || '(sem título)'}</p>
-          <p className={`text-[10px] font-bold ${dColor}`}>{dest} · {p.prazo}</p>
+          <p className="text-white text-sm font-semibold truncate">{p.descricao || '(sem descrição)'}</p>
+          <p className={`text-[10px] font-bold ${dColor}`}>Prazo: {new Date(p.data_prazo).toLocaleDateString('pt-BR')} · Resp: {p.responsavel}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-[#7D8597] text-[10px]">editar</span>
@@ -406,41 +380,34 @@ function PendenciaEditavel({
 
   return (
     <div className={`bg-[#0d1117] border-l-4 ${cColor} rounded-r-xl px-4 py-4 space-y-3`}>
-      {/* Título */}
+      {/* Descrição */}
       <input
         type="text"
-        value={p.titulo}
-        onChange={e => onChange({ titulo: e.target.value })}
+        value={p.descricao}
+        onChange={e => onChange({ descricao: e.target.value })}
         placeholder="O que ficou pendente?"
         autoFocus
         className="w-full bg-transparent text-white text-sm font-semibold placeholder-[#7D8597] border-b border-[#23272F] pb-2 focus:outline-none focus:border-[#0466C8] transition-colors"
       />
 
-      {/* Prioridade */}
-      <div className="flex gap-1.5">
-        {(['urgente', 'atencao', 'normal'] as PrioridadePendenciaUI[]).map(pr => (
-          <button
-            key={pr}
-            type="button"
-            onClick={() => onChange({ prioridade: pr })}
-            className={`text-[10px] font-bold px-3 py-1.5 rounded-lg border transition-all ${
-              p.prioridade === pr ? prioActive[pr] : 'bg-transparent text-[#7D8597] border-[#23272F]'
-            }`}
-          >
-            {pr === 'urgente' ? 'Urgente' : pr === 'atencao' ? 'Atenção' : 'Normal'}
-          </button>
-        ))}
-      </div>
-
       {/* Prazo */}
       <div className="flex items-center gap-2">
         <span className="text-[10px] text-[#7D8597] shrink-0">Prazo:</span>
         <input
+          type="date"
+          value={p.data_prazo}
+          onChange={e => onChange({ data_prazo: e.target.value })}
+          className="flex-1 bg-[#23272F] text-white text-xs rounded-lg px-3 py-1.5 placeholder-[#7D8597] focus:outline-none focus:ring-1 focus:ring-[#0466C8]"
+        />
+      </div>
+
+      {/* Responsável */}
+      <div className="flex items-center gap-2 mt-2">
+        <span className="text-[10px] text-[#7D8597] shrink-0">Resp:</span>
+        <input
           type="text"
-          value={p.prazo}
-          onChange={e => onChange({ prazo: e.target.value })}
-          placeholder="dd/mm/aaaa"
-          maxLength={10}
+          value={p.responsavel}
+          onChange={e => onChange({ responsavel: e.target.value })}
           className="flex-1 bg-[#23272F] text-white text-xs rounded-lg px-3 py-1.5 placeholder-[#7D8597] focus:outline-none focus:ring-1 focus:ring-[#0466C8]"
         />
       </div>
@@ -568,9 +535,9 @@ export default function NovaVisitaPage() {
               ...f.pendencias, 
               ...paraIncluir.map(s => ({ 
                 id: s.id, 
-                titulo: s.titulo, 
-                prazo: s.prazo, 
-                prioridade: s.prioridade 
+                descricao: s.descricao, 
+                data_prazo: s.data_prazo, 
+                responsavel: s.responsavel 
               }))
             ] 
           }))
@@ -590,7 +557,7 @@ export default function NovaVisitaPage() {
     const s = sugestoes.find(s => s.id === id)
     if (!s) return
     // move para pendencias confirmadas
-    setForm(f => ({ ...f, pendencias: [...f.pendencias, { id: s.id, titulo: s.titulo, prazo: s.prazo, prioridade: s.prioridade }] }))
+    setForm(f => ({ ...f, pendencias: [...f.pendencias, { id: s.id, descricao: s.descricao, data_prazo: s.data_prazo, responsavel: s.responsavel }] }))
     setSugestoes(ss => ss.filter(s => s.id !== id))
   }
 
@@ -624,9 +591,9 @@ export default function NovaVisitaPage() {
         descricao: form.descricao,
         resultados: form.resultados,
         pendencias: form.pendencias.map(p => ({
-          titulo: p.titulo,
-          prazo: p.prazo,
-          prioridade: p.prioridade,
+          descricao: p.descricao,
+          data_prazo: p.data_prazo,
+          responsavel: p.responsavel,
         })),
       })
 
@@ -669,7 +636,10 @@ export default function NovaVisitaPage() {
 
   /* ────────── TELA DE CONFIRMAÇÃO ────────── */
   if (saved) {
-    const urgentes = form.pendencias.filter(p => p.prioridade === 'urgente').length
+    const urgentes = form.pendencias.filter(p => {
+      const urgencia = (new Date(p.data_prazo).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+      return urgencia < 2
+    }).length
     const total    = form.pendencias.length
 
     return (
@@ -978,13 +948,15 @@ export default function NovaVisitaPage() {
               </p>
               <div className="space-y-2">
                 {sugestoes.map(s => {
-                  const dest   = s.prioridade === 'atencao' ? '→ Planejamento hoje' : '→ Planejamento'
-                  const dColor = s.prioridade === 'atencao' ? 'text-amber-400' : 'text-[#7D8597]'
+                  const urgencia = (new Date(s.data_prazo).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+                  const isUrgente = urgencia < 2
+                  const dest   = isUrgente ? '→ Planejamento hoje' : '→ Planejamento'
+                  const dColor = isUrgente ? 'text-amber-400' : 'text-[#7D8597]'
                   return (
                     <div key={s.id} className="flex items-center gap-3 bg-[#0d1117] border border-[#23272F] rounded-xl px-4 py-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-semibold truncate">{s.titulo}</p>
-                        <p className={`text-[10px] font-bold ${dColor}`}>{dest} · {s.prazo}</p>
+                        <p className="text-white text-sm font-semibold truncate">{s.descricao}</p>
+                        <p className={`text-[10px] font-bold ${dColor}`}>{dest} · {new Date(s.data_prazo).toLocaleDateString('pt-BR')}</p>
                       </div>
                       <div className="flex gap-2 shrink-0">
                         <button type="button" onClick={() => aceitarSugestao(s.id)}
@@ -1066,16 +1038,18 @@ export default function NovaVisitaPage() {
               </p>
               <div className="space-y-2">
                 {form.pendencias.map(p => {
-                  const cor = p.prioridade === 'urgente' ? 'border-red-500' : p.prioridade === 'atencao' ? 'border-amber-400' : 'border-[#23272F]'
-                  const label = p.prioridade === 'urgente' ? '→ Modo Caos' : '→ Planejamento'
-                  const labelColor = p.prioridade === 'urgente' ? 'text-red-400' : 'text-[#7D8597]'
+                  const urgencia = (new Date(p.data_prazo).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+                  const isUrgente = urgencia < 2
+                  const cor = isUrgente ? 'border-red-500' : 'border-[#23272F]'
+                  const label = isUrgente ? '→ Modo Caos' : '→ Planejamento'
+                  const labelColor = isUrgente ? 'text-red-400' : 'text-[#7D8597]'
                   return (
                     <div key={p.id} className={`bg-[#0d1117] border-l-4 ${cor} rounded-r-xl px-4 py-3`}>
                       <div className="flex items-start justify-between gap-2">
-                        <p className="text-white text-sm flex-1">{p.titulo || '(sem título)'}</p>
+                        <p className="text-white text-sm flex-1">{p.descricao || '(sem descrição)'}</p>
                         <span className={`text-[10px] font-bold shrink-0 ${labelColor}`}>{label}</span>
                       </div>
-                      {p.prazo && <p className="text-[#7D8597] text-xs mt-0.5">Prazo: {p.prazo}</p>}
+                      {p.data_prazo && <p className="text-[#7D8597] text-xs mt-0.5">Prazo: {new Date(p.data_prazo).toLocaleDateString('pt-BR')}</p>}
                     </div>
                   )
                 })}

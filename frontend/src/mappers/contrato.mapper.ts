@@ -12,6 +12,11 @@ export function getHistoricos(): HistoricoContrato[] {
   return (HistoricosMock as unknown as HistoricoContratoRaw[]).map(mapHistorico)
 }
 
+export function getClienteFromContratoId(contratoId: string): string | undefined {
+  const contratos = getContratos()
+  return contratos.find(c => c.id === contratoId)?.clienteId
+}
+
 export function mapContrato(raw: ContratoRaw): Contrato {
   validateShape<ContratoRaw>('ContratoRaw', raw, [
     'id_contrato',

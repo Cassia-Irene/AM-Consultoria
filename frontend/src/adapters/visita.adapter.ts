@@ -14,9 +14,9 @@ export type ModalidadeVisitaUI = 'presencial' | 'online' | 'hibrida'
 export type PrioridadePendenciaUI = 'urgente' | 'atencao' | 'normal'
 
 export interface PendenciaInput {
-  titulo: string
-  prazo: string
-  prioridade: PrioridadePendenciaUI
+  descricao: string
+  data_prazo: string
+  responsavel: string
 }
 
 export interface NovaVisitaInput {
@@ -41,10 +41,12 @@ export interface ValidationResult {
 // ─── Tipos de saída (contrato exato da API) ───────────────────────────────────
 
 export interface PendenciaCriacaoDTO {
-  titulo: string
-  prazo: string
-  prioridade: PrioridadePendenciaUI
+  descricao: string
+  responsavel: string
   data_origem: string
+  data_prazo: string | null
+  resolvida: boolean
+  data_resolucao: string | null
 }
 
 export interface CriarVisitaRequest {
@@ -99,10 +101,12 @@ export function toVisitaPayload(input: NovaVisitaInput): CriarVisitaRequest {
     descricao: input.descricao || 'Sem descrição',
     resultados: input.resultados || null,
     pendencias: input.pendencias.map(p => ({
-      titulo: p.titulo,
-      prazo: ptBRToISO(p.prazo),
-      prioridade: p.prioridade,
+      descricao: p.descricao,
+      responsavel: p.responsavel,
       data_origem: input.data_hora,
+      data_prazo: ptBRToISO(p.data_prazo),
+      resolvida: false,
+      data_resolucao: null
     })),
   }
 }

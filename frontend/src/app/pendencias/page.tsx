@@ -3,132 +3,215 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { PendenciaCard, Pendencia } from '../../components/PendenciaCard'
-import { Pendencias } from '../../lib/mocks'
+import { getPendencias } from '@/mappers/pendencia.mapper'
 import { getClientes } from '@/mappers/cliente.mapper'
+import { getClienteFromContratoId } from '@/mappers/contrato.mapper'
+import { getPendenciaSeveridade, getPendenciaStatus } from '@/utils/pendencia'
+import type { Pendencia } from '@/domain/pendencia'
+import { displayDate } from '@/utils/date'
 
-type Filtro = 'todas' | 'urgente' | 'atencao' | 'andamento' | 'resolvida'
+type Filtro = 'todas' | 'abertas' | 'atrasadas' | 'concluidas'
 
-const FILTROS: { value: Filtro; label: string; color: string; activeColor: string }[] = [
-  { value: 'todas',     label: 'Todas',       color: 'text-gray-500 bg-gray-100',    activeColor: 'text-white bg-gray-800'    },
-  { value: 'urgente',   label: 'Urgentes',    color: 'text-red-700 bg-red-50',       activeColor: 'text-white bg-red-600'     },
-  { value: 'atencao',   label: 'Atenção',     color: 'text-amber-700 bg-amber-50',   activeColor: 'text-white bg-amber-500'   },
-  { value: 'andamento', label: 'Andamento',   color: 'text-blue-700 bg-blue-50',     activeColor: 'text-white bg-blue-600'    },
-  { value: 'resolvida', label: 'Resolvidas',  color: 'text-green-700 bg-green-50',   activeColor: 'text-white bg-green-600'   },
-]
-
-const STATUS_ORDER: Record<Pendencia['status'], number> = {
-  urgente: 0, atencao: 1, andamento: 2, resolvida: 3,
+type PendenciaView = {
+  p: Pendencia
+  clienteNome: string
+  status: 'concluida' | 'aberta' | 'atrasada'
+  severidade: 'urgente' | 'atencao' | 'normal'
 }
+
+const FILTROS: { value: Filtro; label: string }[] = [
+  { value: 'todas', label: 'Todas' },
+  { value: 'abertas', label: 'Abertas' },
+  { value: 'atrasadas', label: 'Atrasadas' },
+  { value: 'concluidas', label: 'Concluídas' },
+]
 
 export default function PendenciasPage() {
   const [filtro, setFiltro] = useState<Filtro>('todas')
 
-  // Mapeia clienteId → nome do cliente e garante campo 'cliente' exigido pelo tipo
-  const pendenciasComCliente: Pendencia[] = Pendencias.map(p => {
-    // Mapeia o status do mock/domínio para o status visual do PendenciaCard
-    let statusVisual: Pendencia['status'] = 'andamento'
-    if (p.status === 'concluida') {
-      statusVisual = 'resolvida'
-    } else if (p.prioridade === 'urgente') {
-      statusVisual = 'urgente'
-    } else if (p.prioridade === 'atencao') {
-      statusVisual = 'atencao'
-    }
-
+  const [pendencias] = useState<Pendencia[]>(getPendencias())
+  
+  const pendenciasView: PendenciaView[] = pendencias.map(p => {
+    const clienteId = getClienteFromContratoId(p.contratoId)
+    const clienteNome = clienteId 
+      ? getClientes().find(c => c.id === clienteId)?.nome_instituicao ?? 'Desconhecido'
+      : 'Desconhecido'
+      
     return {
-      id: p.id,
-      titulo: p.titulo,
-      cliente: getClientes().find(c => c.id === p.clienteId)?.nome_instituicao ?? p.clienteId,
-      prazo: p.prazo,
-      status: statusVisual,
-      diasAtraso: (p as { diasAtraso?: number }).diasAtraso,
-      descricao: p.descricao,
+      p,
+      clienteNome,
+      status: getPendenciaStatus(p),
+      severidade: getPendenciaSeveridade(p)
     }
   })
 
-  const [pendencias, setPendencias] = useState<Pendencia[]>(pendenciasComCliente)
+  // KPIs
+  const kpiAbertas = pendenciasView.filter(v => v.status === 'aberta').length
+  const kpiAtrasadas = pendenciasView.filter(v => v.status === 'atrasada').length
+  const kpiConcluidas = pendenciasView.filter(v => v.status === 'concluida').length
+  const kpiUrgentes = pendenciasView.filter(v => v.severidade === 'urgente' && v.status !== 'concluida').length
 
-  const filtradas = pendencias
-    .filter(p => filtro === 'todas' || p.status === filtro)
-    .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status])
+  // Filtragem
+  const filtradas = pendenciasView.filter(v => {
+    if (filtro === 'todas') return true
+    if (filtro === 'abertas') return v.status === 'aberta'
+    if (filtro === 'atrasadas') return v.status === 'atrasada'
+    if (filtro === 'concluidas') return v.status === 'concluida'
+    return true
+  })
 
-  const urgentesCount  = pendencias.filter(p => p.status === 'urgente').length
-  const abertas        = pendencias.filter(p => p.status !== 'resolvida').length
+  // Agrupamento Visual
+  const atrasadas = filtradas.filter(v => v.status === 'atrasada')
+  const proximas = filtradas.filter(v => v.status === 'aberta')
+  const resolvidas = filtradas.filter(v => v.status === 'concluida')
 
-  function handleResolve(id: string) {
-    setPendencias(prev =>
-      prev.map(p => p.id === id ? { ...p, status: 'resolvida' as const } : p)
+  // Helpers de Badge
+  const badgeStatus = {
+    concluida: 'bg-green-500/20 text-green-400',
+    aberta: 'bg-blue-500/20 text-blue-400',
+    atrasada: 'bg-red-500/20 text-red-400',
+  }
+  const badgeStatusLabel = { concluida: 'Concluída', aberta: 'Aberta', atrasada: 'Atrasada' }
+
+  const badgeSeveridade = {
+    urgente: 'bg-red-500/20 text-red-400',
+    atencao: 'bg-yellow-500/20 text-yellow-400',
+    normal: 'bg-zinc-700 text-zinc-300',
+  }
+  const badgeSeveridadeLabel = { urgente: 'Urgente', atencao: 'Atenção', normal: 'Normal' }
+
+  const renderCard = (view: PendenciaView) => (
+    <div key={view.p.id} className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <p className="text-white text-base font-medium mb-1 wrap-break-word">{view.p.descricao}</p>
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            <span className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">{view.clienteNome}</span>
+            <span className="text-zinc-600">•</span>
+            <span className="text-zinc-400 text-xs">Resp: {view.p.responsavel}</span>
+            {view.p.data_prazo && (
+              <>
+                <span className="text-zinc-600">•</span>
+                <span className="text-zinc-400 text-xs">Prazo: {displayDate(view.p.data_prazo)}</span>
+              </>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2 shrink-0">
+          <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest ${badgeSeveridade[view.severidade]}`}>
+            {badgeSeveridadeLabel[view.severidade]}
+          </span>
+          <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest ${badgeStatus[view.status]}`}>
+            {badgeStatusLabel[view.status]}
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+
+  const renderGrupo = (titulo: string, items: PendenciaView[], emptyText?: string) => {
+    if (items.length === 0) {
+      if (emptyText) {
+        return (
+          <div className="mb-8">
+            <h2 className="text-sm font-black uppercase tracking-widest text-zinc-500 mb-4">{titulo}</h2>
+            <div className="text-zinc-500 text-sm border border-dashed border-zinc-800 rounded-2xl p-8 text-center bg-zinc-900/30">
+              {emptyText}
+            </div>
+          </div>
+        )
+      }
+      return null
+    }
+
+    return (
+      <div className="mb-8">
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">{titulo}</h2>
+          <span className="bg-zinc-800 text-zinc-400 text-[10px] px-2 py-0.5 rounded-full font-bold">
+            {items.length}
+          </span>
+        </div>
+        <div className="space-y-4">
+          {items.map(renderCard)}
+        </div>
+      </div>
     )
   }
 
   return (
-    <main className="min-h-screen bg-white pb-24">
-      {/* ── HEADER ── */}
-      <div className="bg-[#001845] px-4 pt-12 pb-5 sticky top-0 z-10">
-        <div className="flex items-center gap-3 mb-3">
-          <Link href="/dashboard" className="text-blue-200 text-2xl leading-none">‹</Link>
-          <h1 className="text-lg font-medium text-white">Pendências</h1>
-          {urgentesCount > 0 && (
-            <span className="ml-auto flex items-center justify-center w-6 h-6 rounded-full bg-red-600 text-white text-xs font-medium">
-              {urgentesCount}
-            </span>
-          )}
+    <main className="min-h-screen bg-[#07090D] pb-24 text-white">
+      {/* ── HEADER SUPERIOR ── */}
+      <div className="sticky top-0 z-10 bg-[#07090D]/90 backdrop-blur-md border-b border-zinc-800 px-6 py-5">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Pendências</h1>
+            <p className="text-sm text-zinc-400 mt-1">Acompanhamento operacional e itens críticos</p>
+          </div>
+          <Link href="/pendencias/nova" className="w-full sm:w-auto text-center inline-block bg-white text-black font-bold text-sm px-6 py-2.5 rounded-xl hover:bg-zinc-200 transition-colors">
+            + Nova Pendência
+          </Link>
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-6 pt-6">
+        {/* ── KPIs SUPERIORES ── */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Abertas</p>
+            <p className="text-3xl font-black tabular-nums text-white">{kpiAbertas}</p>
+          </div>
+          <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Atrasadas</p>
+            <p className="text-3xl font-black tabular-nums text-red-400">{kpiAtrasadas}</p>
+          </div>
+          <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Concluídas</p>
+            <p className="text-3xl font-black tabular-nums text-green-400">{kpiConcluidas}</p>
+          </div>
+          <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Urgentes</p>
+            <p className="text-3xl font-black tabular-nums text-red-500">{kpiUrgentes}</p>
+          </div>
         </div>
 
         {/* ── FILTROS ── */}
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none mb-6">
           {FILTROS.map(f => {
-            const count = f.value === 'todas'
-              ? pendencias.length
-              : pendencias.filter(p => p.status === f.value).length
             const isActive = filtro === f.value
             return (
               <button
                 key={f.value}
                 onClick={() => setFiltro(f.value)}
                 className={`
-                  shrink-0 px-3 py-1.5 rounded-full text-xs font-medium
-                  transition-colors
-                  ${isActive ? f.activeColor : f.color}
+                  shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-colors border
+                  ${isActive 
+                    ? 'bg-zinc-800 text-white border-zinc-700' 
+                    : 'bg-zinc-900/40 text-zinc-400 border-zinc-800 hover:bg-zinc-800/80'
+                  }
                 `}
               >
-                {f.label} {count > 0 && `(${count})`}
+                {f.label}
               </button>
             )
           })}
         </div>
-      </div>
 
-      <div className="px-4 pt-4">
-        {/* ── CONTAGEM ── */}
-        <p className="text-sm text-gray-400 mb-4">
-          {abertas} abertas · {pendencias.filter(p => p.status === 'resolvida').length} resolvidas
-        </p>
-
-        {/* ── LISTA ── */}
+        {/* ── LISTAGEM PRINCIPAL ── */}
         {filtradas.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-2xl mb-2">✓</p>
-            <p className="text-gray-400 text-sm">Nenhuma pendência aqui</p>
+          <div className="py-20 text-center">
+            <p className="text-4xl mb-4 opacity-50">📋</p>
+            <p className="text-zinc-400 text-sm font-medium">Nenhuma pendência encontrada</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {filtradas.map(p => (
-              <PendenciaCard
-                key={p.id}
-                pendencia={p}
-                onResolve={handleResolve}
-              />
-            ))}
+          <div>
+            {renderGrupo('Atrasadas', atrasadas)}
+            {renderGrupo('Próximas do Prazo', proximas)}
+            {renderGrupo('Resolvidas', resolvidas)}
           </div>
         )}
       </div>
-
-      {/* ── FAB — Nova pendência ── */}
-      <button className="fixed bottom-6 right-4 bg-[#001845] text-white rounded-2xl px-5 py-4 text-[15px] font-medium shadow-lg active:scale-95 transition-transform z-20">
-        + Nova pendência
-      </button>
     </main>
   )
 }

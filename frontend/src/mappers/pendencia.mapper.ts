@@ -1,50 +1,34 @@
-// src/mappers/pendencia.mapper.ts
-
-import { Pendencias as PendenciasMock } from '@/lib/mocks'
-import type { Pendencia, PrioridadePendencia } from '@/domain/pendencia'
+import { Pendencias as Mock } from '@/mocks/pendencias'
+import type { Pendencia } from '@/domain/pendencia'
 import type { PendenciaRaw } from '@/types/pendencia.raw'
+import { validateShape } from '@/utils/schemaGuard'
 
 export function getPendencias(): Pendencia[] {
-  return (PendenciasMock as PendenciaRaw[]).map(mapPendencia)
+  return (Mock as unknown as PendenciaRaw[]).map(mapPendencia)
 }
 
 export function mapPendencia(raw: PendenciaRaw): Pendencia {
+  validateShape<PendenciaRaw>('PendenciaRaw', raw, [
+    'id_pendencia',
+    'id_contrato',
+    'id_visita',
+    'descricao',
+    'responsavel',
+    'data_origem',
+    'data_prazo',
+    'resolvida',
+    'data_resolucao'
+  ])
+
   return {
-    id: String(raw.id),
-    titulo: raw.titulo,
-
-    clienteId: String(raw.clienteId),
-    contratoId: raw.contratoId || 'mock-contrato',
-    prioridade: normalizePrioridade(raw.prioridade),
-
-    status: normalizeStatus(raw.status),
-
-    prazo: raw.prazo ?? undefined,
-    data_origem: raw.criadaEm,
-    criadaEm: raw.criadaEm,
-    atualizadaEm: raw.criadaEm,
+    id: String(raw.id_pendencia),
+    contratoId: String(raw.id_contrato),
+    visitaId: raw.id_visita != null ? String(raw.id_visita) : undefined,
+    descricao: raw.descricao,
+    responsavel: raw.responsavel,
+    data_origem: raw.data_origem,
+    data_prazo: raw.data_prazo ?? undefined,
+    resolvida: raw.resolvida,
+    data_resolucao: raw.data_resolucao ?? undefined,
   }
-}
-
-/* ───────── helpers ───────── */
-
-function normalizeStatus(
-  status: string
-): 'aberta' | 'em_andamento' | 'concluida' {
-  if (status === 'aberta') return 'aberta'
-  if (status === 'em_andamento') return 'em_andamento'
-  if (status === 'concluida') return 'concluida'
-
-  console.warn('Status de pendência desconhecido:', status)
-  return 'aberta'
-}
-
-function normalizePrioridade(prioridade?: string): PrioridadePendencia {
-  if (prioridade === 'urgente') return 'urgente'
-  if (prioridade === 'atencao') return 'atencao'
-  if (prioridade === 'normal') return 'normal'
-
-  // BACKEND_DEPENDENCY: campo prioridade não existe no modelo Pendencia
-  // (pendencia.py está vazio). Quando implementado, este fallback pode ser removido.
-  return 'normal'
 }

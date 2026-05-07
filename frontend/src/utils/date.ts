@@ -46,3 +46,10 @@ export function datetimeLocalToDate(value: string): string {
   return value.split('T')[0]
 }
 
+export function getDiffDias(prazo: string): number {
+  const hoje = new Date()
+  hoje.setHours(0, 0, 0, 0)
+  const p = parseDate(prazo)
+  p.setHours(0, 0, 0, 0)
+  return Math.ceil((p.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24))
+}

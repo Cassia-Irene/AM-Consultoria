@@ -6,37 +6,12 @@ import type { Pendencia } from '@/domain/pendencia'
 import type { Visita } from '@/domain/visita'
 import { getFaturamentoMaisRecente, getStatusFaturamento } from '@/domain/faturamento'
 import { DashboardService, type DashboardResponse } from '@/services/dashboard.service'
+import { getPendenciaSeveridade } from '@/utils/pendencia'
+import { getDiffDias } from '@/utils/date'
 
 /* ─────────────────────────────────────────────
-   HELPERS (mesmo do modo caos)
+   HELPERS
 ───────────────────────────────────────────── */
-
-/** Converte prazo 'dd/mm/yyyy' para Date (evita bug do new Date() que lê como MM/DD) */
-function parsePrazoDate(prazo: string): Date {
-  const parts = prazo.split('/')
-  if (parts.length === 3) {
-    const [dia, mes, ano] = parts.map(Number)
-    return new Date(ano, mes - 1, dia)
-  }
-  return new Date(prazo) // fallback ISO
-}
-
-function getDiffDias(prazo: string): number {
-  const hoje = new Date()
-  hoje.setHours(0, 0, 0, 0)
-  const p = parsePrazoDate(prazo)
-  p.setHours(0, 0, 0, 0)
-  return Math.ceil((p.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24))
-}
-
-function getPrioridade(p: Pendencia): 'urgente' | 'atencao' | 'normal' {
-  if (!p.prazo) return 'normal'
-  const diff = getDiffDias(p.prazo)
-  if (diff < 0) return 'urgente'
-  if (diff <= 2) return 'atencao'
-  return 'normal'
-}
-
 function labelPrazo(prazo: string): string {
   const diff = getDiffDias(prazo)
   if (diff < 0) return diff === -1 ? 'ontem' : `${Math.abs(diff)}d atrás`
@@ -92,7 +67,7 @@ function MetricCard({
 
 /** Card de pendência — compacto para modo planejamento */
 function PriorityCard({ p, clienteNome }: { p: Pendencia; clienteNome: string }) {
-  const prio = getPrioridade(p)
+  const prio = getPendenciaSeveridade(p)
   const isUrgente = prio === 'urgente'
   const borderColor = isUrgente ? 'border-red-500' : prio === 'atencao' ? 'border-amber-400' : 'border-[#23272F]'
   const prazoColor  = isUrgente ? 'text-red-400' : prio === 'atencao' ? 'text-amber-400' : 'text-[#7D8597]'
@@ -101,12 +76,12 @@ function PriorityCard({ p, clienteNome }: { p: Pendencia; clienteNome: string })
     <Link href={`/pendencias/${p.id}`} className="block active:scale-[0.98] transition-transform">
       <div className={`flex items-center gap-3 bg-[#0d1117] border-l-4 ${borderColor} rounded-r-2xl px-4 py-3 min-h-[60px]`}>
         <div className="flex-1 min-w-0">
-          <p className="text-white font-semibold text-[14px] leading-tight truncate">{p.titulo}</p>
+          <p className="text-white font-semibold text-[14px] leading-tight truncate">{p.descricao}</p>
           <p className="text-[#7D8597] text-xs mt-0.5 truncate">{clienteNome}</p>
         </div>
-        {p.prazo && (
+        {p.data_prazo && (
           <p className={`shrink-0 text-xs font-bold tabular-nums ${prazoColor}`}>
-            {labelPrazo(p.prazo)}
+            {labelPrazo(p.data_prazo)}
           </p>
         )}
         <svg className="shrink-0 text-[#23272F]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -132,7 +107,7 @@ function VisitaAgendaCard({
   valorMes?: number
 }) {
   const temPendencias = pendenciasAbertas.length > 0
-  const pendUrgentes  = pendenciasAbertas.filter(p => getPrioridade(p) === 'urgente').length
+  const pendUrgentes  = pendenciasAbertas.filter(p => getPendenciaSeveridade(p) === 'urgente').length
 
   return (
     <div className="bg-[#001233] border border-[#001845] rounded-2xl overflow-hidden">
@@ -227,10 +202,10 @@ export default function DashboardPlanejamentoPage() {
   }
 
   const { pendencias, visitas, contratos, faturamentos, clientes } = data
-  const abertas    = pendencias.filter(p => p.status !== 'concluida')
-  const urgentes   = abertas.filter(p => getPrioridade(p) === 'urgente')
-  const atencao    = abertas.filter(p => getPrioridade(p) === 'atencao')
-  const normais    = abertas.filter(p => getPrioridade(p) === 'normal')
+  const abertas    = pendencias.filter(p => !p.resolvida)
+  const urgentes   = abertas.filter(p => getPendenciaSeveridade(p) === 'urgente')
+  const atencao    = abertas.filter(p => getPendenciaSeveridade(p) === 'atencao')
+  const normais    = abertas.filter(p => getPendenciaSeveridade(p) === 'normal')
 
   // Lookup: ID numérico do cliente → nome
   const clientesLista = clientes
@@ -251,11 +226,15 @@ export default function DashboardPlanejamentoPage() {
   }, 0)
 
   // Índices cruzados — chave = nome do cliente
+  const getClienteId = (p: Pendencia) => contratos.find(c => c.id === p.contratoId)?.clienteId ?? ''
+
   const pendenciasPorCliente = new Map<string, Pendencia[]>()
   abertas.forEach(p => {
-    const lista = pendenciasPorCliente.get(p.clienteId) ?? []
+    const cid = getClienteId(p)
+    if (!cid) return
+    const lista = pendenciasPorCliente.get(cid) ?? []
     lista.push(p)
-    pendenciasPorCliente.set(p.clienteId, lista)
+    pendenciasPorCliente.set(cid, lista)
   })
 
   const pagamentoPorCliente = new Map<string, 'pago' | 'pendente' | 'atrasado'>()
@@ -354,7 +333,7 @@ export default function DashboardPlanejamentoPage() {
                 <PriorityCard 
                   key={p.id} 
                   p={p} 
-                  clienteNome={clienteNomePorId.get(p.clienteId) || p.clienteId} 
+                  clienteNome={clienteNomePorId.get(getClienteId(p)) || getClienteId(p)} 
                 />
               ))}
             </div>
@@ -370,7 +349,7 @@ export default function DashboardPlanejamentoPage() {
                 <PriorityCard 
                   key={p.id} 
                   p={p} 
-                  clienteNome={clienteNomePorId.get(p.clienteId) || p.clienteId} 
+                  clienteNome={clienteNomePorId.get(getClienteId(p)) || getClienteId(p)} 
                 />
               ))}
             </div>
@@ -386,7 +365,7 @@ export default function DashboardPlanejamentoPage() {
                 <PriorityCard 
                   key={p.id} 
                   p={p} 
-                  clienteNome={clienteNomePorId.get(p.clienteId) || p.clienteId} 
+                  clienteNome={clienteNomePorId.get(getClienteId(p)) || getClienteId(p)} 
                 />
               ))}
             </div>

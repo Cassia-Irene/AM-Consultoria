@@ -8,36 +8,8 @@ import { getFaturamentoMaisRecente, getStatusFaturamento } from '@/domain/fatura
 import { getTopPrioridade } from '@/lib/prioritizer'
 import type { InsightPrioridade } from '@/domain/insight'
 import { DashboardService, type DashboardResponse } from '@/services/dashboard.service'
-
-/* ─────────────────────────────────────────────
-   HELPERS
-───────────────────────────────────────────── */
-
-function parsePrazoDate(prazo: string): Date {
-  const parts = prazo.split('/')
-  if (parts.length === 3) {
-    const [dia, mes, ano] = parts.map(Number)
-    return new Date(ano, mes - 1, dia)
-  }
-  return new Date(prazo)
-}
-
-function getDiffDias(prazo: string): number {
-  const hoje = new Date()
-  hoje.setHours(0, 0, 0, 0)
-  const p = parsePrazoDate(prazo)
-  p.setHours(0, 0, 0, 0)
-  return Math.ceil((p.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24))
-}
-
-function getPrioridade(p: Pendencia): 'urgente' | 'atencao' | 'normal' {
-  if (!p.prazo) return 'normal'
-  const diff = getDiffDias(p.prazo)
-  if (diff < 0) return 'urgente'
-  if (diff <= 2) return 'atencao'
-  return 'normal'
-}
-
+import { getPendenciaSeveridade } from '@/utils/pendencia'
+import { getDiffDias } from '@/utils/date'
 function labelPrazo(prazo: string): string {
   const diff = getDiffDias(prazo)
   if (diff < 0) return diff === -1 ? 'ontem' : `${Math.abs(diff)}d atrás`
@@ -101,12 +73,12 @@ function AcaoCard({ p, clienteNome }: { p: Pendencia; clienteNome: string }) {
     <Link href={`/pendencias/${p.id}`} className="block active:scale-[0.98] transition-transform">
       <div className="flex items-center gap-3 bg-[#0d1117] border-l-4 border-red-500 rounded-r-2xl px-4 py-3.5 min-h-[64px]">
         <div className="flex-1 min-w-0">
-          <p className="text-white font-semibold text-[14px] leading-tight truncate">{p.titulo}</p>
+          <p className="text-white font-semibold text-[14px] leading-tight truncate">{p.descricao}</p>
           <p className="text-[#7D8597] text-xs mt-0.5 truncate">{clienteNome}</p>
         </div>
         <div className="shrink-0 text-right flex items-center gap-2">
           <span className="text-red-400 text-xs font-bold tabular-nums">
-            {p.prazo ? labelPrazo(p.prazo) : '—'}
+            {p.data_prazo ? labelPrazo(p.data_prazo) : '—'}
           </span>
           <svg className="text-[#23272F]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 18l6-6-6-6" />
@@ -140,11 +112,11 @@ function AlertaCard({ p, clienteNome }: { p: Pendencia; clienteNome: string }) {
     <Link href={`/pendencias/${p.id}`} className="block active:scale-[0.98] transition-transform">
       <div className="flex items-center gap-3 bg-[#0d1117] border-l-4 border-amber-400 rounded-r-2xl px-4 py-3 min-h-[56px]">
         <div className="flex-1 min-w-0">
-          <p className="text-white text-[14px] font-semibold leading-tight truncate">{p.titulo}</p>
+          <p className="text-white text-[14px] font-semibold leading-tight truncate">{p.descricao}</p>
           <p className="text-[#7D8597] text-xs mt-0.5 truncate">{clienteNome}</p>
         </div>
         <span className="shrink-0 text-amber-400 text-xs font-bold tabular-nums">
-          {p.prazo ? labelPrazo(p.prazo) : '—'}
+          {p.data_prazo ? labelPrazo(p.data_prazo) : '—'}
         </span>
         <svg className="shrink-0 text-[#23272F]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M9 18l6-6-6-6" />
@@ -156,17 +128,17 @@ function AlertaCard({ p, clienteNome }: { p: Pendencia; clienteNome: string }) {
 
 /** Pendência inline — usada dentro do card de visita */
 function PendenciaInline({ p }: { p: Pendencia }) {
-  const prio = getPrioridade(p)
+  const prio = getPendenciaSeveridade(p)
   const dotColor  = prio === 'urgente' ? 'bg-red-500' : prio === 'atencao' ? 'bg-amber-400' : 'bg-[#7D8597]'
   const textColor = prio === 'urgente' ? 'text-red-400' : prio === 'atencao' ? 'text-amber-400' : 'text-[#7D8597]'
 
   return (
     <Link href={`/pendencias/${p.id}`} className="flex items-start gap-2 py-1 active:opacity-70">
       <span className={`mt-1.5 size-1.5 shrink-0 rounded-full ${dotColor}`} />
-      <p className="text-[#979DAC] text-xs flex-1 leading-snug">{p.titulo}</p>
-      {p.prazo && (
+      <p className="text-[#979DAC] text-xs flex-1 leading-snug">{p.descricao}</p>
+      {p.data_prazo && (
         <p className={`shrink-0 text-[10px] font-bold tabular-nums ${textColor}`}>
-          {labelPrazo(p.prazo)}
+          {labelPrazo(p.data_prazo)}
         </p>
       )}
     </Link>
@@ -189,7 +161,7 @@ function VisitaRotinaCard({
   statusPagamento?: 'pago' | 'pendente' | 'atrasado'
 }) {
   const temPendencias = pendenciasAbertas.length > 0
-  const temUrgente    = pendenciasAbertas.some(p => getPrioridade(p) === 'urgente')
+  const temUrgente    = pendenciasAbertas.some(p => getPendenciaSeveridade(p) === 'urgente')
 
   return (
     <div className="bg-[#001845] border border-[#002855] rounded-2xl overflow-hidden">
@@ -316,25 +288,29 @@ export default function DashboardPage() {
 
   /* ── dados ── */
   const { pendencias, visitas, contratos, faturamentos, clientes } = data
-  const abertas    = pendencias.filter(p => p.status !== 'concluida')
+  const abertas = pendencias.filter(p => !p.resolvida)
 
   const urgentes = abertas
-    .filter(p => getPrioridade(p) === 'urgente')
-    .sort((a, b) => getDiffDias(a.prazo ?? '') - getDiffDias(b.prazo ?? ''))
+    .filter(p => getPendenciaSeveridade(p) === 'urgente')
+    .sort((a, b) => getDiffDias(a.data_prazo ?? '') - getDiffDias(b.data_prazo ?? ''))
 
   const atencao = abertas
-    .filter(p => getPrioridade(p) === 'atencao')
-    .sort((a, b) => getDiffDias(a.prazo ?? '') - getDiffDias(b.prazo ?? ''))
+    .filter(p => getPendenciaSeveridade(p) === 'atencao')
+    .sort((a, b) => getDiffDias(a.data_prazo ?? '') - getDiffDias(b.data_prazo ?? ''))
 
   /* ── lookups ── */
   const clienteNomePorId = new Map<string, string>()
   clientes.forEach(c => clienteNomePorId.set(c.id, c.nome_instituicao))
 
+  const getClienteId = (p: Pendencia) => contratos.find(c => c.id === p.contratoId)?.clienteId ?? ''
+
   const pendenciasPorCliente = new Map<string, Pendencia[]>()
   abertas.forEach(p => {
-    const lista = pendenciasPorCliente.get(p.clienteId) ?? []
+    const cid = getClienteId(p)
+    if (!cid) return
+    const lista = pendenciasPorCliente.get(cid) ?? []
     lista.push(p)
-    pendenciasPorCliente.set(p.clienteId, lista)
+    pendenciasPorCliente.set(cid, lista)
   })
 
   // Status de pagamento vem de FaturamentoCliente, não de Contrato
@@ -345,7 +321,7 @@ export default function DashboardPage() {
   })
 
   /* ── TOP 1 ── */
-  const top1 = getTopPrioridade(abertas, clienteNomePorId)
+  const top1 = getTopPrioridade(abertas, p => clienteNomePorId.get(getClienteId(p)) ?? 'Desconhecido')
 
   /* ── urgentes restantes (sem o top1) ── */
   const urgentesRest = urgentes.filter(p => p.id !== top1?.entidadeId)
@@ -353,9 +329,11 @@ export default function DashboardPage() {
   /* ── agrupamento por cliente para bloco 2 ── */
   const urgentesGrupo = new Map<string, Pendencia[]>()
   urgentesRest.forEach(p => {
-    const lista = urgentesGrupo.get(p.clienteId) ?? []
+    const cid = getClienteId(p)
+    if (!cid) return
+    const lista = urgentesGrupo.get(cid) ?? []
     lista.push(p)
-    urgentesGrupo.set(p.clienteId, lista)
+    urgentesGrupo.set(cid, lista)
   })
 
   /* ── header ── */
@@ -413,7 +391,7 @@ export default function DashboardPage() {
           <section>
             <SectionHeader label="Vencem em breve" count={atencao.length} cor="amber" />
             <div className="space-y-1.5">
-              {atencao.map(p => <AlertaCard key={p.id} p={p} clienteNome={clienteNomePorId.get(p.clienteId) || p.clienteId} />)}
+              {atencao.map(p => <AlertaCard key={p.id} p={p} clienteNome={clienteNomePorId.get(getClienteId(p)) || getClienteId(p)} />)}
             </div>
           </section>
         )}

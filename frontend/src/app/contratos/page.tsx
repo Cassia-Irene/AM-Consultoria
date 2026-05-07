@@ -1,147 +1,232 @@
 'use client'
 // app/contratos/page.tsx
+//
+// Refatoração estrutural completa para alinhar com o novo mapa lógico.
+// Focado em registro contratual puro, sem lógica financeira (agora em FaturamentoCliente).
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { StatusBadge, type StatusVariant } from '../../components/StatusBadge'
-import { Contratos } from '../../lib/mocks'
+import { getClientes } from '@/mappers/cliente.mapper'
+import { getContratos } from '@/mappers/contrato.mapper'
+import { getFaturamentos } from '@/mappers/faturamento.mapper'
+import { getFaturamentoMaisRecente, getStatusFaturamento } from '@/domain/faturamento'
+import type { Contrato } from '@/domain/contrato'
+import type { FaturamentoCliente } from '@/domain/faturamento'
+import type { Cliente } from '@/domain/cliente'
+import { fetchApi } from '@/services/api'
+
+type ContratoComCliente = Contrato & { clienteNome: string }
 
 export default function ContratosPage() {
-  const [mostrarInativos, setMostrarInativos] = useState(false)
+  const [contratos, setContratos] = useState<ContratoComCliente[]>([])
+  const [faturamentos, setFaturamentos] = useState<FaturamentoCliente[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const contratos = mostrarInativos
-    ? Contratos
-    : Contratos.filter(c => c.status === 'ativo')
+  useEffect(() => {
+    let isMounted = true
 
-  const totalReceber = contratos
-    .filter(c => c.faturamentoMes.status === 'pendente')
-    .reduce((sum, c) => sum + c.faturamentoMes.valor, 0)
+    async function loadData() {
+      try {
+        const [todosContratos, clientes, fatDados] = await Promise.all([
+          fetchApi<Contrato[]>('/contratos', undefined, getContratos()),
+          fetchApi<Cliente[]>('/clientes', undefined, getClientes()),
+          fetchApi<FaturamentoCliente[]>('/faturamento-cliente', undefined, getFaturamentos())
+        ])
 
-  const totalPago = contratos
-    .filter(c => c.faturamentoMes.status === 'pago')
-    .reduce((sum, c) => sum + c.faturamentoMes.valor, 0)
+        const clienteNomePorId = new Map(clientes.map(c => [c.id, c.nome_instituicao]))
 
-  function formatMoney(n: number) {
-    return `R$\u2009${n.toLocaleString('pt-BR')}`
+        const comNome: ContratoComCliente[] = todosContratos.map(c => ({
+          ...c,
+          clienteNome: clienteNomePorId.get(c.clienteId) ?? `Cliente ${c.clienteId}`,
+        }))
+
+        if (isMounted) {
+          setContratos(comNome)
+          setFaturamentos(fatDados)
+        }
+      } catch (err) {
+        if (isMounted) {
+          console.warn('[WARN][CONTRATOS] Erro ao carregar dados:', err)
+          setError('Não foi possível carregar os dados dos contratos.')
+        }
+      } finally {
+        if (isMounted) setLoading(false)
+      }
+    }
+
+    loadData()
+    return () => { isMounted = false }
+  }, [])
+
+  const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })
+
+  if (loading) {
+    return <LoadingSkeleton />
   }
 
   return (
-    <main className="min-h-screen bg-white pb-24">
+    <main className="min-h-screen bg-[#07090D] pb-32 text-zinc-300">
       {/* ── HEADER ── */}
-      <div className="bg-[#001845] px-4 pt-12 pb-5 sticky top-0 z-10">
-        <div className="flex items-center gap-3 mb-4">
-          <Link href="/dashboard" className="text-blue-200 text-2xl leading-none">‹</Link>
-          <h1 className="text-lg font-medium text-white">Contratos</h1>
+      <header className="sticky top-0 z-10 bg-[#07090D]/95 backdrop-blur-sm px-5 pt-10 pb-4 border-b border-zinc-800/50">
+        <div className="flex items-center gap-4 mb-1">
+          <Link href="/dashboard" className="text-zinc-500 hover:text-white transition-colors">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </Link>
+          <h1 className="text-white text-xl font-black tracking-tight">Contratos</h1>
         </div>
-
-        {/* ── RESUMO FATURAMENTO MÊS ── */}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="bg-white/10 rounded-xl p-3">
-            <p className="text-xs text-blue-200 mb-0.5">Pago em mai</p>
-            <p className="text-lg font-medium text-green-300">{formatMoney(totalPago)}</p>
-          </div>
-          <div className="bg-white/10 rounded-xl p-3">
-            <p className="text-xs text-blue-200 mb-0.5">A receber em mai</p>
-            <p className={`text-lg font-medium ${totalReceber > 0 ? 'text-amber-300' : 'text-green-300'}`}>
-              {formatMoney(totalReceber)}
-            </p>
-          </div>
+        <div className="flex items-center justify-between ml-10">
+          <p className="text-zinc-500 text-xs font-medium">Gestão e acompanhamento operacional</p>
+          <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">{hoje}</p>
         </div>
-      </div>
+      </header>
 
-      <div className="px-4 pt-4 space-y-3">
-        {contratos.map(c => (
-          <div key={c.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-            {/* ── CARD HEADER ── */}
-            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gray-50">
-              <div>
-                <p className="text-[15px] font-medium text-gray-900">{c.cliente}</p>
-                <p className="text-xs text-gray-400">{c.tipo} · desde {c.criadoEm}</p>
-              </div>
-              <StatusBadge variant={c.status as StatusVariant} />
-            </div>
-
-            {/* ── DADOS ── */}
-            <div className="px-4 py-3 space-y-2">
-              <Row label="Valor base" value={formatMoney(c.valorBase)} />
-
-              {c.valorAtual !== c.valorBase && (
-                <Row
-                  label="Valor atual"
-                  value={formatMoney(c.valorAtual)}
-                  valueClass="text-[#0353A4] font-medium"
-                />
-              )}
-
-              {c.MudancaValor?.motivoAlteracao && (
-                <Row
-                  label="Última alteração"
-                  value={`${c.MudancaValor.ultimaAlteracao} — ${c.MudancaValor.motivoAlteracao}`}
-                  small
-                />
-              )}
-
-              <Row label="Visitas/mês" value={`${c.visitasMes} regulares`} />
-
-              <div className="flex items-center justify-between pt-2 border-t border-gray-50">
-                <span className="text-sm text-gray-500">Faturamento mai</span>
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-medium ${
-                    c.faturamentoMes.status === 'pago' ? 'text-green-700' : 'text-amber-700'
-                  }`}>
-                    {formatMoney(c.faturamentoMes.valor)}
-                  </span>
-                  <StatusBadge variant={c.faturamentoMes.status as StatusVariant} />
-                </div>
-              </div>
-            </div>
-
-            {/* ── AÇÕES ── */}
-            <div className="flex border-t border-gray-50">
-              <button className="flex-1 py-3 text-sm text-gray-500 font-medium active:bg-gray-50 border-r border-gray-50">
-                Histórico
-              </button>
-              <button className="flex-1 py-3 text-sm text-[#0466C8] font-medium active:bg-blue-50">
-                Editar valor
-              </button>
-            </div>
+      <div className="px-5 pt-6 space-y-8">
+        {/* ── ERROR ALERT ── */}
+        {error && (
+          <div className="bg-red-950/40 border border-red-700/50 rounded-2xl px-4 py-3 text-red-400 text-sm">
+            <p className="font-bold uppercase tracking-widest text-[10px] mb-1">Aviso</p>
+            {error}
           </div>
-        ))}
+        )}
 
-        {/* ── TOGGLE INATIVOS ── */}
-        <button
-          onClick={() => setMostrarInativos(v => !v)}
-          className="w-full py-3 text-sm text-gray-400 font-medium text-center active:text-gray-600"
-        >
-          {mostrarInativos ? 'Ocultar inativos' : 'Mostrar contratos inativos'}
-        </button>
+        {/* ── GRID DE CARDS ── */}
+        {contratos.length > 0 ? (
+          <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {contratos.map(contrato => (
+              <ContratoCard 
+                key={contrato.id} 
+                contrato={contrato} 
+                faturamento={getFaturamentoMaisRecente(faturamentos, contrato.id)} 
+              />
+            ))}
+          </section>
+        ) : (
+          <div className="py-20 text-center">
+            <p className="text-zinc-600 text-sm font-medium italic">Nenhum contrato encontrado</p>
+          </div>
+        )}
       </div>
-
-      {/* ── FAB ── */}
-      <button className="fixed bottom-6 right-4 bg-[#001845] text-white rounded-2xl px-5 py-4 text-[15px] font-medium shadow-lg active:scale-95 transition-transform z-20">
-        + Novo contrato
-      </button>
     </main>
   )
 }
 
-function Row({
-  label,
-  value,
-  valueClass = 'text-gray-900',
-  small = false,
-}: {
-  label: string
-  value: string
-  valueClass?: string
-  small?: boolean
-}) {
+function ContratoCard({ contrato, faturamento }: { contrato: ContratoComCliente; faturamento?: FaturamentoCliente }) {
+  const formatDate = (iso?: string) => iso ? new Date(iso).toLocaleDateString('pt-BR') : 'Indeterminado'
+
   return (
-    <div className="flex items-center justify-between">
-      <span className={`text-gray-500 ${small ? 'text-xs' : 'text-sm'}`}>{label}</span>
-      <span className={`font-medium ${small ? 'text-xs text-gray-600 text-right max-w-[55%]' : `text-sm ${valueClass}`}`}>
-        {value}
-      </span>
-    </div>
+    <Link href={`/contratos/${contrato.id}`} className="block h-full">
+      <div className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-6 hover:border-zinc-700 transition-all group active:scale-[0.99] flex flex-col justify-between h-full min-h-[220px]">
+        <div>
+          <div className="flex justify-between items-start mb-6 gap-3">
+            <div className="min-w-0">
+              <h3 className="text-white font-bold text-xl leading-tight truncate group-hover:text-sky-400 transition-colors">
+                {contrato.clienteNome}
+              </h3>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Serviços:</span>
+                <p className="text-zinc-400 text-xs font-medium truncate">
+                  {contrato.servicos_contratados}
+                </p>
+              </div>
+            </div>
+            {contrato.inclui_relatorio && (
+              <span className="shrink-0 bg-blue-900/40 text-blue-400 border border-blue-800/30 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg">
+                Relatório
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-6 mt-6">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">Visitas Mensais</p>
+              <p className="text-white font-black tabular-nums text-lg">
+                {contrato.visitas_previstas_mes} <span className="text-zinc-600 text-xs font-bold tracking-normal">visitas</span>
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">Vigência</p>
+              <p className="text-zinc-300 text-sm font-bold tabular-nums">
+                {formatDate(contrato.data_inicio)}
+              </p>
+              <p className="text-zinc-600 text-[10px] font-medium mt-0.5">
+                até {formatDate(contrato.data_fim)}
+              </p>
+            </div>
+          </div>
+
+          {contrato.observacoes_gerais && (
+            <div className="mt-6 pt-4 border-t border-zinc-800/50">
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">Observações</p>
+              <p className="text-zinc-500 text-xs leading-relaxed italic line-clamp-2">
+                &quot;{contrato.observacoes_gerais}&quot;
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="pt-6 mt-6 border-t border-zinc-800/50 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">Faturamento:</p>
+            {faturamento ? (
+              <StatusBadgeLocal variant={getStatusFaturamento(faturamento)} />
+            ) : (
+              <span className="text-[9px] font-black uppercase tracking-widest bg-zinc-800 text-zinc-600 px-2 py-0.5 rounded-lg">
+                Sem dados
+              </span>
+            )}
+          </div>
+          
+          <div className="text-[11px] font-black uppercase tracking-widest text-sky-500 flex items-center gap-1 group/btn">
+            Ver detalhes
+            <svg className="group-hover/btn:translate-x-0.5 transition-transform" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </Link>
+  )
+}
+
+function StatusBadgeLocal({ variant }: { variant: string }) {
+  const styles: Record<string, string> = {
+    pago:      'bg-emerald-900/40 text-emerald-400 border-emerald-800/30',
+    pendente:  'bg-amber-900/40 text-amber-400 border-amber-800/30',
+    atrasado:  'bg-red-900/40 text-red-400 border-red-800/30',
+  }
+
+  const labels: Record<string, string> = {
+    pago:      '✓ Pago',
+    pendente:  'Pendente',
+    atrasado:  'Atrasado',
+  }
+
+  const style = styles[variant] || 'bg-zinc-800 text-zinc-400'
+  const label = labels[variant] || variant
+
+  return (
+    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border ${style} whitespace-nowrap`}>
+      {label}
+    </span>
+  )
+}
+
+function LoadingSkeleton() {
+  return (
+    <main className="min-h-screen bg-[#07090D] pb-32">
+      <header className="px-5 pt-10 pb-4 border-b border-zinc-800/50">
+        <div className="h-6 w-32 bg-zinc-900 rounded animate-pulse" />
+      </header>
+      <div className="px-5 pt-6 space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="h-56 bg-zinc-900/40 border border-zinc-800 rounded-3xl animate-pulse" />
+          ))}
+        </div>
+      </div>
+    </main>
   )
 }

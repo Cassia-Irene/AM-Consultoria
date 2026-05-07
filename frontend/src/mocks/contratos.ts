@@ -1,44 +1,30 @@
+// src/mocks/contratos.ts
+//
+// Mock alinhado ao novo mapa lógico real.
+
 export const Contratos = [
   {
-    id: 1,
-    cliente: 'Lar São Francisco',
+    id_contrato: 1,
+    id_cliente: 1,
+    servicos_contratados: 'Consultoria mensal + visitas técnicas',
+    visitas_previstas_mes: 3,
+    inclui_relatorio: true,
+    data_inicio: '2025-12-01',
+    data_fim: null,
+    valor_mensal: '3500.00',
     status: 'ativo',
-    tipo: 'Retentor',
-    criadoEm: '2025-12-01',
-    valorMensal: 3500,
-    valor: 3500,
-    valorBase: 3500,
-    valorAtual: 3500,
-    visitasMes: 3,
-    faturamentoMes: {
-      status: 'pago',
-      valor: 3500,
-      vencimento: '2026-04-10',
-    },
-    MudancaValor: {
-      ultimaAlteracao: '2026-02-20',
-      motivoAlteracao: 'Ajuste anual conforme contrato',
-    }
+    observacoes_gerais: 'Contrato padrão anual'
   },
   {
-    id: 2,
-    cliente: 'CAPS Centro',
+    id_contrato: 2,
+    id_cliente: 3,
+    servicos_contratados: 'Projeto de adequação sanitária',
+    visitas_previstas_mes: 2,
+    inclui_relatorio: false,
+    data_inicio: '2026-01-15',
+    data_fim: null,
+    valor_mensal: '2800.00',
     status: 'ativo',
-    tipo: 'Projeto Especial',
-    criadoEm: '2026-01-15',
-    valorMensal: 2800,
-    valor: 2800,
-    valorBase: 2800,
-    valorAtual: 2800,
-    visitasMes: 2,
-    faturamentoMes: {
-      status: 'pendente',
-      valor: 2800,
-      vencimento: '2026-04-30',
-    },
-    MudancaValor: {
-      ultimaAlteracao: '2026-02-20',
-      motivoAlteracao: 'Ajuste anual conforme contrato',
-    }
-  },
+    observacoes_gerais: null
+  }
 ]

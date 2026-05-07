@@ -1,15 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { getPendencias } from '@/mappers/pendencia.mapper'
+import { useEffect, useState } from 'react'
 import type { Pendencia } from '@/domain/pendencia'
-import { getVisitas } from '@/mappers/visita.mapper'
 import type { Visita } from '@/domain/visita'
-import { getContratos } from '@/mappers/contrato.mapper'
-import type { Contrato } from '@/domain/contrato'
-import { getClientes } from '@/mappers/cliente.mapper'
+import { getFaturamentoMaisRecente, getStatusFaturamento } from '@/domain/faturamento'
 import { getTopPrioridade } from '@/lib/prioritizer'
 import type { InsightPrioridade } from '@/domain/insight'
+import { DashboardService, type DashboardResponse } from '@/services/dashboard.service'
 
 /* ─────────────────────────────────────────────
    HELPERS
@@ -98,13 +96,13 @@ function DecisaoCard({ insight }: { insight: InsightPrioridade }) {
 ───────────────────────────────────────────── */
 
 /** Card compacto de urgência com botão de ação inline */
-function AcaoCard({ p }: { p: Pendencia }) {
+function AcaoCard({ p, clienteNome }: { p: Pendencia; clienteNome: string }) {
   return (
     <Link href={`/pendencias/${p.id}`} className="block active:scale-[0.98] transition-transform">
       <div className="flex items-center gap-3 bg-[#0d1117] border-l-4 border-red-500 rounded-r-2xl px-4 py-3.5 min-h-[64px]">
         <div className="flex-1 min-w-0">
           <p className="text-white font-semibold text-[14px] leading-tight truncate">{p.titulo}</p>
-          <p className="text-[#7D8597] text-xs mt-0.5 truncate">{p.clienteId}</p>
+          <p className="text-[#7D8597] text-xs mt-0.5 truncate">{clienteNome}</p>
         </div>
         <div className="shrink-0 text-right flex items-center gap-2">
           <span className="text-red-400 text-xs font-bold tabular-nums">
@@ -120,14 +118,14 @@ function AcaoCard({ p }: { p: Pendencia }) {
 }
 
 /** Grupo de pendências por cliente — reduz carga cognitiva */
-function GrupoCliente({ cliente, pendencias }: { cliente: string; pendencias: Pendencia[] }) {
+function GrupoCliente({ clienteNome, pendencias }: { clienteNome: string; pendencias: Pendencia[] }) {
   return (
     <div>
       <p className="text-[10px] font-bold uppercase tracking-widest text-[#7D8597] px-1 mb-1.5">
-        {cliente}
+        {clienteNome}
       </p>
       <div className="space-y-1.5">
-        {pendencias.map(p => <AcaoCard key={p.id} p={p} />)}
+        {pendencias.map(p => <AcaoCard key={p.id} p={p} clienteNome={clienteNome} />)}
       </div>
     </div>
   )
@@ -137,13 +135,13 @@ function GrupoCliente({ cliente, pendencias }: { cliente: string; pendencias: Pe
    BLOCO 3 — ALERTAS (vencendo em breve)
 ───────────────────────────────────────────── */
 
-function AlertaCard({ p }: { p: Pendencia }) {
+function AlertaCard({ p, clienteNome }: { p: Pendencia; clienteNome: string }) {
   return (
     <Link href={`/pendencias/${p.id}`} className="block active:scale-[0.98] transition-transform">
       <div className="flex items-center gap-3 bg-[#0d1117] border-l-4 border-amber-400 rounded-r-2xl px-4 py-3 min-h-[56px]">
         <div className="flex-1 min-w-0">
           <p className="text-white text-[14px] font-semibold leading-tight truncate">{p.titulo}</p>
-          <p className="text-[#7D8597] text-xs mt-0.5 truncate">{p.clienteId}</p>
+          <p className="text-[#7D8597] text-xs mt-0.5 truncate">{clienteNome}</p>
         </div>
         <span className="shrink-0 text-amber-400 text-xs font-bold tabular-nums">
           {p.prazo ? labelPrazo(p.prazo) : '—'}
@@ -188,7 +186,7 @@ function VisitaRotinaCard({
   v: Visita
   clienteNome: string
   pendenciasAbertas: Pendencia[]
-  statusPagamento?: Contrato['faturamento']['status']
+  statusPagamento?: 'pago' | 'pendente' | 'atrasado'
 }) {
   const temPendencias = pendenciasAbertas.length > 0
   const temUrgente    = pendenciasAbertas.some(p => getPrioridade(p) === 'urgente')
@@ -202,17 +200,21 @@ function VisitaRotinaCard({
             <span className="size-1.5 rounded-full bg-sky-400" /> Hoje
           </span>
           <p className="text-white font-semibold text-[15px] leading-tight truncate">{clienteNome}</p>
-          {v.horario && <p className="text-[#7D8597] text-xs mt-0.5">{v.horario}</p>}
+          {v.data_visita && <p className="text-[#7D8597] text-xs mt-0.5">{new Date(v.data_visita).toLocaleDateString('pt-BR')}</p>}
         </div>
 
         <div className="flex flex-col items-end gap-1 shrink-0">
-          {statusPagamento && (
+          {statusPagamento ? (
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${
               statusPagamento === 'pago'
                 ? 'bg-emerald-900/50 text-emerald-400'
                 : 'bg-amber-900/50 text-amber-400'
             }`}>
               {statusPagamento === 'pago' ? '✓ Pago' : '$ Pendente'}
+            </span>
+          ) : (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-[#23272F] text-[#7D8597]">
+              Sem dados
             </span>
           )}
           {temPendencias && (
@@ -288,8 +290,32 @@ function SectionHeader({ label, count, cor }: { label: string; count?: number; c
 ───────────────────────────────────────────── */
 
 export default function DashboardPage() {
+  const [data, setData] = useState<DashboardResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    DashboardService.getDashboardData().then(res => {
+      setData(res)
+      setLoading(false)
+    }).catch(err => {
+      console.error('[ERROR][UI] Falha ao carregar dashboard modo caos:', err)
+      setError('Não foi possível carregar alguns dados. O painel está operando em modo de segurança.')
+      setData({ pendencias: [], clientes: [], contratos: [], faturamentos: [], visitas: [], projetos: [] })
+      setLoading(false)
+    })
+  }, [])
+
+  if (loading || !data) {
+    return (
+      <main className="min-h-screen bg-[#07090D] flex items-center justify-center">
+        <p className="text-[#7D8597]">Carregando dashboard...</p>
+      </main>
+    )
+  }
+
   /* ── dados ── */
-  const pendencias = getPendencias()
+  const { pendencias, visitas, contratos, faturamentos, clientes } = data
   const abertas    = pendencias.filter(p => p.status !== 'concluida')
 
   const urgentes = abertas
@@ -300,12 +326,9 @@ export default function DashboardPage() {
     .filter(p => getPrioridade(p) === 'atencao')
     .sort((a, b) => getDiffDias(a.prazo ?? '') - getDiffDias(b.prazo ?? ''))
 
-  const visitas   = getVisitas()
-  const contratos = getContratos()
-
   /* ── lookups ── */
   const clienteNomePorId = new Map<string, string>()
-  getClientes().forEach(c => clienteNomePorId.set(c.id, c.nome))
+  clientes.forEach(c => clienteNomePorId.set(c.id, c.nome_instituicao))
 
   const pendenciasPorCliente = new Map<string, Pendencia[]>()
   abertas.forEach(p => {
@@ -314,11 +337,15 @@ export default function DashboardPage() {
     pendenciasPorCliente.set(p.clienteId, lista)
   })
 
-  const pagamentoPorCliente = new Map<string, Contrato['faturamento']['status']>()
-  contratos.forEach(c => pagamentoPorCliente.set(c.clienteId, c.faturamento.status))
+  // Status de pagamento vem de FaturamentoCliente, não de Contrato
+  const pagamentoPorCliente = new Map<string, 'pago' | 'pendente' | 'atrasado'>()
+  contratos.forEach(c => {
+    const fat = getFaturamentoMaisRecente(faturamentos, c.id)
+    if (fat) pagamentoPorCliente.set(c.clienteId, getStatusFaturamento(fat))
+  })
 
   /* ── TOP 1 ── */
-  const top1 = getTopPrioridade(abertas)
+  const top1 = getTopPrioridade(abertas, clienteNomePorId)
 
   /* ── urgentes restantes (sem o top1) ── */
   const urgentesRest = urgentes.filter(p => p.id !== top1?.entidadeId)
@@ -349,6 +376,13 @@ export default function DashboardPage() {
         </div>
       </header>
 
+      {error && (
+        <div className="mx-4 mt-4 bg-amber-950/40 border border-amber-700/50 rounded-xl px-4 py-3 text-amber-400 text-sm">
+          <p className="font-bold uppercase tracking-widest text-[10px] mb-1">Aviso</p>
+          {error}
+        </div>
+      )}
+
       <div className="px-4 pt-5 space-y-6">
 
         {/* ━━━━ BLOCO 1: DECISÃO ━━━━ */}
@@ -363,8 +397,12 @@ export default function DashboardPage() {
           <section>
             <SectionHeader label="Ação imediata" count={urgentesRest.length} cor="red" />
             <div className="space-y-4">
-              {Array.from(urgentesGrupo.entries()).map(([cliente, items]) => (
-                <GrupoCliente key={cliente} cliente={cliente} pendencias={items} />
+              {Array.from(urgentesGrupo.entries()).map(([clienteId, items]) => (
+                <GrupoCliente 
+                  key={clienteId} 
+                  clienteNome={clienteNomePorId.get(clienteId) || clienteId} 
+                  pendencias={items} 
+                />
               ))}
             </div>
           </section>
@@ -375,7 +413,7 @@ export default function DashboardPage() {
           <section>
             <SectionHeader label="Vencem em breve" count={atencao.length} cor="amber" />
             <div className="space-y-1.5">
-              {atencao.map(p => <AlertaCard key={p.id} p={p} />)}
+              {atencao.map(p => <AlertaCard key={p.id} p={p} clienteNome={clienteNomePorId.get(p.clienteId) || p.clienteId} />)}
             </div>
           </section>
         )}
@@ -392,8 +430,8 @@ export default function DashboardPage() {
                     key={v.id}
                     v={v}
                     clienteNome={nome}
-                    pendenciasAbertas={pendenciasPorCliente.get(nome) ?? []}
-                    statusPagamento={pagamentoPorCliente.get(nome)}
+                    pendenciasAbertas={pendenciasPorCliente.get(v.clienteId) ?? []}
+                    statusPagamento={pagamentoPorCliente.get(v.clienteId)}
                   />
                 )
               })}

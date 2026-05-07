@@ -1,8 +1,30 @@
 export const Clientes = [
-  { id: '1', nome: 'Lar São Francisco',  tipo: 'ILPI',     status: 'ativo' as const, pendenciasUrgentes: 2, proximaVisita: 'hoje'   },
-  { id: '2', nome: 'APAE São Luís',      tipo: 'APAE',     status: 'ativo' as const, pendenciasUrgentes: 1, proximaVisita: 'amanha' },
-  { id: '3', nome: 'CAPS Centro',        tipo: 'CAPS',     status: 'ativo' as const, pendenciasUrgentes: 0, proximaVisita: '30/05'  },
-  { id: '4', nome: 'Creche Girassol',    tipo: 'Creche',   status: 'ativo' as const, pendenciasUrgentes: 0, proximaVisita: '02/06'  },
-  { id: '5', nome: 'Home Care Vitória',  tipo: 'Home Care',status: 'ativo' as const, pendenciasUrgentes: 0, proximaVisita: '05/06'  },
-  { id: '6', nome: 'Lar Esperança',      tipo: 'ILPI',     status: 'inativo' as const,pendenciasUrgentes: 0, proximaVisita: null    },
+  {
+    id: '1',
+    nome_instituicao: 'Lar São Francisco',
+    tipo_instituicao: 'ILPI',
+    cidade: 'São Luís',
+    status: 'ativo'
+  },
+  {
+    id: '2',
+    nome_instituicao: 'Casa de Repouso Bem Viver',
+    tipo_instituicao: 'ILPI',
+    cidade: 'São José de Ribamar',
+    status: 'ativo'
+  },
+  {
+    id: '3',
+    nome_instituicao: 'Residencial Vida Bela',
+    tipo_instituicao: 'ILPI',
+    cidade: 'Paço do Lumiar',
+    status: 'ativo'
+  },
+  {
+    id: '4',
+    nome_instituicao: 'Clínica Geriátrica Nova Esperança',
+    tipo_instituicao: 'Clínica',
+    cidade: 'São Luís',
+    status: 'inativo'
+  }
 ]

@@ -8,4 +8,6 @@ export interface PendenciaRaw {
 
   origemTipo?: string
   origemDescricao?: string
+  contratoId?: string
+  prioridade?: string
 }

@@ -1,7 +1,7 @@
 // src/mappers/pendencia.mapper.ts
 
 import { Pendencias as PendenciasMock } from '@/lib/mocks'
-import type { Pendencia } from '@/domain/pendencia'
+import type { Pendencia, PrioridadePendencia } from '@/domain/pendencia'
 import type { PendenciaRaw } from '@/types/pendencia.raw'
 
 export function getPendencias(): Pendencia[] {
@@ -14,19 +14,15 @@ export function mapPendencia(raw: PendenciaRaw): Pendencia {
     titulo: raw.titulo,
 
     clienteId: String(raw.clienteId),
+    contratoId: raw.contratoId || 'mock-contrato',
+    prioridade: normalizePrioridade(raw.prioridade),
 
     status: normalizeStatus(raw.status),
 
     prazo: raw.prazo ?? undefined,
-
+    data_origem: raw.criadaEm,
     criadaEm: raw.criadaEm,
-
-    origem: raw.origemTipo
-      ? {
-          tipo: normalizeOrigemTipo(raw.origemTipo),
-          descricao: raw.origemDescricao || '',
-        }
-      : undefined,
+    atualizadaEm: raw.criadaEm,
   }
 }
 
@@ -34,21 +30,21 @@ export function mapPendencia(raw: PendenciaRaw): Pendencia {
 
 function normalizeStatus(
   status: string
-): 'aberta' | 'concluida' {
+): 'aberta' | 'em_andamento' | 'concluida' {
   if (status === 'aberta') return 'aberta'
+  if (status === 'em_andamento') return 'em_andamento'
   if (status === 'concluida') return 'concluida'
 
   console.warn('Status de pendência desconhecido:', status)
   return 'aberta'
 }
 
-function normalizeOrigemTipo(
-  tipo: string
-): 'visita' | 'contrato' | 'manual' {
-  if (tipo === 'visita') return 'visita'
-  if (tipo === 'contrato') return 'contrato'
-  if (tipo === 'manual') return 'manual'
+function normalizePrioridade(prioridade?: string): PrioridadePendencia {
+  if (prioridade === 'urgente') return 'urgente'
+  if (prioridade === 'atencao') return 'atencao'
+  if (prioridade === 'normal') return 'normal'
 
-  console.warn('Origem desconhecida:', tipo)
-  return 'manual'
+  // BACKEND_DEPENDENCY: campo prioridade não existe no modelo Pendencia
+  // (pendencia.py está vazio). Quando implementado, este fallback pode ser removido.
+  return 'normal'
 }

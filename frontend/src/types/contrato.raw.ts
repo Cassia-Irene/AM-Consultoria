@@ -1,16 +1,27 @@
+// src/types/contrato.raw.ts
+//
+// Shape do JSON que a API retorna — espelha exatamente o ContratoRead (backend real)
+
 export interface ContratoRaw {
-  id: number | string
-  cliente: string
+  id_contrato: number
+  id_cliente: number
 
-  status?: string
+  servicos_contratados: string
+  visitas_previstas_mes: number
+  inclui_relatorio: boolean
 
-  faturamentoMes?: {
-    status?: string
-    valor?: number
-    vencimento?: string
-  }
+  data_inicio: string         // ISO 8601: "YYYY-MM-DD"
+  data_fim: string | null
+  valor_mensal: string
+  status: string
 
-  valorMensal?: number
+  observacoes_gerais: string | null
+}
 
-  criadoEm?: string
+export interface HistoricoContratoRaw {
+  id_historico: number
+  id_contrato_encerrado: number
+  id_contrato_novo: number
+  data_alteracao: string
+  motivo_alteracao: string
 }

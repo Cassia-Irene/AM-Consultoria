@@ -9,7 +9,9 @@
 
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { Clientes } from '../../../mocks/clientes'
+import { getClientes } from '@/mappers/cliente.mapper'
+import { getContratos } from '@/mappers/contrato.mapper'
+import { VisitasService } from '../../../services/visitas.service'
 
 /* ─────────────────────────────────────────────
    TYPES
@@ -35,8 +37,13 @@ interface PendenciaSugerida extends PendenciaGerada {
 
 interface FormState {
   clienteId: string
+  contratoId: string
   tipoVisita: TipoVisita
-  resumo: string
+  modalidade: string
+  duracao_estimada_minutos: number
+  data_visita: string
+  descricao: string
+  resultado: string
   observacoes: string
   pendencias: PendenciaGerada[]
 }
@@ -257,7 +264,7 @@ function sugerirPendencias(resumo: string): PendenciaSugerida[] {
    HELPERS
 ───────────────────────────────────────────── */
 
-const clientesAtivos = Clientes.filter(c => c.status === 'ativo')
+const clientesAtivos = getClientes().filter(c => c.status === 'ativo')
 
 function uid() {
   return Math.random().toString(36).slice(2, 9)
@@ -513,11 +520,25 @@ export default function NovaVisitaPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [sugestoes, setSugestoes] = useState<PendenciaSugerida[]>([])
+  /**
+   * Opção C: UI + log.
+   * True quando o backend confirmou a visita mas NÃO retornou pendencias_ids,
+   * indicando que as pendências foram enviadas mas não persistidas.
+   * Remove quando pendencia.py estiver implementado no backend.
+   */
+  const [pendenciasWarning, setPendenciasWarning] = useState(false)
+
+  const [errorSubmit, setErrorSubmit] = useState<string | null>(null)
 
   const [form, setForm] = useState<FormState>({
     clienteId: '',
+    contratoId: '',
     tipoVisita: 'Regular',
-    resumo: '',
+    modalidade: 'presencial',
+    duracao_estimada_minutos: 60,
+    data_visita: new Date().toISOString().slice(0, 16),
+    descricao: '',
+    resultado: '',
     observacoes: '',
     pendencias: [],
   })
@@ -528,11 +549,13 @@ export default function NovaVisitaPage() {
   function avancarEtapa1() {
     const e: typeof errors = {}
     if (!form.clienteId) e.clienteId = 'Selecione o cliente'
-    if (!form.resumo.trim()) e.resumo = 'Descreva brevemente o que aconteceu'
+    if (!form.contratoId) e.contratoId = 'Selecione o contrato'
+    if (!form.descricao.trim()) e.descricao = 'Descreva brevemente o que aconteceu'
+    if (!form.resultado.trim()) e.resultado = 'Informe os resultados'
     setErrors(e)
     if (Object.keys(e).length === 0) {
       if (sugestoes.length === 0) {
-        const todas = sugerirPendencias(form.resumo)
+        const todas = sugerirPendencias(form.descricao)
         
         // Agora usamos o Score de Confiança para decidir o Opt-out
         // >= THRESHOLD_PRE_ACEITAR (0.7) → Entra direto como "Já inclusa"
@@ -585,24 +608,65 @@ export default function NovaVisitaPage() {
     setForm(f => ({ ...f, pendencias: f.pendencias.map(p => p.id === id ? { ...p, ...changes } : p) }))
   }
 
-  /* ── submit ── */
   async function handleSubmit(e?: FormEvent) {
     e?.preventDefault()
     setSaving(true)
-    // TODO: await api.visitas.create({ ...form })
-    // Pendências com prioridade=urgente → viram cards no Modo Caos
-    // Pendências normais → viram histórico + Modo Planejamento
-    await new Promise(r => setTimeout(r, 900))
-    setSaving(false)
-    setSaved(true)
-    setTimeout(() => router.push('/dashboard'), 1400)
+    setErrorSubmit(null)
+
+    try {
+      // O componente passa dados brutos. O service → adapter decide o formato da API.
+      const response = await VisitasService.criar({
+        clienteId: form.clienteId,
+        contratoId: form.contratoId,
+        tipoVisita: form.tipoVisita,
+        modalidade: form.modalidade,
+        duracao_estimada_minutos: form.duracao_estimada_minutos,
+        data_visita: form.data_visita,
+        descricao: form.descricao,
+        resultado: form.resultado,
+        pendencias: form.pendencias.map(p => ({
+          titulo: p.titulo,
+          prazo: p.prazo,
+          prioridade: p.prioridade,
+        })),
+      })
+
+      // Detecta ausência de persistência de pendências na resposta
+      const enviouPendencias = form.pendencias.length > 0
+      const backendConfirmou = Array.isArray(response.pendencias_ids) && response.pendencias_ids.length > 0
+      const shouldWarn = enviouPendencias && !backendConfirmou
+
+      if (shouldWarn) {
+        // BACKEND_DEPENDENCY: remover quando pendencia.py estiver implementado
+        console.warn(
+          '[WARN] Pendências não persistidas pelo backend.',
+          `Enviadas: ${form.pendencias.length}. Confirmadas: ${response.pendencias_ids?.length ?? 0}.`,
+          'Aguardando implementação de pendencia.py no backend.'
+        )
+        setPendenciasWarning(true)
+      }
+
+      setSaving(false)
+      setSaved(true)
+      // Usa variável local — state async pode não refletir o valor atualizado aqui
+      setTimeout(() => router.push('/dashboard'), shouldWarn ? 3000 : 1400)
+    } catch (error: unknown) {
+      console.error('[ERROR][API] Erro ao submeter visita:', error)
+      setSaving(false)
+      const msg = error instanceof Error ? error.message : 'Ocorreu um erro ao salvar. Tente novamente.'
+      setErrorSubmit(msg)
+    }
   }
 
   const hoje = new Date().toLocaleDateString('pt-BR', {
     weekday: 'short', day: 'numeric', month: 'short',
   })
 
-  const nomeCliente = clientesAtivos.find(c => c.id === form.clienteId)?.nome ?? ''
+  const nomeCliente = clientesAtivos.find(c => c.id === form.clienteId)?.nome_instituicao ?? ''
+  
+  const contratosDoCliente = form.clienteId 
+    ? getContratos().filter(c => c.clienteId === form.clienteId) 
+    : []
 
   /* ────────── TELA DE CONFIRMAÇÃO ────────── */
   if (saved) {
@@ -637,6 +701,19 @@ export default function NovaVisitaPage() {
           </div>
         )}
 
+        {/* Aviso não bloqueante: pendências enviadas mas não confirmadas pelo backend */}
+        {pendenciasWarning && total > 0 && (
+          <div className="mt-4 w-full max-w-sm bg-amber-950/40 border border-amber-700/50 rounded-2xl px-4 py-3 text-left">
+            <p className="text-amber-400 text-xs font-bold uppercase tracking-widest mb-1">⚠ Aviso</p>
+            <p className="text-amber-300/80 text-sm">
+              Visita registrada, mas as {total} pendência{total > 1 ? 's' : ''} ainda não foram salvas.
+            </p>
+            <p className="text-amber-500/60 text-xs mt-1">
+              Funcionalidade em implantação no servidor.
+            </p>
+          </div>
+        )}
+
         <p className="text-[#7D8597] text-xs mt-5">Voltando ao painel...</p>
       </main>
     )
@@ -665,6 +742,13 @@ export default function NovaVisitaPage() {
         <EtapaIndicador atual={etapa} />
       </div>
 
+      {errorSubmit && (
+        <div className="mx-4 mt-4 bg-red-950/40 border border-red-700/50 rounded-xl px-4 py-3 text-red-400 text-sm">
+          <p className="font-bold uppercase tracking-widest text-[10px] mb-1">Erro</p>
+          {errorSubmit}
+        </div>
+      )}
+
       {/* ════════════════════════════
           ETAPA 1 — O QUE ACONTECEU
       ════════════════════════════ */}
@@ -679,7 +763,7 @@ export default function NovaVisitaPage() {
             <select
               value={form.clienteId}
               onChange={e => {
-                setForm(f => ({ ...f, clienteId: e.target.value }))
+                setForm(f => ({ ...f, clienteId: e.target.value, contratoId: '' }))
                 setErrors(er => ({ ...er, clienteId: undefined }))
               }}
               className={`w-full rounded-xl border px-4 py-3.5 text-base text-white bg-[#0d1117] appearance-none focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40 ${
@@ -688,11 +772,36 @@ export default function NovaVisitaPage() {
             >
               <option value="" className="bg-[#0d1117]">Selecione o cliente...</option>
               {clientesAtivos.map(c => (
-                <option key={c.id} value={c.id} className="bg-[#0d1117]">{c.nome}</option>
+                <option key={c.id} value={c.id} className="bg-[#0d1117]">{c.nome_instituicao}</option>
               ))}
             </select>
             {errors.clienteId && <p className="mt-1 text-xs text-red-400">{errors.clienteId}</p>}
           </div>
+
+          {/* Contrato Vinculado */}
+          {form.clienteId && (
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
+                Contrato Vinculado *
+              </label>
+              <select
+                value={form.contratoId}
+                onChange={e => {
+                  setForm(f => ({ ...f, contratoId: e.target.value }))
+                  setErrors(er => ({ ...er, contratoId: undefined }))
+                }}
+                className={`w-full rounded-xl border px-4 py-3.5 text-base text-white bg-[#0d1117] appearance-none focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40 ${
+                  errors.contratoId ? 'border-red-500' : 'border-[#23272F]'
+                }`}
+              >
+                <option value="" className="bg-[#0d1117]">Selecione o contrato...</option>
+                {contratosDoCliente.map(c => (
+                  <option key={c.id} value={c.id} className="bg-[#0d1117]">{c.servicos_contratados}</option>
+                ))}
+              </select>
+              {errors.contratoId && <p className="mt-1 text-xs text-red-400">{errors.contratoId}</p>}
+            </div>
+          )}
 
           {/* Tipo de visita */}
           <div>
@@ -726,22 +835,92 @@ export default function NovaVisitaPage() {
               O que aconteceu? *
             </label>
             <textarea
-              value={form.resumo}
+              value={form.descricao}
               onChange={e => {
-                setForm(f => ({ ...f, resumo: e.target.value }))
-                if (e.target.value.trim()) setErrors(er => ({ ...er, resumo: undefined }))
+                setForm(f => ({ ...f, descricao: e.target.value }))
+                setErrors(er => ({ ...er, descricao: undefined }))
               }}
-              placeholder="Resumo rápido da visita. Decisões, encaminhamentos, contexto..."
-              rows={4}
-              className={`w-full rounded-xl border px-4 py-3.5 text-sm text-white bg-[#0d1117] placeholder-[#7D8597] resize-none leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40 ${
-                errors.resumo ? 'border-red-500' : 'border-[#23272F]'
+              rows={3}
+              placeholder="Ex: Inspeção sanitária mensal na cozinha e refeitório..."
+              className={`w-full rounded-xl border px-4 py-3.5 text-base text-white bg-[#0d1117] placeholder-[#7D8597] focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40 resize-none ${
+                errors.descricao ? 'border-red-500' : 'border-[#23272F]'
               }`}
             />
-            {errors.resumo && <p className="mt-1 text-xs text-red-400">{errors.resumo}</p>}
-            <p className="mt-1 text-[10px] text-[#7D8597]">
-              Escreva como se fosse uma nota rápida no caderno.
-            </p>
+            {errors.descricao && <p className="mt-1 text-xs text-red-400">{errors.descricao}</p>}
           </div>
+
+          {/* Resultados detalhados */}
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
+              Resultados *
+            </label>
+            <textarea
+              value={form.resultado}
+              onChange={e => {
+                setForm(f => ({ ...f, resultado: e.target.value }))
+                setErrors(er => ({ ...er, resultado: undefined }))
+              }}
+              rows={4}
+              placeholder="Ex: Tudo conforme, exceto lixeiras sem pedal..."
+              className={`w-full rounded-xl border px-4 py-3.5 text-base text-white bg-[#0d1117] placeholder-[#7D8597] focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40 resize-none ${
+                errors.resultado ? 'border-red-500' : 'border-[#23272F]'
+              }`}
+            />
+            {errors.resultado && <p className="mt-1 text-xs text-red-400">{errors.resultado}</p>}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Data da Visita */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
+                Data *
+              </label>
+              <input
+                type="datetime-local"
+                value={form.data_visita}
+                onChange={e => setForm(f => ({ ...f, data_visita: e.target.value }))}
+                style={{ colorScheme: 'dark' }}
+                className="w-full rounded-xl border border-[#23272F] px-4 py-3.5 text-base text-white bg-[#0d1117] focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40 transition-all cursor-pointer"
+              />
+            </div>
+            
+            {/* Duração Estimada */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
+                Duração (min)
+              </label>
+              <input
+                type="number"
+                value={form.duracao_estimada_minutos}
+                onChange={e => setForm(f => ({ ...f, duracao_estimada_minutos: Number(e.target.value) }))}
+                className="w-full rounded-xl border border-[#23272F] px-4 py-3.5 text-base text-white bg-[#0d1117] focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40"
+              />
+            </div>
+          </div>
+
+          {/* Modalidade */}
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
+              Modalidade
+            </label>
+            <div className="flex gap-2">
+              {(['presencial', 'online'] as const).map(mod => (
+                <button
+                  type="button"
+                  key={mod}
+                  onClick={() => setForm(f => ({ ...f, modalidade: mod }))}
+                  className={`flex-1 py-3 rounded-xl text-sm font-semibold border transition-colors capitalize ${
+                    form.modalidade === mod
+                      ? 'bg-[#001845] text-white border-[#0466C8]'
+                      : 'bg-[#0d1117] text-[#7D8597] border-[#23272F]'
+                  }`}
+                >
+                  {mod}
+                </button>
+              ))}
+            </div>
+          </div>
+
 
           {/* Observações opcionais */}
           <div>
@@ -857,7 +1036,7 @@ export default function NovaVisitaPage() {
                 {form.tipoVisita}
               </span>
             </div>
-            <p className="text-[#979DAC] text-xs leading-snug">{form.resumo}</p>
+            <p className="text-[#979DAC] text-xs leading-snug">{form.descricao}</p>
             {form.observacoes && (
               <p className="text-[#7D8597] text-xs italic">{form.observacoes}</p>
             )}

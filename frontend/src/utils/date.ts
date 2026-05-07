@@ -53,3 +53,23 @@ export function getDiffDias(prazo: string): number {
   p.setHours(0, 0, 0, 0)
   return Math.ceil((p.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24))
 }
+
+export function isToday(dateStr: string): boolean {
+  if (!dateStr) return false
+  const date = new Date(dateStr)
+  const hoje = new Date()
+  return (
+    date.getDate() === hoje.getDate() &&
+    date.getMonth() === hoje.getMonth() &&
+    date.getFullYear() === hoje.getFullYear()
+  )
+}
+
+export function isPast(dateStr: string): boolean {
+  if (!dateStr) return false
+  const date = new Date(dateStr)
+  const hoje = new Date()
+  hoje.setHours(0, 0, 0, 0)
+  date.setHours(0, 0, 0, 0)
+  return date.getTime() < hoje.getTime()
+}

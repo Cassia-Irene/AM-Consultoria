@@ -491,7 +491,6 @@ export default function NovaVisitaPage() {
    * indicando que as pendências foram enviadas mas não persistidas.
    * Remove quando pendencia.py estiver implementado no backend.
    */
-  const [pendenciasWarning, setPendenciasWarning] = useState(false)
 
   const [errorSubmit, setErrorSubmit] = useState<string | null>(null)
 
@@ -580,7 +579,7 @@ export default function NovaVisitaPage() {
 
     try {
       // O componente passa dados brutos. O service → adapter decide o formato da API.
-      const response = await VisitasService.criar({
+      await VisitasService.criar({
         clienteId: form.clienteId,
         contratoId: form.contratoId,
         status: form.status,
@@ -597,25 +596,9 @@ export default function NovaVisitaPage() {
         })),
       })
 
-      // Detecta ausência de persistência de pendências na resposta
-      const enviouPendencias = form.pendencias.length > 0
-      const backendConfirmou = Array.isArray(response.pendencias_ids) && response.pendencias_ids.length > 0
-      const shouldWarn = enviouPendencias && !backendConfirmou
-
-      if (shouldWarn) {
-        // BACKEND_DEPENDENCY: remover quando pendencia.py estiver implementado
-        console.warn(
-          '[WARN] Pendências não persistidas pelo backend.',
-          `Enviadas: ${form.pendencias.length}. Confirmadas: ${response.pendencias_ids?.length ?? 0}.`,
-          'Aguardando implementação de pendencia.py no backend.'
-        )
-        setPendenciasWarning(true)
-      }
-
       setSaving(false)
       setSaved(true)
-      // Usa variável local — state async pode não refletir o valor atualizado aqui
-      setTimeout(() => router.push('/dashboard'), shouldWarn ? 3000 : 1400)
+      setTimeout(() => router.push('/dashboard'), 1400)
     } catch (error: unknown) {
       console.error('[ERROR][API] Erro ao submeter visita:', error)
       setSaving(false)
@@ -670,18 +653,6 @@ export default function NovaVisitaPage() {
           </div>
         )}
 
-        {/* Aviso não bloqueante: pendências enviadas mas não confirmadas pelo backend */}
-        {pendenciasWarning && total > 0 && (
-          <div className="mt-4 w-full max-w-sm bg-amber-950/40 border border-amber-700/50 rounded-2xl px-4 py-3 text-left">
-            <p className="text-amber-400 text-xs font-bold uppercase tracking-widest mb-1">⚠ Aviso</p>
-            <p className="text-amber-300/80 text-sm">
-              Visita registrada, mas as {total} pendência{total > 1 ? 's' : ''} ainda não foram salvas.
-            </p>
-            <p className="text-amber-500/60 text-xs mt-1">
-              Funcionalidade em implantação no servidor.
-            </p>
-          </div>
-        )}
 
         <p className="text-[#7D8597] text-xs mt-5">Voltando ao painel...</p>
       </main>

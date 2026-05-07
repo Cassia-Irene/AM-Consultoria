@@ -19,14 +19,33 @@ import {
   type NovaVisitaInput,
   type CriarVisitaResponse,
 } from '@/adapters/visita.adapter'
+import { fetchApi } from './api'
+import { USE_MOCKS } from '@/config/env'
+import { Visitas as VisitasMock } from '@/mocks/visitas'
+import { mapVisita } from '@/mappers/visita.mapper'
+import type { Visita } from '@/domain/visita'
+import type { VisitaRaw } from '@/types/visita.raw'
 
 export type { NovaVisitaInput, CriarVisitaResponse } from '@/adapters/visita.adapter'
 
 // ─── Service ─────────────────────────────────────────────────────────────────
 
 export const VisitasService = {
+  async getAll(): Promise<Visita[]> {
+    if (USE_MOCKS) {
+      return (VisitasMock as unknown as VisitaRaw[]).map(mapVisita)
+    }
+    try {
+      const data = await fetchApi<VisitaRaw[]>('/visitas/')
+      return data.map(mapVisita)
+    } catch (err) {
+      console.error('[SERVICE][ERROR] Falha ao buscar visitas:', err)
+      return (VisitasMock as unknown as VisitaRaw[]).map(mapVisita)
+    }
+  },
+
   async criar(input: NovaVisitaInput): Promise<CriarVisitaResponse> {
-    // 1. Validar antes de chamar a API — falha rápida, mensagem clara
+    // 1. Validar antes de chamar a API
     const { valid, errors } = validateNovaVisitaInput(input)
     if (!valid) {
       throw new AppError(
@@ -39,22 +58,21 @@ export const VisitasService = {
     // 2. Converter para o formato da API
     const payload = toVisitaPayload(input)
 
-    // 3. Enviar — erros da API são capturados e relançados como VisitaServiceError
-    try {
-      // TODO: descomentar quando a API estiver disponível
-      // return await fetchApi<CriarVisitaResponse>('/visitas', {
-      //   method: 'POST',
-      //   body: JSON.stringify(payload),
-      // })
-
-      console.log('[API POST /visitas] Payload:', payload)
+    if (USE_MOCKS) {
+      console.log('[SERVICE] Simulando POST /visitas (MOCK):', payload)
       await new Promise(resolve => setTimeout(resolve, 800))
-      return { id: 'v-gerado-123', message: 'Visita e pendências criadas com sucesso' }
+      return { id: `v-${Math.random()}`, message: 'Visita (MOCK) criada com sucesso' }
+    }
 
+    // 3. Enviar para API Real
+    try {
+      return await fetchApi<CriarVisitaResponse>('/visitas/', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
     } catch (err) {
-      // Nunca repassa o erro bruto da API — UI recebe mensagem de domínio
       throw new AppError(
-        'Falha ao comunicar com o servidor. Tente novamente.',
+        'Falha ao registrar visita no servidor.',
         'API_ERROR',
         err
       )

@@ -21,7 +21,11 @@ def criar_faturamento(faturamento: FaturamentoClienteCreate, db: Session = Depen
 
     # 3. REGRA DE NEGÓCIO: Força o cálculo do valor total no backend
     # Assim evitamos que o Frontend mande um valor total errado acidentalmente
-    dados_faturamento["valor_total"] = dados_faturamento["valor_base"] + dados_faturamento["valor_extra"]
+    dados_faturamento["valor_total"] = (
+        dados_faturamento["valor_base"] + 
+        dados_faturamento["valor_extra"] - 
+        dados_faturamento["desconto"]
+    )
 
     # 4. Prepara para salvar
     novo_faturamento = FaturamentoCliente(**dados_faturamento)

@@ -12,6 +12,8 @@ class ContratoBase(BaseModel):
     servicos_contratados: str 
     visitas_previstas_mes: int
     inclui_relatorio: bool = False
+    valor_mensal: Decimal = Decimal("0.00")
+    status: str = "ativo"
     # ✅ Renomeado: De 'observacoes' para 'observacoes_gerais' para espelhar o banco
     observacoes_gerais: Optional[str] = None
 

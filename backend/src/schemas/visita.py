@@ -1,21 +1,22 @@
 from pydantic import BaseModel, ConfigDict
-from typing import Optional
-from datetime import date
+from typing import Optional, List
+from datetime import datetime
+from .pendencia import PendenciaCreate
 
 class VisitaBase(BaseModel):
     id_cliente: int
-    # Ajustado para id_projeto para seguir o Modelo Lógico
-    id_projeto: int 
-    # Renomeado de data_visita para data
-    data: date 
+    id_contrato: int
+    id_projeto: Optional[int] = None
+    
+    data_hora: datetime 
     modalidade: str
     duracao_estimada_minutos: int
     status: str = "Agendada"
     descricao: Optional[str] = None
-    resultado: Optional[str] = None
+    resultados: Optional[str] = None
 
 class VisitaCreate(VisitaBase):
-    pass
+    pendencias: Optional[List[PendenciaCreate]] = []
 
 class VisitaRead(VisitaBase):
     id_visita: int

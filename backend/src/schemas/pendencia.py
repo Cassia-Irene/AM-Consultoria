@@ -1,14 +1,20 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
-from datetime import date
+from datetime import datetime
 
 class PendenciaBase(BaseModel):
-    id_visita: int
-    status: str
+    id_visita: Optional[int] = None
+    id_contrato: int
+    
     descricao: str
-    data_identificacao: date
-    data_resolucao: Optional[date] = None
+    responsavel: str
+    
+    data_origem: datetime
+    data_prazo: Optional[datetime] = None
+    
     resolvida: bool = False
+    data_resolucao: Optional[datetime] = None
+    
     observacoes: Optional[str] = None
 
 class PendenciaCreate(PendenciaBase):

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Date, Text, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from src.database import Base
 
@@ -10,19 +10,19 @@ class Visita(Base):
     # 🔗 Chaves Estrangeiras Corrigidas
     id_cliente = Column(Integer, ForeignKey("clientes.id_cliente"), nullable=False) # ✅ Apontando para o plural
     # ⚠️ No seu diagrama lógico, Visita se liga a Projeto (id_projeto), não a Contrato.
-    id_projeto = Column(Integer, ForeignKey("projetos.id_projeto"), nullable=False) 
+    id_projeto = Column(Integer, ForeignKey("projetos.id_projeto"), nullable=True) 
 
     id_contrato = Column(Integer, ForeignKey("contratos.id_contrato"), nullable=False)
     
-    # Nomes de colunas ajustados para espelhar o Modelo Lógico
-    data = Column(Date, nullable=False) # Era data_visita
+    # Nomes de colunas ajustados para espelhar o Modelo Lógico e Frontend
+    data_hora = Column(DateTime(timezone=True), nullable=False) 
     modalidade = Column(String(20), nullable=False)
     duracao_estimada_minutos = Column(Integer, nullable=False)
     status = Column(String(20), nullable=False)
     
     # Campos de registro técnico
     descricao = Column(Text)
-    resultado = Column(Text)
+    resultados = Column(Text) # Sincronizado com frontend (plural)
 
     # Relacionamentos
     cliente = relationship("Cliente", back_populates="visitas")

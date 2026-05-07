@@ -1,30 +1,38 @@
-// src/mocks/contratos.ts
-//
-// Mock alinhado ao novo mapa lógico real.
-
 export const Contratos = [
   {
-    id_contrato: 1,
-    id_cliente: 1,
-    servicos_contratados: 'Consultoria mensal + visitas técnicas',
-    visitas_previstas_mes: 3,
-    inclui_relatorio: true,
-    data_inicio: '2025-12-01',
-    data_fim: null,
-    valor_mensal: '3500.00',
+    id: '1',
+    clienteId: '1',
+    servicos_contratados: 'Gestão Operacional Home Care',
+    visitas_previstas_mes: 4,
+    valor_mensal: 4500,
     status: 'ativo',
-    observacoes_gerais: 'Contrato padrão anual'
+    data_inicio: '2025-01-01'
   },
   {
-    id_contrato: 2,
-    id_cliente: 3,
-    servicos_contratados: 'Projeto de adequação sanitária',
+    id: '2',
+    clienteId: '2',
+    servicos_contratados: 'Adequação de Processos e Auditoria',
     visitas_previstas_mes: 2,
-    inclui_relatorio: false,
-    data_inicio: '2026-01-15',
-    data_fim: null,
-    valor_mensal: '2800.00',
+    valor_mensal: 3800,
     status: 'ativo',
-    observacoes_gerais: null
+    data_inicio: '2025-06-01'
+  },
+  {
+    id: '3',
+    clienteId: '3',
+    servicos_contratados: 'Consultoria em Vigilância Sanitária',
+    visitas_previstas_mes: 4,
+    valor_mensal: 3200,
+    status: 'ativo',
+    data_inicio: '2025-03-01'
+  },
+  {
+    id: '4',
+    clienteId: '4',
+    servicos_contratados: 'Suporte Técnico ILPI',
+    visitas_previstas_mes: 2,
+    valor_mensal: 2500,
+    status: 'ativo',
+    data_inicio: '2024-10-01'
   }
 ]

@@ -5,10 +5,11 @@ from decimal import Decimal
 
 class FaturamentoClienteBase(BaseModel):
     id_contrato: int
-    mes_referencia: int
-    ano_referencia: int
+    mes_ano: date
+    visitas_realizadas: Optional[int] = 0
     valor_base: Decimal
     valor_extra: Decimal = Decimal('0.00')
+    desconto: Decimal = Decimal('0.00')
     valor_total: Decimal
     pago: bool = False
     data_pagamento: Optional[date] = None

@@ -4,7 +4,7 @@ import type { VisitaRaw } from '@/types/visita.raw'
 import { validateShape } from '@/utils/schemaGuard'
 
 export function getVisitas(): Visita[] {
-  return (Mock as VisitaRaw[]).map(mapVisita)
+  return (Mock as unknown as VisitaRaw[]).map(mapVisita)
 }
 
 export function mapVisita(raw: VisitaRaw): Visita {

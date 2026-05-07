@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { getClientes } from '@/mappers/cliente.mapper'
+import { ClientesService } from '@/services/clientes.service'
 import type { Cliente } from '@/domain/cliente'
 
 export default function ClientesPage() {
@@ -20,7 +20,7 @@ export default function ClientesPage() {
       try {
         // Simula latência de rede para evitar cascading render síncrono
         await new Promise(resolve => setTimeout(resolve, 10))
-        const data = getClientes()
+        const data = await ClientesService.getAll()
         
         if (isMounted) {
           setClientes(data)

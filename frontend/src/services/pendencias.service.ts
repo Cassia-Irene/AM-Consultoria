@@ -11,10 +11,30 @@ import {
   type NovaPendenciaInput,
   type CriarPendenciaResponse,
 } from '@/adapters/pendencia.adapter'
+import { fetchApi } from './api'
+import { USE_MOCKS } from '@/config/env'
+import { Pendencias as PendenciasMock } from '@/mocks/pendencias'
+import { mapPendencia } from '@/mappers/pendencia.mapper'
+import type { Pendencia } from '@/domain/pendencia'
+import type { PendenciaRaw } from '@/types/pendencia.raw'
 
 export type { NovaPendenciaInput, CriarPendenciaResponse } from '@/adapters/pendencia.adapter'
 
 export const PendenciasService = {
+  async getAll(): Promise<Pendencia[]> {
+    if (USE_MOCKS) {
+      return (PendenciasMock as unknown as PendenciaRaw[]).map(mapPendencia)
+    }
+
+    try {
+      const data = await fetchApi<PendenciaRaw[]>('/pendencias/')
+      return data.map(mapPendencia)
+    } catch (err) {
+      console.error('[SERVICE][ERROR] Falha ao buscar pendências:', err)
+      return (PendenciasMock as unknown as PendenciaRaw[]).map(mapPendencia)
+    }
+  },
+
   async criar(input: NovaPendenciaInput): Promise<CriarPendenciaResponse> {
     const { valid, errors } = validateNovaPendenciaInput(input)
     if (!valid) {
@@ -27,15 +47,20 @@ export const PendenciasService = {
 
     const payload = toPendenciaPayload(input)
 
-    try {
-      console.log('[API POST /pendencias] Payload:', payload)
-      // MOCK temporário simulando ida ao banco
+    if (USE_MOCKS) {
+      console.log('[SERVICE] Simulando POST /pendencias (MOCK):', payload)
       await new Promise(resolve => setTimeout(resolve, 800))
-      return { id: `p-gerada-${Math.floor(Math.random() * 10000)}`, message: 'Pendência criada com sucesso' }
+      return { id: `p-${Math.random()}`, message: 'Pendência (MOCK) criada com sucesso' }
+    }
 
+    try {
+      return await fetchApi<CriarPendenciaResponse>('/pendencias/', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
     } catch (err) {
       throw new AppError(
-        'Falha ao comunicar com o servidor. Tente novamente.',
+        'Falha ao registrar pendência no servidor.',
         'API_ERROR',
         err
       )

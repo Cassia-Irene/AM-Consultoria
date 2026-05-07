@@ -62,7 +62,7 @@ export function getTopPrioridade(
 
   return {
     tipo: 'top1',
-    titulo: p.descricao, // Usando a descrição como titulo para UI
+    titulo: p.descricao,
     descricao: '',
     clienteNome: resolveClienteNome(p),
     entidadeId: p.id,
@@ -70,4 +70,37 @@ export function getTopPrioridade(
     prazoLabel: labelPrazo(p.data_prazo!),
     atraso: diff < 0,
   }
+}
+
+/**
+ * Gera uma recomendação de "Próxima Ação" baseada no contexto do dia.
+ */
+export function getRecommendedAction(
+  visitasHoje: any[],
+  pendenciasUrgentes: Pendencia[],
+  resolveClienteByContrato: (contratoId: string) => string
+): { title: string; action: string; href: string } | null {
+  // 1. Se tem visita hoje não realizada, prioridade é registrar/iniciar
+  const proximasVisitas = visitasHoje.filter(v => v.status === 'agendada')
+  if (proximasVisitas.length > 0) {
+    const v = proximasVisitas[0]
+    return {
+      title: `Registrar visita: ${resolveClienteByContrato(v.contratoId)}`,
+      action: 'Iniciar agora',
+      href: `/visitas/nova?contratoId=${v.contratoId}`
+    }
+  }
+
+  // 2. Se tem pendência muito atrasada (> 2 dias)
+  const criticas = pendenciasUrgentes.filter(p => getDiffDias(p.data_prazo!) < -2)
+  if (criticas.length > 0) {
+    const p = criticas[0]
+    return {
+      title: `Resolver atraso: ${p.descricao}`,
+      action: 'Enviar agora',
+      href: `/pendencias/${p.id}`
+    }
+  }
+
+  return null
 }

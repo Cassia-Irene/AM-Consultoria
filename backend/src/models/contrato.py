@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Boolean, Date, Text, ForeignKey
+from sqlalchemy import Column, Integer, Boolean, Date, Text, ForeignKey, Numeric, String
 from sqlalchemy.orm import relationship
 from src.database import Base
 
@@ -18,21 +18,17 @@ class Contrato(Base):
     visitas_previstas_mes = Column(Integer, nullable=False)
     inclui_relatorio = Column(Boolean, nullable=False, default=False)
     
+    valor_mensal = Column(Numeric(10, 2), nullable=False, default=0.0)
+    status = Column(String(20), nullable=False, default="ativo")
+    
     # ✅ Nome corrigido para 'observacoes_gerais' conforme o banco
     observacoes_gerais = Column(Text)
 
     # Relacionamentos
     cliente = relationship("Cliente", back_populates="contratos")
     visitas = relationship("Visita", back_populates="contrato")
+    pendencias = relationship("Pendencia", back_populates="contrato")
+    projetos = relationship("Projeto", back_populates="contrato")
+    faturamentos = relationship("FaturamentoCliente", back_populates="contrato")
+    pagamentos = relationship("ContratoPagamento", back_populates="contrato")
 
-class HistoricoContrato(Base):
-    __tablename__ = "historico_contratos"
-
-    id_historico = Column(Integer, primary_key=True, index=True)
-    id_contrato_encerrado = Column(Integer, ForeignKey("contrato.id_contrato"), nullable=False)
-    id_contrato_novo = Column(Integer, ForeignKey("contrato.id_contrato"), nullable=False)
-    data_alteracao = Column(Date, nullable=False)
-    motivo_alteracao = Column(Text, nullable=False)
-
-    contrato_encerrado = relationship("Contrato", foreign_keys=[id_contrato_encerrado])
-    contrato_novo = relationship("Contrato", foreign_keys=[id_contrato_novo])

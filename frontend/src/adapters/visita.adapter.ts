@@ -4,7 +4,6 @@
  * FONTE DE VERDADE dos DTOs de criação de visita.
  */
 
-import { ptBRToISO } from '@/utils/date'
 
 // ─── Tipos de entrada (o que a UI fornece) ────────────────────────────────────
 
@@ -94,7 +93,7 @@ export function toVisitaPayload(input: NovaVisitaInput): CriarVisitaRequest {
     id_contrato: Number(input.contratoId),
     id_projeto: input.projetoId ? Number(input.projetoId) : null,
     status: input.status,
-    data_hora: input.data_hora,
+    data_hora: new Date(input.data_hora).toISOString(),
     duracao_minutos: input.duracao_minutos || null,
     tipo_visita: input.tipo_visita,
     modalidade: input.modalidade,
@@ -103,8 +102,8 @@ export function toVisitaPayload(input: NovaVisitaInput): CriarVisitaRequest {
     pendencias: input.pendencias.map(p => ({
       descricao: p.descricao,
       responsavel: p.responsavel,
-      data_origem: input.data_hora,
-      data_prazo: ptBRToISO(p.data_prazo),
+      data_origem: new Date(input.data_hora).toISOString(),
+      data_prazo: p.data_prazo ? new Date(p.data_prazo + 'T12:00:00Z').toISOString() : null,
       resolvida: false,
       data_resolucao: null
     })),

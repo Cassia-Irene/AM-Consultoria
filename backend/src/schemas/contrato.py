@@ -1,20 +1,19 @@
+from decimal import Decimal
+
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import date
-from decimal import Decimal
 
 class ContratoBase(BaseModel):
     id_cliente: int
-    tipo_cobranca: str
-    valor_mensal: Decimal
-    visitas_previstas_mes: int
-    valor_visita_extra: Optional[Decimal] = None
-    inclui_relatorio: bool = False
     data_inicio: date
     data_fim: Optional[date] = None
-    status: str = "ativo"
-    motivo_alteracao: Optional[str] = None
-    observacoes: Optional[str] = None
+    # ✅ Adicionado: Obrigatório no SQL (V003)
+    servicos_contratados: str 
+    visitas_previstas_mes: int
+    inclui_relatorio: bool = False
+    # ✅ Renomeado: De 'observacoes' para 'observacoes_gerais' para espelhar o banco
+    observacoes_gerais: Optional[str] = None
 
 class ContratoCreate(ContratoBase):
     pass

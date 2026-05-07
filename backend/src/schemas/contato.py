@@ -1,15 +1,16 @@
 from pydantic import BaseModel, ConfigDict, EmailStr
 from typing import Optional
 
+#
 class ContatoBase(BaseModel):
     id_cliente: int
     nome: str
     cargo: Optional[str] = None
     papel: str
     telefone_whatsapp: Optional[str] = None
-    email: Optional[EmailStr] = None # Valida se o formato do e-mail está certo
-    contato_emergencia: bool = False
-    contato_financeiro: bool = False
+    email: Optional[EmailStr] = None
+    # ✅ Adicionado observacoes_gerais que existe no SQL e no diagrama
+    observacoes_gerais: Optional[str] = None
 
 class ContatoCreate(ContatoBase):
     pass

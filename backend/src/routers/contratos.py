@@ -36,7 +36,7 @@ def listar_contratos(db: Session = Depends(get_db)):
 @router.post("/replace", response_model=ContratoRead)
 def replace_contrato(data: ContratoReplaceRequest, db: Session = Depends(get_db)):
     """
-    Substitui um contrato existente por uma nova versão,
-    encerrando o antigo e registrando no histórico.
+    Substitui um contrato existente por uma nova versão.
+    A auditoria é feita automaticamente via SQLAlchemy Events.
     """
     return encerrar_e_criar_novo_contrato(db, data)

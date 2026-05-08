@@ -10,7 +10,7 @@ class Contato(Base):
     nome = Column(String(100), nullable=False)
     cargo = Column(String(50))
     papel = Column(String(30), nullable=False)
-    telefone_whatsapp = Column(String(20))
+    telefone = Column(String(20))
     email = Column(String(50))
     observacoes_gerais = Column(Text)
 

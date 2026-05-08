@@ -5,7 +5,7 @@ from typing import List
 from src.database import get_db
 from src.models.faturamento_cliente import FaturamentoCliente
 from src.models.contrato import Contrato
-from src.schemas.faturamento_cliente import FaturamentoClienteCreate, FaturamentoClienteRead
+from src.schemas.faturamento_cliente import FaturamentoClienteCreate, FaturamentoClienteRead, FaturamentoUpdate
 
 router = APIRouter(prefix="/faturamento-cliente", tags=["Faturamento"])
 
@@ -40,3 +40,29 @@ def criar_faturamento(faturamento: FaturamentoClienteCreate, db: Session = Depen
 @router.get("/", response_model=List[FaturamentoClienteRead])
 def listar_faturamentos(db: Session = Depends(get_db)):
     return db.query(FaturamentoCliente).all()
+
+@router.patch("/{id_faturamento}", response_model=FaturamentoClienteRead)
+def atualizar_faturamento(
+    id_faturamento: int, 
+    faturamento_update: FaturamentoUpdate, 
+    db: Session = Depends(get_db)
+):
+    # 1. Busca o registro
+    db_faturamento = db.query(FaturamentoCliente).filter(
+        FaturamentoCliente.id_faturamento == id_faturamento
+    ).first()
+    
+    if not db_faturamento:
+        raise HTTPException(status_code=404, detail="Faturamento não encontrado")
+
+    # 2. Converte o schema em dicionário, ignorando o que não foi enviado
+    update_data = faturamento_update.model_dump(exclude_unset=True)
+
+    # 3. Atualização Dinâmica
+    for key, value in update_data.items():
+        setattr(db_faturamento, key, value)
+
+    # 4. Commit e Refresh
+    db.commit()
+    db.refresh(db_faturamento)
+    return db_faturamento

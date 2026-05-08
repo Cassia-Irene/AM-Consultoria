@@ -16,3 +16,11 @@ class EventoCriticoRead(EventoCriticoBase):
     id_evento: int
     
     model_config = ConfigDict(from_attributes=True)
+
+from pydantic import BaseModel
+from typing import Optional
+from datetime import date
+
+class EventoCriticoUpdate(BaseModel):
+    descricao: Optional[str] = None
+    acao_tomada: Optional[str] = None

@@ -9,7 +9,7 @@ class ClienteBase(BaseModel):
     cidade: str
     status: str = "ativo"
     nivel_complexidade: Optional[str] = None
-    modalidade_atendimento: Optional[str] = None
+    #modalidade_atendimento: Optional[str] = None
     observacoes_gerais: Optional[str] = None
 
     # Esse validador garante que 'Alta' vire 'alta' antes de chegar no banco

@@ -1,5 +1,6 @@
+
 from pydantic import BaseModel, ConfigDict
-from decimal import Decimal
+from typing import Optional
 
 class ProjetoExtraBase(BaseModel):
     id_projeto: int
@@ -13,3 +14,6 @@ class ProjetoExtraRead(ProjetoExtraBase):
     id_extra: int
     
     model_config = ConfigDict(from_attributes=True)
+
+class ProjetoExtraUpdate(BaseModel):
+    aprovado_por:(Optional[int]) = None 

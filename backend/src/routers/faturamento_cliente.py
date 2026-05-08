@@ -16,8 +16,20 @@ def criar_faturamento(faturamento: FaturamentoClienteCreate, db: Session = Depen
     if not contrato:
         raise HTTPException(status_code=404, detail="Contrato não encontrado.")
 
+    # ✅ Verifica duplicata antes de tentar inserir
+    duplicado = db.query(FaturamentoCliente).filter(
+        FaturamentoCliente.id_contrato == faturamento.id_contrato,
+        FaturamentoCliente.mes_ano == faturamento.mes_ano
+    ).first()
+    if duplicado:
+        raise HTTPException(status_code=409, detail="Já existe um faturamento para este contrato neste mês.")
+    
     # 2. Converte os dados recebidos para um dicionário
     dados_faturamento = faturamento.model_dump()
+
+    #dados_faturamento["valor_base"] =
+    #dados_faturamento["valor_extra"] =
+    dados_faturamento["valor_total"] = dados_faturamento["valor_base"] + dados_faturamento["valor_extra"] - dados_faturamento["desconto"]
 
     # 3. # REGRA DE NEGÓCIO: Incluir o desconto no cálculo
     dados_faturamento["valor_total"] = (

@@ -1,10 +1,10 @@
 from pydantic import BaseModel, ConfigDict
-from datetime import datetime
+from datetime import date
 
 class HistoricoContratoBase(BaseModel):
     id_contrato: int
-    data_alteracao: datetime # Data e hora da alteração do contrato
-    descricao_alteracao: str
+    data_alteracao: date # Data e hora da alteração do contrato
+    motivo_alteracao: str
 
 class HistoricoContratoCreate(HistoricoContratoBase):
     pass

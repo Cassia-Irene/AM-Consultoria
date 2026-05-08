@@ -4,12 +4,20 @@ from datetime import date
 
 class PendenciaBase(BaseModel):
     id_visita: int
-    status: str
+    id_contrato: int
     descricao: str
-    data_identificacao: date
+    data_origem: date
     data_resolucao: Optional[date] = None
     resolvida: bool = False
-    observacoes: Optional[str] = None
+    responsavel: Optional[str] = None
+    data_prazo: date
+
+class PendenciaUpdate(BaseModel):
+    descricao: Optional[str] = None
+    data_resolucao: Optional[date] = None
+    resolvida: Optional[bool] = None
+    responsavel: Optional[str] = None
+    data_prazo: Optional[date] = None
 
 class PendenciaCreate(PendenciaBase):
     pass

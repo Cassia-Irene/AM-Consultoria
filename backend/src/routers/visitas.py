@@ -1,11 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-
 from src.database import get_db
 from src.models.visita import Visita
-from src.models.cliente import Cliente
-
+from src.models.contrato import Contrato
 from src.models.projeto import Projeto 
 from src.schemas.visita import VisitaCreate, VisitaRead
 
@@ -13,16 +11,16 @@ router = APIRouter(prefix="/visitas", tags=["Visitas"])
 
 @router.post("/", response_model=VisitaRead)
 def registrar_visita(visita: VisitaCreate, db: Session = Depends(get_db)):
-    # 1. Valida se o cliente informado existe no banco
-    cliente = db.query(Cliente).filter(Cliente.id_cliente == visita.id_cliente).first()
-    if not cliente:
-        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    # 1. Valida o CONTRATO (obrigatório no novo modelo)
+    contrato = db.query(Contrato).filter(Contrato.id_contrato == visita.id_contrato).first()
+    if not contrato:
+        raise HTTPException(status_code=404, detail="Contrato não encontrado")
         
-    # 2. Valida se o projeto informado existe (Conforme seu Modelo Lógico)
-   
-    projeto = db.query(Projeto).filter(Projeto.id_projeto == visita.id_projeto).first()
-    if not projeto:
-        raise HTTPException(status_code=404, detail="Projeto não encontrado")
+    # 2. Valida o projeto apenas se o ID for enviado
+    if visita.id_projeto:
+        projeto = db.query(Projeto).filter(Projeto.id_projeto == visita.id_projeto).first()
+        if not projeto:
+            raise HTTPException(status_code=404, detail="Projeto não encontrado")
 
     # O model_dump() vai mapear 'id_projeto' e 'data' corretamente agora
     nova_visita = Visita(**visita.model_dump())

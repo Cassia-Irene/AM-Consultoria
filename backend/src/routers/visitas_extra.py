@@ -5,7 +5,7 @@ from typing import List
 from src.database import get_db
 from src.models.visita_extra import VisitaExtra
 from src.models.visita import Visita
-from src.schemas.visita_extra import VisitaExtraCreate, VisitaExtraRead
+from src.schemas.visita_extra import VisitaExtraCreate, VisitaExtraRead, VisitaExtraUpdate
 
 router = APIRouter(prefix="/visitas-extra", tags=["Visitas Extras"])
 
@@ -30,3 +30,20 @@ def criar_visita_extra(visita_extra: VisitaExtraCreate, db: Session = Depends(ge
 @router.get("/", response_model=List[VisitaExtraRead])
 def listar_visitas_extra(db: Session = Depends(get_db)):
     return db.query(VisitaExtra).all()
+
+@router.patch("/{id_extra}", response_model=VisitaExtraRead) # Verifique o nome correto do Read e do ID
+def atualizar_visita_extra(
+    id_extra: int, 
+    extra_update: VisitaExtraUpdate, 
+    db: Session = Depends(get_db)
+):
+    db_extra = db.query(VisitaExtra).filter(VisitaExtra.id_extra == id_extra).first()
+    if not db_extra:
+        raise HTTPException(status_code=404, detail="Visita Extra não encontrada")
+
+    for key, value in extra_update.model_dump(exclude_unset=True).items():
+        setattr(db_extra, key, value)
+
+    db.commit()
+    db.refresh(db_extra)
+    return db_extra

@@ -17,4 +17,4 @@ class Cliente(Base):
     # 🤝 As "mãos" para segurar as outras tabelas (Via de mão dupla)
     contatos = relationship("Contato", back_populates="cliente")
     contratos = relationship("Contrato", back_populates="cliente")
-    visitas = relationship("Visita", back_populates="cliente")
+    # visitas = relationship("Visita", back_populates="cliente")

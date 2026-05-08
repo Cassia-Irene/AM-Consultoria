@@ -7,9 +7,8 @@ class ContatoBase(BaseModel):
     nome: str
     cargo: Optional[str] = None
     papel: str
-    telefone_whatsapp: Optional[str] = None
+    telefone: Optional[str] = None
     email: Optional[EmailStr] = None
-    # ✅ Adicionado observacoes_gerais que existe no SQL e no diagrama
     observacoes_gerais: Optional[str] = None
 
 class ContatoCreate(ContatoBase):

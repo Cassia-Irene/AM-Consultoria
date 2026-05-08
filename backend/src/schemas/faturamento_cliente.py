@@ -21,3 +21,9 @@ class FaturamentoClienteRead(FaturamentoClienteBase):
 
     id_faturamento: int
     model_config = ConfigDict(from_attributes=True)
+
+class FaturamentoUpdate(BaseModel):
+    pago: Optional[bool] = None
+    data_pagamento: Optional[date] = None
+    valor_total: Optional[Decimal] = None
+    desconto: Optional[Decimal] = None

@@ -1,18 +1,17 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
-from datetime import date
+from datetime import datetime
 
 class VisitaBase(BaseModel):
-    id_cliente: int
-    # Ajustado para id_projeto para seguir o Modelo Lógico
-    id_projeto: int 
-    # Renomeado de data_visita para data
-    data: date 
-    modalidade: str
-    duracao_estimada_minutos: int
-    status: str = "Agendada"
+    id_contrato: int
+    id_projeto: Optional[int] = None
+    status: str = "agendada"
+    data_hora: datetime
+    duracao_minutos: Optional[int] = None
+    tipo_visita: str
+    modalidade: str # Deve ser 'presencial' ou 'remota'
     descricao: Optional[str] = None
-    resultado: Optional[str] = None
+    resultados: Optional[str] = None
 
 class VisitaCreate(VisitaBase):
     pass
@@ -20,5 +19,4 @@ class VisitaCreate(VisitaBase):
 class VisitaRead(VisitaBase):
     id_visita: int
     
-    # Configuração para integração com SQLAlchemy
     model_config = ConfigDict(from_attributes=True)

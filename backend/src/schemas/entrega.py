@@ -4,11 +4,12 @@ from datetime import date
 
 class EntregaBase(BaseModel):
     id_projeto: int
-    titulo: str
     descricao: Optional[str] = None
-    data_prevista: date
-    data_entrega: Optional[date] = None
-    status: str = "Pendente"
+    data_entrega_prevista: date
+    data_entrega_real: Optional[date] = None
+    entregue: bool = False
+    referencia_doc: Optional[str] = None
+    
 
 class EntregaCreate(EntregaBase):
     pass

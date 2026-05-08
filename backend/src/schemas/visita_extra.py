@@ -2,7 +2,7 @@ from pydantic import BaseModel, ConfigDict
 
 class VisitaExtraBase(BaseModel):
     id_visita: int
-    motivo_extra: str
+    solicitado_por: int
 
 class VisitaExtraCreate(VisitaExtraBase):
     pass

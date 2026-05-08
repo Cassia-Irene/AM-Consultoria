@@ -3,7 +3,8 @@ from typing import Optional
 from datetime import date
 
 class EventoCriticoBase(BaseModel):
-    id_visita: int
+    id_contrato: int
+    id_visita: Optional[int] = None
     data_evento: date
     descricao: str
     acao_tomada: Optional[str] = None

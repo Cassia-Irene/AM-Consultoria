@@ -2,15 +2,17 @@
  * visita.adapter.ts
  *
  * FONTE DE VERDADE dos DTOs de criação de visita.
+ * Atualizado para suportar a arquitetura de Sensores Operacionais.
  */
-
 
 // ─── Tipos de entrada (o que a UI fornece) ────────────────────────────────────
 
-export type TipoVisitaUI = 'rotina' | 'extra' | 'projeto'
+export type TipoVisitaUI = 'rotineira' | 'urgente' | 'pontual' | 'estruturada' | 'acompanhamento_direcionado'
 export type StatusVisitaUI = 'agendada' | 'realizada' | 'cancelada'
 export type ModalidadeVisitaUI = 'presencial' | 'online' | 'hibrida'
-export type PrioridadePendenciaUI = 'urgente' | 'atencao' | 'normal'
+export type ContextoAgendamentoUI = 'planejado' | 'extra_proativo' | 'extra_reativo'
+export type OrigemSolicitacaoUI = 'whatsapp' | 'telefone' | 'email' | 'presencial'
+export type SeveridadeUI = 'baixa' | 'moderada' | 'alta' | 'critica'
 
 export interface PendenciaInput {
   descricao: string
@@ -23,7 +25,22 @@ export interface NovaVisitaInput {
   contratoId: string
   projetoId?: string
   status: StatusVisitaUI
+  
+  // 🧠 Novas Dimensões Operacionais
   tipo_visita: TipoVisitaUI
+  contexto_agendamento: ContextoAgendamentoUI
+  
+  // 🚦 Contexto de Caos/Extra
+  origem_solicitacao?: OrigemSolicitacaoUI
+  id_contato_solicitante?: number
+  motivo_acionamento_id?: number
+  descricao_trigger?: string
+  
+  // 🔥 Métricas
+  severidade_operacional?: SeveridadeUI
+  tempo_resposta_minutos?: number
+  impacto_operacional?: string
+  
   modalidade: ModalidadeVisitaUI
   duracao_minutos: number
   data_hora: string // YYYY-MM-DDTHH:mm
@@ -49,12 +66,28 @@ export interface PendenciaCriacaoDTO {
 }
 
 export interface CriarVisitaRequest {
+  id_cliente: number
   id_contrato: number
   id_projeto: number | null
   status: string
   data_hora: string
-  duracao_minutos: number | null
+  duracao_estimada_minutos: number | null
+  
+  // 🧠 Dimensões
   tipo_visita: string
+  contexto_agendamento: string
+  
+  // 🚦 Caos
+  origem_solicitacao: string | null
+  id_contato_solicitante: number | null
+  motivo_acionamento_id: number | null
+  descricao_trigger: string | null
+  
+  // 🔥 Impacto
+  severidade_operacional: string | null
+  tempo_resposta_minutos: number | null
+  impacto_operacional: string | null
+  
   modalidade: string
   descricao: string
   resultados: string | null
@@ -62,9 +95,15 @@ export interface CriarVisitaRequest {
 }
 
 export interface CriarVisitaResponse {
-  id: string
-  message: string
-  pendencias_ids?: string[]
+  id_visita: number
+  message?: string
+}
+
+export interface MotivoAcionamentoRead {
+  id_motivo: number
+  nome: string
+  slug: string
+  descricao?: string
 }
 
 // ─── Validação ────────────────────────────────────────────────────────────────
@@ -72,15 +111,22 @@ export interface CriarVisitaResponse {
 export function validateNovaVisitaInput(input: NovaVisitaInput): ValidationResult {
   const errors: string[] = []
 
+  if (!input.clienteId) errors.push('clienteId é obrigatório')
   if (!input.contratoId) errors.push('contratoId é obrigatório')
   if (!input.data_hora) errors.push('data_hora é obrigatória')
   if (!input.modalidade) errors.push('modalidade é obrigatória')
   if (!input.status) errors.push('status é obrigatório')
   if (!input.tipo_visita) errors.push('tipo_visita é obrigatório')
+  if (!input.contexto_agendamento) errors.push('contexto_agendamento é obrigatório')
   if (!input.descricao?.trim()) errors.push('descricao não pode estar vazia')
   
   if (input.status === 'realizada' && !input.resultados?.trim()) {
     errors.push('resultados são obrigatórios para visitas realizadas')
+  }
+
+  // Validação condicional para acionamentos extras
+  if (input.contexto_agendamento === 'extra_reativo') {
+    if (!input.origem_solicitacao) errors.push('Origem da solicitação é necessária para visitas reativas')
   }
 
   return { valid: errors.length === 0, errors }
@@ -90,13 +136,29 @@ export function validateNovaVisitaInput(input: NovaVisitaInput): ValidationResul
 
 export function toVisitaPayload(input: NovaVisitaInput): CriarVisitaRequest {
   return {
+    id_cliente: Number(input.clienteId),
     id_contrato: Number(input.contratoId),
     id_projeto: input.projetoId ? Number(input.projetoId) : null,
-    status: input.status,
+    status: input.status === 'realizada' ? 'Realizada' : input.status === 'agendada' ? 'Agendada' : 'Cancelada',
     data_hora: new Date(input.data_hora).toISOString(),
-    duracao_minutos: input.duracao_minutos || null,
+    duracao_estimada_minutos: input.duracao_minutos || null,
+    
+    // 🧠 Dimensões
     tipo_visita: input.tipo_visita,
-    modalidade: input.modalidade,
+    contexto_agendamento: input.contexto_agendamento,
+    
+    // 🚦 Caos
+    origem_solicitacao: input.origem_solicitacao || null,
+    id_contato_solicitante: input.id_contato_solicitante || null,
+    motivo_acionamento_id: input.motivo_acionamento_id || null,
+    descricao_trigger: input.descricao_trigger || null,
+    
+    // 🔥 Impacto
+    severidade_operacional: input.severidade_operacional || null,
+    tempo_resposta_minutos: input.tempo_resposta_minutos || null,
+    impacto_operacional: input.impacto_operacional || null,
+    
+    modalidade: input.modalidade === 'online' ? 'Remoto' : 'Presencial',
     descricao: input.descricao || 'Sem descrição',
     resultados: input.resultados || null,
     pendencias: input.pendencias.map(p => ({

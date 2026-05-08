@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 
+# ⚠️ [DEPRECATED] Utilize VisitaCreate com contexto_agendamento
 class VisitaExtraBase(BaseModel):
     id_visita: int
     motivo_extra: str

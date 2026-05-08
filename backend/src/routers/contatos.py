@@ -39,3 +39,10 @@ def criar_contato(contato: ContatoCreate, db: Session = Depends(get_db)):
 def listar_contatos(db: Session = Depends(get_db)):
     # Busca todos os registros na tabela "contatos"
     return db.query(Contato).all()
+
+@router.get("/{id_contato}", response_model=ContatoRead)
+def buscar_contato(id_contato: int, db: Session = Depends(get_db)):
+    contato = db.query(Contato).filter(Contato.id_contato == id_contato).first()
+    if not contato:
+        raise HTTPException(status_code=404, detail="Contato não encontrado")
+    return contato

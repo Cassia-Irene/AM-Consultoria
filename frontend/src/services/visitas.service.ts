@@ -18,6 +18,7 @@ import {
   validateNovaVisitaInput,
   type NovaVisitaInput,
   type CriarVisitaResponse,
+  type MotivoAcionamentoRead,
 } from '@/adapters/visita.adapter'
 import { fetchApi } from './api'
 import { USE_MOCKS } from '@/config/env'
@@ -44,6 +45,22 @@ export const VisitasService = {
     }
   },
 
+  async getMotivosAcionamento(): Promise<MotivoAcionamentoRead[]> {
+    if (USE_MOCKS) {
+      return [
+        { id_motivo: 1, nome: 'Conflito de Equipe', slug: 'conflito_equipe' },
+        { id_motivo: 2, nome: 'Falta de Profissional', slug: 'falta_cuidador' },
+        { id_motivo: 3, nome: 'Crise Operacional', slug: 'crise_operacional' },
+      ]
+    }
+    try {
+      return await fetchApi<MotivoAcionamentoRead[]>('/visitas/motivos-acionamento')
+    } catch (err) {
+      console.error('[SERVICE][ERROR] Falha ao buscar motivos:', err)
+      return []
+    }
+  },
+
   async criar(input: NovaVisitaInput): Promise<CriarVisitaResponse> {
     // 1. Validar antes de chamar a API
     const { valid, errors } = validateNovaVisitaInput(input)
@@ -61,7 +78,7 @@ export const VisitasService = {
     if (USE_MOCKS) {
       console.log('[SERVICE] Simulando POST /visitas (MOCK):', payload)
       await new Promise(resolve => setTimeout(resolve, 800))
-      return { id: `v-${Math.random()}`, message: 'Visita (MOCK) criada com sucesso' }
+      return { id_visita: Math.floor(Math.random() * 1000), message: 'Visita (MOCK) criada com sucesso' }
     }
 
     // 3. Enviar para API Real

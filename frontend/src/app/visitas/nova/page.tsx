@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 // app/visitas/nova/page.tsx
 //
 // Nova Visita = Gerador de ações futuras.
@@ -12,14 +12,24 @@ import { useRouter } from 'next/navigation'
 import { ClientesService } from '@/services/clientes.service'
 import { ContratoService } from '@/services/contrato.service'
 import { VisitasService } from '@/services/visitas.service'
+import { ContatosService } from '@/services/contatos.service'
 import type { Cliente } from '@/domain/cliente'
 import type { Contrato } from '@/domain/contrato'
+import type { Contato } from '@/domain/contato'
 
 /* ─────────────────────────────────────────────
    TYPES
 ───────────────────────────────────────────── */
 
-import type { TipoVisitaUI, StatusVisitaUI, ModalidadeVisitaUI } from '@/adapters/visita.adapter'
+import type { 
+  TipoVisitaUI, 
+  StatusVisitaUI, 
+  ModalidadeVisitaUI,
+  ContextoAgendamentoUI,
+  OrigemSolicitacaoUI,
+  SeveridadeUI,
+  MotivoAcionamentoRead
+} from '@/adapters/visita.adapter'
 
 interface PendenciaGerada {
   id: string
@@ -39,7 +49,21 @@ interface FormState {
   clienteId: string
   contratoId: string
   status: StatusVisitaUI
+  
+  // 🧠 Dimensões Operacionais
   tipo_visita: TipoVisitaUI
+  contexto_agendamento: ContextoAgendamentoUI
+  
+  // 🚦 Contexto de Extra/Caos
+  origem_solicitacao: OrigemSolicitacaoUI
+  id_contato_solicitante: string
+  motivo_acionamento_id: string
+  descricao_trigger: string
+  
+  // 🔥 Métricas
+  severidade_operacional: SeveridadeUI
+  impacto_operacional: string
+  
   modalidade: ModalidadeVisitaUI
   duracao_minutos: number
   data_hora: string
@@ -500,7 +524,21 @@ export default function NovaVisitaPage() {
     clienteId: '',
     contratoId: '',
     status: 'realizada',
-    tipo_visita: 'rotina',
+    
+    // 🧠 Dimensões
+    tipo_visita: 'rotineira',
+    contexto_agendamento: 'planejado',
+    
+    // 🚦 Caos
+    origem_solicitacao: 'whatsapp',
+    id_contato_solicitante: '',
+    motivo_acionamento_id: '',
+    descricao_trigger: '',
+    
+    // 🔥 Métricas
+    severidade_operacional: 'baixa',
+    impacto_operacional: '',
+
     modalidade: 'presencial',
     duracao_minutos: 60,
     data_hora: new Date().toISOString().slice(0, 16),
@@ -511,19 +549,25 @@ export default function NovaVisitaPage() {
 
   const [allClientes, setAllClientes] = useState<Cliente[]>([])
   const [allContratos, setAllContratos] = useState<Contrato[]>([])
+  const [allContatos, setAllContatos] = useState<Contato[]>([])
+  const [motivosAcionamento, setMotivosAcionamento] = useState<MotivoAcionamentoRead[]>([])
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
 
   useEffect(() => {
     let isMounted = true
     async function loadData() {
       try {
-        const [cli, cont] = await Promise.all([
+        const [cli, cont, motivos, contatos] = await Promise.all([
           ClientesService.getAll(),
-          ContratoService.getAll()
+          ContratoService.getAll(),
+          VisitasService.getMotivosAcionamento(),
+          ContatosService.getAll()
         ])
         if (isMounted) {
           setAllClientes(cli.filter(c => c.status === 'ativo'))
           setAllContratos(cont)
+          setMotivosAcionamento(motivos)
+          setAllContatos(contatos)
         }
       } catch (err) {
         console.error('Erro ao carregar dados:', err)
@@ -608,6 +652,16 @@ export default function NovaVisitaPage() {
         contratoId: form.contratoId,
         status: form.status,
         tipo_visita: form.tipo_visita,
+        contexto_agendamento: form.contexto_agendamento,
+        
+        origem_solicitacao: form.contexto_agendamento !== 'planejado' ? form.origem_solicitacao : undefined,
+        id_contato_solicitante: form.contexto_agendamento !== 'planejado' && form.id_contato_solicitante ? Number(form.id_contato_solicitante) : undefined,
+        motivo_acionamento_id: form.contexto_agendamento !== 'planejado' && form.motivo_acionamento_id ? Number(form.motivo_acionamento_id) : undefined,
+        descricao_trigger: form.contexto_agendamento !== 'planejado' ? form.descricao_trigger : undefined,
+        
+        severidade_operacional: form.contexto_agendamento !== 'planejado' ? form.severidade_operacional : undefined,
+        impacto_operacional: form.contexto_agendamento !== 'planejado' ? form.impacto_operacional : undefined,
+
         modalidade: form.modalidade,
         duracao_minutos: form.duracao_minutos,
         data_hora: form.data_hora,
@@ -699,7 +753,7 @@ export default function NovaVisitaPage() {
             </svg>
           </button>
           <div>
-            <h1 className="text-white text-base font-bold">Nova visita</h1>
+            <h1 className="text-white text-base font-bold">Registrar Visita</h1>
             <p className="text-[#7D8597] text-xs capitalize">{hoje}</p>
           </div>
         </div>
@@ -790,28 +844,158 @@ export default function NovaVisitaPage() {
             </div>
           </div>
 
-          {/* Tipo de visita */}
+          {/* Natureza Operacional */}
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
-              Tipo
+              Natureza da Visita *
             </label>
-            <div className="flex gap-2">
-              {(['rotina', 'extra', 'projeto'] as TipoVisitaUI[]).map(tipo => (
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { id: 'rotineira', label: 'Rotineira' },
+                { id: 'estruturada', label: 'Estruturada' },
+                { id: 'urgente', label: 'Urgente' },
+                { id: 'pontual', label: 'Pontual' },
+                { id: 'acompanhamento_direcionado', label: 'Acompanhamento' },
+              ].map(natureza => (
                 <button
                   type="button"
-                  key={tipo}
-                  onClick={() => setForm(f => ({ ...f, tipo_visita: tipo }))}
-                  className={`flex-1 py-3 rounded-xl text-sm font-semibold border transition-colors capitalize ${
-                    form.tipo_visita === tipo
+                  key={natureza.id}
+                  onClick={() => setForm(f => ({ ...f, tipo_visita: natureza.id as TipoVisitaUI }))}
+                  className={`py-3 rounded-xl text-xs font-semibold border transition-colors ${
+                    form.tipo_visita === natureza.id
                       ? 'bg-[#001845] text-white border-[#0466C8]'
                       : 'bg-[#0d1117] text-[#7D8597] border-[#23272F]'
                   }`}
                 >
-                  {tipo}
+                  {natureza.label}
                 </button>
               ))}
             </div>
           </div>
+
+          {/* Contexto da Agenda (A grande mudança semântica) */}
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
+              Contexto da Agenda (Goodwill/Caos) *
+            </label>
+            <div className="flex gap-2">
+              {[
+                { id: 'planejado', label: 'Planejado' },
+                { id: 'extra_proativo', label: 'Extra (Proativo)' },
+                { id: 'extra_reativo', label: 'Extra (Reativo)' },
+              ].map(contexto => (
+                <button
+                  type="button"
+                  key={contexto.id}
+                  onClick={() => setForm(f => ({ ...f, contexto_agendamento: contexto.id as ContextoAgendamentoUI }))}
+                  className={`flex-1 py-3 rounded-xl text-[10px] font-bold border transition-colors uppercase tracking-tight ${
+                    form.contexto_agendamento === contexto.id
+                      ? 'bg-emerald-950/30 text-emerald-400 border-emerald-500'
+                      : 'bg-[#0d1117] text-[#7D8597] border-[#23272F]'
+                  }`}
+                >
+                  {contexto.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* CAMPOS DE CAOS (Condicionais) */}
+          {form.contexto_agendamento !== 'planejado' && (
+            <div className="bg-[#0d1117] border border-[#0466C8]/30 rounded-2xl p-5 space-y-5">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0466C8]">Sensores de Demanda Extra</p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                {/* Origem */}
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">Origem</label>
+                  <select
+                    value={form.origem_solicitacao}
+                    onChange={e => setForm(f => ({ ...f, origem_solicitacao: e.target.value as OrigemSolicitacaoUI }))}
+                    className="w-full bg-[#161b22] border border-[#23272F] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#0466C8]"
+                  >
+                    <option value="whatsapp">WhatsApp</option>
+                    <option value="telefone">Telefone</option>
+                    <option value="email">E-mail</option>
+                    <option value="presencial">Presencial</option>
+                  </select>
+                </div>
+
+                {/* Solicitante */}
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">Quem chamou?</label>
+                  <select
+                    value={form.id_contato_solicitante}
+                    onChange={e => setForm(f => ({ ...f, id_contato_solicitante: e.target.value }))}
+                    className="w-full bg-[#161b22] border border-[#23272F] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#0466C8]"
+                  >
+                    <option value="">Selecione o contato...</option>
+                    {allContatos.filter(c => c.clienteId === form.clienteId).map(c => (
+                      <option key={c.id} value={c.id}>{c.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Motivo do Acionamento */}
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">Motivo do Acionamento</label>
+                <select
+                  value={form.motivo_acionamento_id}
+                  onChange={e => setForm(f => ({ ...f, motivo_acionamento_id: e.target.value }))}
+                  className="w-full bg-[#161b22] border border-[#23272F] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#0466C8]"
+                >
+                  <option value="">Selecione a categoria...</option>
+                  {motivosAcionamento.map(m => (
+                    <option key={m.id_motivo} value={m.id_motivo}>{m.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Severidade e Impacto */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">Severidade</label>
+                  <select
+                    value={form.severidade_operacional}
+                    onChange={e => setForm(f => ({ ...f, severidade_operacional: e.target.value as SeveridadeUI }))}
+                    className="w-full bg-[#161b22] border border-[#23272F] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#0466C8]"
+                  >
+                    <option value="baixa">Baixa</option>
+                    <option value="moderada">Moderada</option>
+                    <option value="alta">Alta</option>
+                    <option value="critica">Crítica</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">Impacto Principal</label>
+                  <select
+                    value={form.impacto_operacional}
+                    onChange={e => setForm(f => ({ ...f, impacto_operacional: e.target.value }))}
+                    className="w-full bg-[#161b22] border border-[#23272F] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#0466C8]"
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="equipe">Equipe</option>
+                    <option value="financeiro">Financeiro</option>
+                    <option value="pacientes">Pacientes</option>
+                    <option value="contrato">Contrato</option>
+                    <option value="reputação">Reputação</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Descrição do Trigger */}
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">Relato do Gatilho (O que disparou o caos?)</label>
+                <textarea
+                  value={form.descricao_trigger}
+                  onChange={e => setForm(f => ({ ...f, descricao_trigger: e.target.value }))}
+                  placeholder="Ex: Ligação desesperada da coordenação informando falta de pessoal..."
+                  className="w-full bg-[#161b22] border border-[#23272F] rounded-xl px-4 py-3 text-sm text-white placeholder-[#7D8597] focus:outline-none focus:border-[#0466C8] min-h-[80px]"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Resumo — curto e objetivo */}
           <div>

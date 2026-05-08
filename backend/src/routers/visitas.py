@@ -6,9 +6,9 @@ from src.database import get_db
 from src.models.visita import Visita
 from src.models.pendencia import Pendencia
 from src.models.cliente import Cliente
-
 from src.models.projeto import Projeto 
-from src.schemas.visita import VisitaCreate, VisitaRead
+from src.models.motivo_acionamento import MotivoAcionamento
+from src.schemas.visita import VisitaCreate, VisitaRead, MotivoAcionamentoRead
 
 router = APIRouter(prefix="/visitas", tags=["Visitas"])
 
@@ -53,5 +53,19 @@ def registrar_visita(visita: VisitaCreate, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=List[VisitaRead])
 def listar_visitas(db: Session = Depends(get_db)):
-    # Busca todas as visitas na tabela "visitas"
     return db.query(Visita).all()
+
+@router.get("/{id_visita}", response_model=VisitaRead)
+def buscar_visita(id_visita: int, db: Session = Depends(get_db)):
+    visita = db.query(Visita).filter(Visita.id_visita == id_visita).first()
+    if not visita:
+        raise HTTPException(status_code=404, detail="Visita não encontrada")
+    return visita
+
+@router.get("/motivos-acionamento", response_model=List[MotivoAcionamentoRead])
+def listar_motivos_acionamento(db: Session = Depends(get_db)):
+    """
+    Retorna as categorias padronizadas de porquês uma visita extra foi acionada.
+    Útil para preenchimento no Modo Reflexão ou no acionamento do Modo Caos.
+    """
+    return db.query(MotivoAcionamento).all()

@@ -7,8 +7,10 @@ from src.models.visita_extra import VisitaExtra
 from src.models.visita import Visita
 from src.schemas.visita_extra import VisitaExtraCreate, VisitaExtraRead
 
-router = APIRouter(prefix="/visitas-extra", tags=["Visitas Extras"])
+router = APIRouter(prefix="/visitas-extra", tags=["Visitas Extras [DEPRECATED]"])
 
+# ⚠️ [DEPRECATED] Este router será removido. 
+# Utilize o endpoint POST /visitas informando o contexto_agendamento.
 @router.post("/", response_model=VisitaExtraRead)
 def criar_visita_extra(visita_extra: VisitaExtraCreate, db: Session = Depends(get_db)):
     # Valida se a visita base existe

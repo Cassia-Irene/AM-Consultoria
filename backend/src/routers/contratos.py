@@ -33,6 +33,13 @@ def criar_contrato(contrato: ContratoCreate, db: Session = Depends(get_db)):
 def listar_contratos(db: Session = Depends(get_db)):
     return db.query(Contrato).all()
 
+@router.get("/{id_contrato}", response_model=ContratoRead)
+def buscar_contrato(id_contrato: int, db: Session = Depends(get_db)):
+    contrato = db.query(Contrato).filter(Contrato.id_contrato == id_contrato).first()
+    if not contrato:
+        raise HTTPException(status_code=404, detail="Contrato não encontrado")
+    return contrato
+
 @router.post("/replace", response_model=ContratoRead)
 def replace_contrato(data: ContratoReplaceRequest, db: Session = Depends(get_db)):
     """

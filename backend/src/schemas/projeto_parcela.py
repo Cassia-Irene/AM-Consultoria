@@ -7,10 +7,17 @@ class ProjetoParcelaBase(BaseModel):
     id_projeto: int
     numero_parcela: int
     valor_parcela: Decimal
-    data_vencimento: date
+    #data_vencimento: date
+    data_pagamento_prevista: Optional[date] = None
     data_pagamento: Optional[date] = None
     pago: bool = False
 
+class ProjetoParcelaUpdate(BaseModel):
+    data_pagamento: Optional[date] = None
+    pago: Optional[bool] = None
+    # Caso queira permitir mudar o valor ou a observação depois
+    valor_parcela: Optional[Decimal] = None
+    
 class ProjetoParcelaCreate(ProjetoParcelaBase):
     pass
 

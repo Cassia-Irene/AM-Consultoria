@@ -10,8 +10,7 @@ class FaturamentoCliente(Base):
     # 🔗 FK apenas para contrato (Respeitando a 3NF do Backlog)
     id_contrato = Column(Integer, ForeignKey("contratos.id_contrato"), nullable=False)
     
-    mes_referencia = Column(Integer, nullable=False)
-    ano_referencia = Column(Integer, nullable=False)
+    mes_ano = Column(Date, nullable=False)
     
     # Valores financeiros
     valor_base = Column(Numeric(10, 2), nullable=False)
@@ -21,6 +20,10 @@ class FaturamentoCliente(Base):
     # Controle de pagamento
     pago = Column(Boolean, nullable=False, default=False)
     data_pagamento = Column(Date) # Pode ser nulo se não estiver pago
+
+    visitas_realizadas = Column(Integer, default=0)
+    desconto = Column(Numeric(10,2), default=0)
+
 
     # 🤝 Relacionamento
     contrato = relationship("Contrato", back_populates="faturamentos")

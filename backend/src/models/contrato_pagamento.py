@@ -13,7 +13,5 @@ class ContratoPagamento(Base):
     valor = Column(Numeric(10, 2), nullable=False)
 
     # 🤝 Relacionamentos
-    contrato = relationship("Contrato", back_populates="pagamentos")
+    contrato = relationship("Contrato", back_populates="pagamentos") 
     tipo_pagamento = relationship("TipoPagamento", back_populates="contratos_pagamento")
-    recebimentos = relationship("Recebimento", back_populates="contrato_pagamento")
-    

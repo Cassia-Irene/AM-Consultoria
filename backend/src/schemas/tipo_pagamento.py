@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 
 class TipoPagamentoBase(BaseModel):
-    nome: str
+    tipo: str
 
 class TipoPagamentoCreate(TipoPagamentoBase):
     pass

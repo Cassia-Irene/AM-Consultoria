@@ -6,7 +6,7 @@ class TipoPagamento(Base):
     __tablename__ = "tipos_pagamento"
 
     id_tipo = Column(Integer, primary_key=True, index=True)
-    nome = Column(String(50), nullable=False, unique=True)
+    tipo = Column(String(50), nullable=False, unique=True)
 
     # 🤝 Relacionamento
     contratos_pagamento = relationship("ContratoPagamento", back_populates="tipo_pagamento")

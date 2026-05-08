@@ -11,6 +11,10 @@ def encerrar_e_criar_novo_contrato(db: Session, data: ContratoReplaceRequest):
     if not antigo:
         raise HTTPException(status_code=404, detail="Contrato não encontrado")
     
+    # 🚨 NOVA VALIDAÇÃO DE SEGURANÇA (O Escudo Anti-Zumbi)
+    if antigo.data_fim is not None:
+        raise HTTPException(status_code=400, detail="Este contrato já está encerrado e não pode ser substituído novamente.")
+    
     try:
         # 2. Encerrar antigo
         antigo.data_fim = date.today()

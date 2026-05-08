@@ -3,9 +3,8 @@ from decimal import Decimal
 
 class ProjetoExtraBase(BaseModel):
     id_projeto: int
-    descricao_extra: str
-    valor_extra: Decimal
-    aprovado: bool = False
+    solicitado_por: int
+    aprovado_por: int = None
 
 class ProjetoExtraCreate(ProjetoExtraBase):
     pass

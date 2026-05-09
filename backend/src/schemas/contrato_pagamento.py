@@ -13,3 +13,7 @@ class ContratoPagamentoRead(ContratoPagamentoBase):
     id: int
     
     model_config = ConfigDict(from_attributes=True)
+
+class ContratoPagamentoUpdate(BaseModel):
+    id_tipo_pagamento: int | None = None
+    valor: Decimal | None = None

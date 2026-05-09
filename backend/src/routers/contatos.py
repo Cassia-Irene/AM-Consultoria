@@ -5,7 +5,7 @@ from typing import List
 from src.database import get_db
 from src.models.contato import Contato
 from src.models.cliente import Cliente
-from src.schemas.contato import ContatoCreate, ContatoRead
+from src.schemas.contato import ContatoCreate, ContatoRead, ContatoUpdate
 
 router = APIRouter(prefix="/contatos", tags=["Contatos"])
 
@@ -39,3 +39,27 @@ def criar_contato(contato: ContatoCreate, db: Session = Depends(get_db)):
 def listar_contatos(db: Session = Depends(get_db)):
     # Busca todos os registros na tabela "contatos"
     return db.query(Contato).all()
+
+@router.patch("/{id_contato}", response_model=ContatoRead)
+def atualizar_contato(
+    id_contato: int, 
+    contato_update: ContatoUpdate, 
+    db: Session = Depends(get_db)
+):
+    db_contato = db.query(Contato).filter(Contato.id_contato == id_contato).first()
+    
+    if not db_contato:
+        raise HTTPException(status_code=404, detail="Contato não encontrado")
+
+    update_data = contato_update.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(db_contato, key, value)
+
+    try:
+        db.commit()
+        db.refresh(db_contato)
+        return db_contato
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Erro ao atualizar contato: {str(e)}")

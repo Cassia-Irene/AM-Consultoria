@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-from backend.src.services.faturamento_service import calcular_valor_base, calcular_valor_extra
+from src.services.faturamento_service import calcular_valor_base, calcular_valor_extra
 from src.database import get_db
 from src.models.faturamento_cliente import FaturamentoCliente
 from src.models.contrato import Contrato

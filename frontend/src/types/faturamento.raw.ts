@@ -6,16 +6,16 @@
 export interface FaturamentoRaw {
   id_faturamento: number
   id_contrato: number
-
-  mes_ano: string
-
-  visitas_realizadas: number | null
-
-  valor_base: string
-  valor_extra: string
-  desconto: string
-  valor_total: string
-
+  
+  mes_ano: string             // ISO 8601: "YYYY-MM-DD" (sempre dia 1)
+  
+  visitas_realizadas: number
+  
+  valor_base: string | number
+  valor_extra: string | number
+  desconto: string | number
+  valor_total: string | number
+  
   pago: boolean
-  data_pagamento: string | null
+  data_pagamento: string | null // ISO 8601: "YYYY-MM-DD"
 }

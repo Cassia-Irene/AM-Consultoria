@@ -10,19 +10,26 @@ import type { FaturamentoCliente } from '@/domain/faturamento'
 import type { Visita } from '@/domain/visita'
 import type { Projeto } from '@/domain/projeto'
 
-import { getPendencias } from '@/mappers/pendencia.mapper'
-import { getClientes } from '@/mappers/cliente.mapper'
-import { getContratos } from '@/mappers/contrato.mapper'
-import { getFaturamentos } from '@/mappers/faturamento.mapper'
-import { getVisitas } from '@/mappers/visita.mapper'
-import { getProjetos } from '@/mappers/projeto.mapper'
+import { mapPendencia } from '@/mappers/pendencia.mapper'
+import { mapVisita } from '@/mappers/visita.mapper'
+import { mapCliente } from '@/mappers/cliente.mapper'
+import { mapContrato } from '@/mappers/contrato.mapper'
+import { mapFaturamento } from '@/mappers/faturamento.mapper'
+import { mapProjeto } from '@/mappers/projeto.mapper'
+
+import type { PendenciaRaw } from '@/types/pendencia.raw'
+import type { VisitaRaw } from '@/types/visita.raw'
+import type { ClienteRaw } from '@/types/cliente.raw'
+import type { ContratoRaw } from '@/types/contrato.raw'
+import type { FaturamentoRaw } from '@/types/faturamento.raw'
+import type { ProjetoRaw } from '@/types/projeto.raw'
 
 import { safeArray } from '@/utils/safe'
 import { fetchApi } from './api'
 
 export interface DashboardResponse {
   pendencias: Pendencia[]
-  clientes: Pick<Cliente, 'id' | 'nome_instituicao'>[]
+  clientes: Cliente[]
   contratos: Contrato[]
   faturamentos: FaturamentoCliente[]
   visitas: Visita[]
@@ -32,22 +39,22 @@ export interface DashboardResponse {
 export const DashboardService = {
   async getDashboardData(): Promise<DashboardResponse> {
     try {
-      const [pendencias, clientes, contratos, faturamentos, visitas, projetos] = await Promise.all([
-        fetchApi<Pendencia[]>('/pendencias', undefined, getPendencias()),
-        fetchApi<Pick<Cliente, 'id' | 'nome_instituicao'>[]>('/clientes', undefined, getClientes().map(c => ({ id: c.id, nome_instituicao: c.nome_instituicao }))),
-        fetchApi<Contrato[]>('/contratos', undefined, getContratos()),
-        fetchApi<FaturamentoCliente[]>('/faturamento-cliente', undefined, getFaturamentos()),
-        fetchApi<Visita[]>('/visitas?hoje=true', undefined, getVisitas()),
-        fetchApi<Projeto[]>('/projetos', undefined, getProjetos()),
+      const [pendRaw, cliRaw, conRaw, fatRaw, visRaw, proRaw] = await Promise.all([
+        fetchApi<PendenciaRaw[]>('/pendencias/'),
+        fetchApi<ClienteRaw[]>('/clientes/'),
+        fetchApi<ContratoRaw[]>('/contratos/'),
+        fetchApi<FaturamentoRaw[]>('/faturamento-cliente/'),
+        fetchApi<VisitaRaw[]>('/visitas/'),
+        fetchApi<ProjetoRaw[]>('/projetos/'),
       ])
 
       return {
-        pendencias: safeArray(pendencias),
-        clientes: safeArray(clientes),
-        contratos: safeArray(contratos),
-        faturamentos: safeArray(faturamentos),
-        visitas: safeArray(visitas),
-        projetos: safeArray(projetos),
+        pendencias: safeArray(pendRaw).map(mapPendencia),
+        clientes: safeArray(cliRaw).map(mapCliente),
+        contratos: safeArray(conRaw).map(mapContrato),
+        faturamentos: safeArray(fatRaw).map(mapFaturamento),
+        visitas: safeArray(visRaw).map(mapVisita),
+        projetos: safeArray(proRaw).map(mapProjeto),
       }
     } catch (err) {
       console.warn('[WARN][DASHBOARD] Fallback ativado. Erro ao carregar dados:', err)

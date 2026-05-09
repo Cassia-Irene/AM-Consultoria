@@ -15,18 +15,60 @@
 import { AppError } from '@/utils/errors'
 import {
   toVisitaPayload,
+  toPendenciasPayload,
   validateNovaVisitaInput,
   type NovaVisitaInput,
   type CriarVisitaResponse,
+  type MotivoAcionamentoRead,
 } from '@/adapters/visita.adapter'
+import { fetchApi } from './api'
+import { mapVisita } from '@/mappers/visita.mapper'
+import type { Visita } from '@/domain/visita'
+import type { VisitaRaw } from '@/types/visita.raw'
 
 export type { NovaVisitaInput, CriarVisitaResponse } from '@/adapters/visita.adapter'
 
 // ─── Service ─────────────────────────────────────────────────────────────────
 
+/**
+ * VisitasService - Integração Vertical Real (Back-First)
+ * 
+ * Agora consome obrigatoriamente a API oficial para estabilizar o contrato.
+ */
 export const VisitasService = {
+  async getAll(): Promise<Visita[]> {
+    try {
+      // Forçamos a API Real para Visitas (Back-First)
+      const data = await fetchApi<VisitaRaw[]>('/visitas/')
+      return data.map(mapVisita)
+    } catch (err) {
+      console.error('[SERVICE][ERROR] Falha ao buscar visitas reais:', err)
+      throw new AppError('Não foi possível carregar as visitas do servidor.', 'API_ERROR', err)
+    }
+  },
+
+  async getById(id: string | number): Promise<Visita> {
+    try {
+      const data = await fetchApi<VisitaRaw>(`/visitas/${id}`)
+      return mapVisita(data)
+    } catch (err) {
+      console.error(`[SERVICE][ERROR] Falha ao buscar visita ${id}:`, err)
+      throw new AppError('Falha ao carregar detalhes da visita.', 'API_ERROR', err)
+    }
+  },
+
+  async getMotivosAcionamento(): Promise<MotivoAcionamentoRead[]> {
+    try {
+      return await fetchApi<MotivoAcionamentoRead[]>('/visitas/motivos-acionamento')
+    } catch (err) {
+      console.error('[SERVICE][ERROR] Falha ao buscar motivos:', err)
+      // Fallback silencioso para motivos se o endpoint falhar
+      return []
+    }
+  },
+
   async criar(input: NovaVisitaInput): Promise<CriarVisitaResponse> {
-    // 1. Validar antes de chamar a API — falha rápida, mensagem clara
+    // 1. Validar antes de chamar a API
     const { valid, errors } = validateNovaVisitaInput(input)
     if (!valid) {
       throw new AppError(
@@ -36,25 +78,46 @@ export const VisitasService = {
       )
     }
 
-    // 2. Converter para o formato da API
-    const payload = toVisitaPayload(input)
+    // 2. Converter para o formato da API OFICIAL
+    const payloadVisita = toVisitaPayload(input)
 
-    // 3. Enviar — erros da API são capturados e relançados como VisitaServiceError
     try {
-      // TODO: descomentar quando a API estiver disponível
-      // return await fetchApi<CriarVisitaResponse>('/visitas', {
-      //   method: 'POST',
-      //   body: JSON.stringify(payload),
-      // })
+      // PASSO 1: Criar a Visita
+      const responseVisita = await fetchApi<CriarVisitaResponse>('/visitas/', {
+        method: 'POST',
+        body: JSON.stringify(payloadVisita),
+      })
 
-      console.log('[API POST /visitas] Payload:', payload)
-      await new Promise(resolve => setTimeout(resolve, 800))
-      return { id: 'v-gerado-123', message: 'Visita e pendências criadas com sucesso' }
+      const { id_visita } = responseVisita
+      const pendenciasFalhas: string[] = []
 
+      // PASSO 2: Criar Pendências (se houver)
+      if (input.pendencias && input.pendencias.length > 0) {
+        const payloadPendencias = toPendenciasPayload(input, id_visita)
+        
+        for (const pendencia of payloadPendencias) {
+          try {
+            await fetchApi('/pendencias/', {
+              method: 'POST',
+              body: JSON.stringify(pendencia),
+            })
+          } catch (pErr) {
+            console.error('[SERVICE][WARN] Falha ao criar pendência individual:', pErr)
+            pendenciasFalhas.push(pendencia.descricao)
+          }
+        }
+      }
+
+      return { 
+        id_visita, 
+        message: pendenciasFalhas.length > 0 
+          ? `Visita criada, mas ${pendenciasFalhas.length} pendência(s) falharam.` 
+          : 'Visita e pendências registradas com sucesso no backend oficial.',
+        pendencias_falhas: pendenciasFalhas.length > 0 ? pendenciasFalhas : undefined
+      }
     } catch (err) {
-      // Nunca repassa o erro bruto da API — UI recebe mensagem de domínio
       throw new AppError(
-        'Falha ao comunicar com o servidor. Tente novamente.',
+        'Falha ao registrar visita no servidor oficial.',
         'API_ERROR',
         err
       )

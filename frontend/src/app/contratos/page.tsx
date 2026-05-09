@@ -6,14 +6,12 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { getClientes } from '@/mappers/cliente.mapper'
-import { getContratos } from '@/mappers/contrato.mapper'
-import { getFaturamentos } from '@/mappers/faturamento.mapper'
+import { ContratoService } from '@/services/contrato.service'
+import { ClientesService } from '@/services/clientes.service'
+import { FaturamentosService } from '@/services/faturamento.service'
 import { getFaturamentoMaisRecente, getStatusFaturamento } from '@/domain/faturamento'
 import type { Contrato } from '@/domain/contrato'
 import type { FaturamentoCliente } from '@/domain/faturamento'
-import type { Cliente } from '@/domain/cliente'
-import { fetchApi } from '@/services/api'
 
 type ContratoComCliente = Contrato & { clienteNome: string }
 
@@ -29,10 +27,12 @@ export default function ContratosPage() {
     async function loadData() {
       try {
         const [todosContratos, clientes, fatDados] = await Promise.all([
-          fetchApi<Contrato[]>('/contratos', undefined, getContratos()),
-          fetchApi<Cliente[]>('/clientes', undefined, getClientes()),
-          fetchApi<FaturamentoCliente[]>('/faturamento-cliente', undefined, getFaturamentos())
+          ContratoService.getAll(),
+          ClientesService.getAll(),
+          FaturamentosService.getAll()
         ])
+
+        if (!isMounted) return
 
         const clienteNomePorId = new Map(clientes.map(c => [c.id, c.nome_instituicao]))
 
@@ -41,10 +41,8 @@ export default function ContratosPage() {
           clienteNome: clienteNomePorId.get(c.clienteId) ?? `Cliente ${c.clienteId}`,
         }))
 
-        if (isMounted) {
-          setContratos(comNome)
-          setFaturamentos(fatDados)
-        }
+        setContratos(comNome)
+        setFaturamentos(fatDados)
       } catch (err) {
         if (isMounted) {
           console.warn('[WARN][CONTRATOS] Erro ao carregar dados:', err)

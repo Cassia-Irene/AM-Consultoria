@@ -1,47 +1,48 @@
-import { Contratos as ContratosMock } from '@/mocks/contratos'
-import { HistoricosContratos as HistoricosMock } from '@/mocks/historicos'
 import type { Contrato, HistoricoContrato } from '@/domain/contrato'
 import type { ContratoRaw, HistoricoContratoRaw } from '@/types/contrato.raw'
-import { validateShape } from '@/utils/schemaGuard'
+import { validateShape, warnInvalidShape } from '@/utils/schemaGuard'
+import { IntegrationError } from '@/utils/errors'
 
-export function getContratos(): Contrato[] {
-  return (ContratosMock as unknown as ContratoRaw[]).map(mapContrato)
-}
-
-export function getHistoricos(): HistoricoContrato[] {
-  return (HistoricosMock as unknown as HistoricoContratoRaw[]).map(mapHistorico)
-}
+// Removidas funções de mock para enforçar realidade operacional.
 
 export function mapContrato(raw: ContratoRaw): Contrato {
-  validateShape<ContratoRaw>('ContratoRaw', raw, [
+  // Validação Estrita conforme ContratoRead
+  if (!raw.id_contrato) {
+    warnInvalidShape('Contrato:ID_MISSING', raw)
+    throw new IntegrationError('Contrato', 'id_contrato ausente no contrato real', raw)
+  }
+  if (!raw.id_cliente) {
+    warnInvalidShape('Contrato:CLIENTE_ID_MISSING', raw)
+    throw new IntegrationError('Contrato', 'id_cliente ausente no contrato real', raw)
+  }
+
+  validateShape<ContratoRaw>('ContratoRead', raw, [
     'id_contrato',
     'id_cliente',
     'servicos_contratados',
     'visitas_previstas_mes',
-    'inclui_relatorio',
-    'data_inicio',
-    'valor_mensal',
-    'status'
+    'data_inicio'
   ])
 
-  if (!raw.id_contrato) throw new Error(`ContratoRaw missing required field: id_contrato`)
-  if (!raw.id_cliente) throw new Error(`ContratoRaw missing required field: id_cliente`)
-  if (!raw.servicos_contratados) throw new Error(`ContratoRaw (ID: ${raw.id_contrato}) missing required field: servicos_contratados`)
-  if (!raw.data_inicio) throw new Error(`ContratoRaw (ID: ${raw.id_contrato}) missing required field: data_inicio`)
+  // Derivação de Status (Regra de Negócio Front)
+  const hoje = new Date().toISOString().split('T')[0]
+  const statusDerivado: 'ativo' | 'inativo' = (raw.data_fim && raw.data_fim < hoje) ? 'inativo' : 'ativo'
 
   return {
     id: String(raw.id_contrato),
     clienteId: String(raw.id_cliente),
 
-    servicos_contratados: raw.servicos_contratados,
-    visitas_previstas_mes: raw.visitas_previstas_mes,
-    inclui_relatorio: raw.inclui_relatorio,
+    servicos_contratados: raw.servicos_contratados || 'Serviços não informados',
+    visitas_previstas_mes: raw.visitas_previstas_mes ?? 0,
+    inclui_relatorio: !!raw.inclui_relatorio,
 
     data_inicio: raw.data_inicio,
     data_fim: raw.data_fim ?? undefined,
-    valor_mensal: parseFloat(raw.valor_mensal),
-    status: raw.status as 'ativo' | 'inativo' | 'suspenso',
-
+    
+    // Campo híbrido (não existe no backend contratos)
+    valor_mensal: 0, 
+    
+    status: statusDerivado,
     observacoes_gerais: raw.observacoes_gerais ?? undefined,
   }
 }

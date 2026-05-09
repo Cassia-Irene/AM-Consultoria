@@ -4,5 +4,9 @@
 
 export interface TipoPagamentoRaw {
   id_tipo: number
+
+  // Aliases para compatibilidade híbrida
+  id?: number | string
+
   tipo: string
 }

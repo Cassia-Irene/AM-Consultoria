@@ -1,19 +1,24 @@
-// src/mappers/projeto.mapper.ts
-//
-// Converte ProjetoRaw (shape da API) → Projeto (domain).
-// Validação estrita — sem fallback silencioso.
-
-import { Projetos as Mock } from '@/lib/mocks'
 import type { Projeto, StatusProjeto } from '@/domain/projeto'
 import type { ProjetoRaw } from '@/types/projeto.raw'
-import { validateShape } from '@/utils/schemaGuard'
-
-export function getProjetos(): Projeto[] {
-  return (Mock as unknown as ProjetoRaw[]).map(mapProjeto)
-}
+import { validateShape, warnInvalidShape } from '@/utils/schemaGuard'
+import { IntegrationError } from '@/utils/errors'
 
 export function mapProjeto(raw: ProjetoRaw): Projeto {
-  validateShape<ProjetoRaw>('ProjetoRaw', raw, [
+  // Validação Estrita (Back-First)
+  if (!raw.id_projeto) {
+    warnInvalidShape('Projeto:ID_MISSING', raw)
+    throw new IntegrationError('Projeto', 'id_projeto ausente no contrato real', raw)
+  }
+  if (!raw.id_contrato) {
+    warnInvalidShape('Projeto:CONTRATO_ID_MISSING', raw)
+    throw new IntegrationError('Projeto', 'id_contrato ausente no contrato real', raw)
+  }
+  if (!raw.titulo) {
+    warnInvalidShape('Projeto:TITULO_MISSING', raw)
+    throw new IntegrationError('Projeto', 'titulo ausente no contrato real', raw)
+  }
+
+  validateShape<ProjetoRaw>('ProjetoRead', raw, [
     'id_projeto',
     'id_contrato',
     'titulo',
@@ -33,24 +38,28 @@ export function mapProjeto(raw: ProjetoRaw): Projeto {
     data_fim_prevista: raw.data_fim_prevista ?? undefined,
     data_fim_real: raw.data_fim_real ?? undefined,
 
-    valor_total: parseDecimal(raw.valor_total),
+    valor_total: parseDecimal(raw.valor_total || '0'),
 
-    status: normalizeStatus(raw.status),
+    status: normalizeStatus(raw.status || 'planejado'),
 
     observacoes_gerais: raw.observacoes_gerais ?? undefined,
   }
 }
 
 function normalizeStatus(status: string): StatusProjeto {
-  if (status === 'planejado') return 'planejado'
-  if (status === 'em_andamento') return 'em_andamento'
-  if (status === 'concluido') return 'concluido'
-  if (status === 'cancelado') return 'cancelado'
-  throw new Error(`[ProjetoMapper] Status inválido: "${status}"`)
+  const s = String(status || '').toLowerCase()
+  
+  // Normalização SQL -> Domain
+  if (s === 'em andamento' || s === 'em_andamento') return 'em_andamento'
+  if (s === 'concluído' || s === 'concluido') return 'concluido'
+  if (s === 'cancelado') return 'cancelado'
+  if (s === 'planejado') return 'planejado'
+  
+  console.warn('[MAPPER][PROJETO] Status desconhecido:', status)
+  return 'em_andamento' // Default resiliente
 }
 
-function parseDecimal(value: string): number {
-  const n = parseFloat(value)
-  if (isNaN(n)) throw new Error(`[ProjetoMapper] valor_total inválido: "${value}"`)
-  return n
+function parseDecimal(value: string | number): number {
+  const n = typeof value === 'number' ? value : parseFloat(String(value || '0'))
+  return isNaN(n) ? 0 : n
 }

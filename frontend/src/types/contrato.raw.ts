@@ -12,9 +12,7 @@ export interface ContratoRaw {
 
   data_inicio: string         // ISO 8601: "YYYY-MM-DD"
   data_fim: string | null
-  valor_mensal: string
-  status: string
-
+  
   observacoes_gerais: string | null
 }
 
@@ -22,6 +20,6 @@ export interface HistoricoContratoRaw {
   id_historico: number
   id_contrato_encerrado: number
   id_contrato_novo: number
-  data_alteracao: string
+  data_alteracao: string      // ISO 8601: "YYYY-MM-DD"
   motivo_alteracao: string
 }

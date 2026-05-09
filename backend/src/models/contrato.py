@@ -25,7 +25,11 @@ class Contrato(Base):
     visitas = relationship("Visita", back_populates="contrato")
     faturamentos = relationship("FaturamentoCliente", back_populates="contrato")
     eventos_criticos = relationship("EventoCritico", back_populates="contrato")
+<<<<<<< HEAD
     historicos = relationship("HistoricoContrato", back_populates="contrato")
+=======
+    historicos = relationship("HistoricoContrato", back_populates="contrato", foreign_keys="[HistoricoContrato.id_contrato_encerrado]")
+>>>>>>> cass
     
     # ADICIONE ESTES TRÊS PARA COMPLETAR O MAPA:
     projetos = relationship("Projeto", back_populates="contrato") #

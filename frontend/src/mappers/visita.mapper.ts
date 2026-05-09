@@ -1,53 +1,65 @@
-// src/mappers/visita.mapper.ts
-
-import { Visitas as VisitasMock } from '@/lib/mocks'
-import type { Visita } from '@/domain/visita'
+import type { Visita, StatusVisita, TipoVisita, ModalidadeVisita } from '@/domain/visita'
 import type { VisitaRaw } from '@/types/visita.raw'
+import { validateShape, warnInvalidShape } from '@/utils/schemaGuard'
+import { IntegrationError } from '@/utils/errors'
 
-export function getVisitas(): Visita[] {
-  return (VisitasMock as VisitaRaw[]).map(mapVisita)
-}
 
 export function mapVisita(raw: VisitaRaw): Visita {
-  // Tenta construir dataHora combinando data e horario
-  let dataHora = raw.data
-  if (raw.horario && raw.horario !== '—') {
-    // Se horario for "HH:mm", adiciona T e concatena
-    dataHora = `${raw.data}T${raw.horario}:00`
-  } else if (!dataHora.includes('T')) {
-    dataHora = `${raw.data}T00:00:00`
+  // Validação Estrita (Back-First)
+  if (!raw.id_visita) {
+    warnInvalidShape('Visita:ID_MISSING', raw)
+    throw new IntegrationError('Visita', 'id_visita ausente no contrato real', raw)
+  }
+  if (!raw.id_contrato) {
+    warnInvalidShape('Visita:CONTRATO_ID_MISSING', raw)
+    throw new IntegrationError('Visita', 'id_contrato ausente no contrato real', raw)
   }
 
-  if (!raw.clienteId) throw new Error(`VisitaRaw (ID: ${raw.id}) missing required field: clienteId`)
-  if (!raw.contratoId) throw new Error(`VisitaRaw (ID: ${raw.id}) missing required field: contratoId`)
+  validateShape<VisitaRaw>('VisitaRaw', raw, [
+    'status',
+    'data_hora',
+    'tipo_visita',
+    'modalidade',
+    'descricao'
+  ])
 
   return {
-    id: String(raw.id),
-    clienteId: String(raw.clienteId),
-    contratoId: String(raw.contratoId),
+    id: String(raw.id_visita),
+    contratoId: String(raw.id_contrato),
+    projetoId: raw.id_projeto ? String(raw.id_projeto) : undefined,
 
-    data_visita: dataHora,
-    duracao_estimada_minutos: raw.duracaoMinutos,
+    status: normalizeStatus(raw.status || 'agendada'),
+    data_hora: raw.data_hora || new Date().toISOString(),
+    duracao_minutos: raw.duracao_minutos ?? undefined,
 
-    tipo: normalizeTipo(raw.tipo),
-    modalidade: raw.modalidade || 'presencial',
-    status: raw.status || 'Agendada',
+    tipo_visita: normalizeTipo(raw.tipo_visita || 'rotina'),
+    modalidade: normalizeModalidade(raw.modalidade || 'presencial'),
 
-    descricao: raw.descricao || '',
-    resultado: raw.resultados || '',
-
-    criadaEm: new Date().toISOString(),
-    observacoes: raw.observacoes,
-    ultimaVisitaEm: raw.ultimaVisitaEm,
+    descricao: raw.descricao || 'Sem descrição',
+    resultados: raw.resultados ?? undefined,
   }
 }
 
-/* ───────── helpers ───────── */
+function normalizeStatus(value: string): StatusVisita {
+  const v = String(value || '').toLowerCase()
+  if (v === 'agendada' || v === 'realizada' || v === 'cancelada') {
+    return v as StatusVisita
+  }
+  return 'agendada'
+}
 
-function normalizeTipo(tipo?: string): 'rotina' | 'extra' {
-  if (tipo === 'rotina') return 'rotina'
-  if (tipo === 'extra') return 'extra'
-
-  console.warn('Tipo de visita desconhecido:', tipo)
+function normalizeTipo(value: string): TipoVisita {
+  const v = String(value || '').toLowerCase()
+  if (v === 'rotina' || v === 'rotineira') return 'rotina'
+  if (v === 'extra' || v === 'urgente' || v === 'pontual') return 'extra'
+  if (v === 'projeto') return 'projeto'
   return 'rotina'
+}
+
+function normalizeModalidade(value: string): ModalidadeVisita {
+  const v = String(value || '').toLowerCase()
+  if (v === 'presencial') return 'presencial'
+  if (v === 'online' || v === 'remota' || v === 'remoto') return 'online'
+  if (v === 'hibrida') return 'hibrida'
+  return 'presencial'
 }

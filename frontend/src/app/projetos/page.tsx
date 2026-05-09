@@ -5,8 +5,7 @@
 // Padrão visual Dark/Glass alinhado ao Dashboard.
 
 import { useState, useEffect } from 'react'
-import { getProjetos } from '@/mappers/projeto.mapper'
-import { fetchApi } from '@/services/api'
+import { ProjetosService } from '@/services/projetos.service'
 import Link from 'next/link'
 import type { Projeto, StatusProjeto } from '@/domain/projeto'
 
@@ -20,7 +19,7 @@ export default function ProjetosPage() {
 
     async function loadData() {
       try {
-        const data = await fetchApi<Projeto[]>('/projetos', undefined, getProjetos())
+        const data = await ProjetosService.getAll()
         if (isMounted) setProjetos(data)
       } catch (err) {
         if (isMounted) {

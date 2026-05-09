@@ -1,13 +1,14 @@
 import { Clientes as ClientesMock } from '@/mocks/clientes'
 import type { Cliente } from '@/domain/cliente'
 import type { ClienteRaw } from '@/types/cliente.raw'
-import { validateShape } from '@/utils/schemaGuard'
+import { validateShape, warnInvalidShape } from '@/utils/schemaGuard'
 
 function normalizeStatus(status: string): 'ativo' | 'inativo' {
-  if (status === 'ativo') return 'ativo'
-  if (status === 'inativo') return 'inativo'
+  const s = String(status || '').toLowerCase()
+  if (s === 'ativo') return 'ativo'
+  if (s === 'inativo') return 'inativo'
 
-  console.warn('Status desconhecido:', status)
+  console.warn('[MAPPER][CLIENTE] Status desconhecido:', status)
   return 'inativo'
 }
 
@@ -16,25 +17,31 @@ export function getClientes(): Cliente[] {
 }
 
 export function mapCliente(raw: ClienteRaw): Cliente {
-  validateShape<ClienteRaw>('ClienteRaw', raw, [
-    'id',
-    'nome_instituicao',
+  // Validação Estrita conforme ClienteRead (Backend)
+  if (!raw.id_cliente) {
+    warnInvalidShape('Cliente:ID_MISSING', raw)
+    throw new Error('[MAPPER][CLIENTE] Campo obrigatório ausente: id_cliente')
+  }
+  if (!raw.nome) {
+    warnInvalidShape('Cliente:NAME_MISSING', raw)
+    throw new Error('[MAPPER][CLIENTE] Campo obrigatório ausente: nome')
+  }
+
+  validateShape<ClienteRaw>('ClienteRead', raw, [
+    'id_cliente',
+    'nome',
     'tipo_instituicao',
     'cidade',
     'status'
   ])
 
-  if (!raw.nome_instituicao) throw new Error(`ClienteRaw (ID: ${raw.id}) missing required field: nome_instituicao`)
-  if (!raw.tipo_instituicao) throw new Error(`ClienteRaw (ID: ${raw.id}) missing required field: tipo_instituicao`)
-  if (!raw.cidade) throw new Error(`ClienteRaw (ID: ${raw.id}) missing required field: cidade`)
-
   return {
-    id: String(raw.id),
-    nome_instituicao: raw.nome_instituicao,
-    tipo_instituicao: raw.tipo_instituicao,
-    cidade: raw.cidade,
-    nivel_complexidade: raw.nivel_complexidade,
-    observacoes_gerais: raw.observacoes_gerais,
-    status: normalizeStatus(raw.status),
+    id: String(raw.id_cliente),
+    nome_instituicao: raw.nome,
+    tipo_instituicao: raw.tipo_instituicao || 'Não informada',
+    cidade: raw.cidade || 'Não informada',
+    nivel_complexidade: raw.nivel_complexidade ?? undefined,
+    observacoes_gerais: raw.observacoes_gerais ?? undefined,
+    status: normalizeStatus(raw.status || 'ativo'),
   }
 }

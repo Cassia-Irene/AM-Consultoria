@@ -39,6 +39,13 @@ def listar_visitas(db: Session = Depends(get_db)):
     # Busca todas as visitas na tabela "visitas"
     return db.query(Visita).all()
 
+@router.get("/{id_visita}", response_model=VisitaRead)
+def buscar_visita(id_visita: int, db: Session = Depends(get_db)):
+    visita = db.query(Visita).filter(Visita.id_visita == id_visita).first()
+    if not visita:
+        raise HTTPException(status_code=404, detail="Visita não encontrada")
+    return visita
+
 @router.patch("/{id_visita}", response_model=VisitaRead)
 def atualizar_visita(
     id_visita: int, 

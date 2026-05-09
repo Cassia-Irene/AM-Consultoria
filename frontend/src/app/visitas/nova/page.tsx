@@ -7,25 +7,34 @@
 //   2. O que ficou aberto  (gerador de pendências)
 //   3. Confirmação
 
-import { useState, FormEvent } from 'react'
+import { useState, useEffect, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { getClientes } from '@/mappers/cliente.mapper'
-import { getContratos } from '@/mappers/contrato.mapper'
-import { VisitasService } from '../../../services/visitas.service'
+import { ClientesService } from '@/services/clientes.service'
+import { ContratoService } from '@/services/contrato.service'
+import { VisitasService } from '@/services/visitas.service'
+import { ContatosService } from '@/services/contatos.service'
+import type { Cliente } from '@/domain/cliente'
+import type { Contrato } from '@/domain/contrato'
+import type { Contato } from '@/domain/contato'
+import type { StatusVisita, ModalidadeVisita } from '@/domain/visita'
 
 /* ─────────────────────────────────────────────
    TYPES
 ───────────────────────────────────────────── */
 
-type TipoVisita = 'Regular' | 'Extra'
-
-type PrioridadePendencia = 'urgente' | 'atencao' | 'normal'
+import type { 
+  TipoVisitaUI, 
+  ContextoAgendamentoUI,
+  OrigemSolicitacaoUI,
+  SeveridadeUI,
+  MotivoAcionamentoRead
+} from '@/adapters/visita.adapter'
 
 interface PendenciaGerada {
   id: string
-  titulo: string
-  prazo: string          // dd/mm/yyyy
-  prioridade: PrioridadePendencia
+  descricao: string
+  data_prazo: string     // YYYY-MM-DD
+  responsavel: string
 }
 
 /** Sugestão gerada automaticamente pelo sistema a partir do resumo */
@@ -38,13 +47,27 @@ interface PendenciaSugerida extends PendenciaGerada {
 interface FormState {
   clienteId: string
   contratoId: string
-  tipoVisita: TipoVisita
-  modalidade: string
-  duracao_estimada_minutos: number
-  data_visita: string
+  status: StatusVisita
+  
+  // 🧠 Dimensões Operacionais
+  tipo_visita: TipoVisitaUI
+  contexto_agendamento: ContextoAgendamentoUI
+  
+  // 🚦 Contexto de Extra/Caos
+  origem_solicitacao: OrigemSolicitacaoUI
+  id_contato_solicitante: string
+  motivo_acionamento_id: string
+  descricao_trigger: string
+  
+  // 🔥 Métricas
+  severidade_operacional: SeveridadeUI
+  impacto_operacional: string
+  
+  modalidade: ModalidadeVisita
+  duracao_minutos: number
+  data_hora: string
   descricao: string
-  resultado: string
-  observacoes: string
+  resultados: string
   pendencias: PendenciaGerada[]
 }
 
@@ -57,8 +80,7 @@ interface Regra {
    * Ex: "contrato" bate, mas "assinou" indica que já foi resolvido.
    */
   negadores?: string[]
-  titulo: string
-  prioridade: PrioridadePendencia
+  descricao: string
   diasAFrente: number
   gatilho: string
   /**
@@ -73,8 +95,7 @@ const REGRAS: Regra[] = [
   {
     palavras: ['anvisa', 'vigilância', 'vigilancia', 'sanitária', 'sanitaria', 'inspecão', 'inspecao', 'vistoria', 'auditoria'],
     negadores: ['aprovado', 'aprovada', 'ok', 'passou', 'liberado', 'liberada'],
-    titulo: 'Pendência ANVISA',
-    prioridade: 'urgente',
+    descricao: 'Pendência ANVISA',
     diasAFrente: 3,
     gatilho: 'ANVISA',
     scoreBase: 0.9,
@@ -83,8 +104,7 @@ const REGRAS: Regra[] = [
     palavras: ['relatório', 'relatorio', 'laudo', 'documentar', 'documentação', 'documentacao'],
     // 'documento' removido — ambíguo demais ("o cliente pediu um documento" ≠ pendência)
     negadores: ['enviou', 'enviado', 'mandou', 'entregou', 'pronto', 'concluído', 'concluido'],
-    titulo: 'Enviar relatório',
-    prioridade: 'atencao',
+    descricao: 'Enviar relatório',
     diasAFrente: 7,
     gatilho: 'relatório',
     scoreBase: 0.8,
@@ -93,8 +113,7 @@ const REGRAS: Regra[] = [
     palavras: ['contrato', 'renovação', 'renovacao', 'assinatura'],
     // 'assinar'/'assinou' removidos — indicam conclusão, não pendência
     negadores: ['assinou', 'assinado', 'fechou', 'fechado', 'renovado'],
-    titulo: 'Resolver pendência contratual',
-    prioridade: 'atencao',
+    descricao: 'Resolver pendência contratual',
     diasAFrente: 5,
     gatilho: 'contrato',
     scoreBase: 0.75,
@@ -102,8 +121,7 @@ const REGRAS: Regra[] = [
   {
     palavras: ['fatura', 'pagamento', 'boleto', 'cobrança', 'cobranca', 'cobrar', 'pagar', 'inadimplente', 'inadimplência', 'vencido', 'vencida'],
     negadores: ['pagou', 'pago', 'quitou', 'quitado', 'regularizado'],
-    titulo: 'Regularizar pagamento',
-    prioridade: 'urgente',
+    descricao: 'Regularizar pagamento',
     diasAFrente: 2,
     gatilho: 'pagamento',
     scoreBase: 0.9,
@@ -111,8 +129,7 @@ const REGRAS: Regra[] = [
   {
     palavras: ['treinamento', 'capacitação', 'capacitacao', 'capacitar', 'treinar'],
     negadores: ['fez', 'feito', 'realizado', 'concluído', 'concluido'],
-    titulo: 'Agendar treinamento com equipe',
-    prioridade: 'normal',
+    descricao: 'Agendar treinamento com equipe',
     diasAFrente: 14,
     gatilho: 'treinamento',
     scoreBase: 0.7,
@@ -121,8 +138,7 @@ const REGRAS: Regra[] = [
     // Intenção implícita: "pedir", "marcar", "combinar" indicam ação futura
     palavras: ['retorno', 'reagendar', 'próxima visita', 'proxima visita', 'voltar lá', 'agendar', 'marcar visita', 'pediu pra voltar', 'pediu retorno'],
     negadores: ['cancelou', 'cancelado', 'não quer', 'não precisa'],
-    titulo: 'Agendar próxima visita',
-    prioridade: 'normal',
+    descricao: 'Agendar próxima visita',
     diasAFrente: 7,
     gatilho: 'retorno',
     scoreBase: 0.65,
@@ -130,8 +146,7 @@ const REGRAS: Regra[] = [
   {
     palavras: ['alvará', 'alvara', 'licença', 'licenca'],
     negadores: ['renovado', 'regularizado', 'em dia'],
-    titulo: 'Renovar alvará/licença',
-    prioridade: 'atencao',
+    descricao: 'Renovar alvará/licença',
     diasAFrente: 10,
     gatilho: 'alvará',
     scoreBase: 0.8,
@@ -143,8 +158,7 @@ const REGRAS: Regra[] = [
       'alinhar', 'alinhamento', 'comunicar', 'comunicado', 'reunir', 'reunião',
     ],
     negadores: ['resolvido', 'alinhado', 'alinhada'],
-    titulo: 'Alinhar com equipe do cliente',
-    prioridade: 'atencao',
+    descricao: 'Alinhar com equipe do cliente',
     diasAFrente: 3,
     gatilho: 'equipe',
     scoreBase: 0.65,
@@ -157,8 +171,7 @@ const REGRAS: Regra[] = [
       'ocorrência', 'ocorrencia', 'incidente',
     ],
     negadores: ['resolvido', 'resolvida', 'estavel', 'estável'],
-    titulo: 'Acompanhar situação do paciente/residente',
-    prioridade: 'atencao',
+    descricao: 'Acompanhar situação do paciente/residente',
     diasAFrente: 2,
     gatilho: 'paciente',
     scoreBase: 0.7,
@@ -167,8 +180,7 @@ const REGRAS: Regra[] = [
     // Solicitações diretas do cliente são ações implícitas
     palavras: ['cliente pediu', 'pediu para', 'solicitou', 'precisa de', 'está esperando', 'aguardando'],
     negadores: ['não precisa', 'cancelou', 'desistiu'],
-    titulo: 'Atender solicitação do cliente',
-    prioridade: 'atencao',
+    descricao: 'Atender solicitação do cliente',
     diasAFrente: 3,
     gatilho: 'solicitação',
     scoreBase: 0.65,
@@ -192,10 +204,10 @@ const THRESHOLD_PRE_ACEITAR = 0.7
 /** Janela de caracteres para considerar boost de urgência cirúrgico */
 const JANELA_BOOST = 60
 
-function prazoEmDias(dias: number): string {
+function prazoEmDiasISO(dias: number): string {
   const d = new Date()
   d.setDate(d.getDate() + dias)
-  return d.toLocaleDateString('pt-BR')
+  return d.toISOString().split('T')[0]
 }
 
 /**
@@ -236,20 +248,17 @@ function sugerirPendencias(resumo: string): PendenciaSugerida[] {
     const boostLocal = temBoostProximo(texto, regra.gatilho)
     const comBoost   = boostGlobal || boostLocal
 
-    // 4. Define prioridade final
-    let prioridade: PrioridadePendencia = regra.prioridade
-    if (comBoost && prioridade === 'normal')   prioridade = 'atencao'
-    if (comBoost && prioridade === 'atencao')  prioridade = 'urgente'
-    // urgente permanece urgente
-
-    // 5. Score final (boost sobe o score, dando mais chances de pré-aceitar)
+    // 4. Score final (boost sobe o score, dando mais chances de pré-aceitar)
     const scoreFinal = comBoost ? Math.min(regra.scoreBase + 0.15, 1) : regra.scoreBase
+
+    // 5. Ajusta prazo se for urgente
+    const diasFinal = comBoost ? Math.max(1, Math.ceil(regra.diasAFrente * 0.5)) : regra.diasAFrente
 
     sugestoes.push({
       id: uid(),
-      titulo: regra.titulo,
-      prazo: prazoEmDias(prioridade === 'urgente' ? Math.ceil(regra.diasAFrente * 0.66) : regra.diasAFrente),
-      prioridade,
+      descricao: regra.descricao,
+      data_prazo: prazoEmDiasISO(diasFinal),
+      responsavel: 'Equipe Técnica', // Padrão
       gatilho: regra.gatilho,
       estado: 'pendente',
       // score utilizado pelo chamador para separar opt-out vs opt-in
@@ -264,7 +273,7 @@ function sugerirPendencias(resumo: string): PendenciaSugerida[] {
    HELPERS
 ───────────────────────────────────────────── */
 
-const clientesAtivos = getClientes().filter(c => c.status === 'ativo')
+// Removido clientesAtivos do escopo global
 
 function uid() {
   return Math.random().toString(36).slice(2, 9)
@@ -274,25 +283,21 @@ function uid() {
    SUB-COMPONENTES
 ───────────────────────────────────────────── */
 
-/** Formulário inline para adicionar pendência manualmente — sem abrir modal */
 function AdicionarPendenciaInline({ onAdd, variant = 'dashed' }: { onAdd: (p: PendenciaGerada) => void, variant?: 'dashed' | 'primary' }) {
-  const [titulo, setTitulo] = useState('')
-  const [prioridade, setPrioridade] = useState<PrioridadePendencia>('atencao')
+  const [descricao, setDescricao] = useState('')
+  const [diasAFrente, setDiasAFrente] = useState(5)
   const [aberto, setAberto] = useState(false)
 
   function submeter() {
-    if (!titulo.trim()) return
-    const dias = prioridade === 'urgente' ? 2 : prioridade === 'atencao' ? 5 : 10
-    const d = new Date()
-    d.setDate(d.getDate() + dias)
+    if (!descricao.trim()) return
     onAdd({
       id: Math.random().toString(36).slice(2, 9),
-      titulo: titulo.trim(),
-      prazo: d.toLocaleDateString('pt-BR'),
-      prioridade,
+      descricao: descricao.trim(),
+      data_prazo: prazoEmDiasISO(diasAFrente),
+      responsavel: 'Equipe Técnica',
     })
-    setTitulo('')
-    setPrioridade('atencao')
+    setDescricao('')
+    setDiasAFrente(5)
     setAberto(false)
   }
 
@@ -326,8 +331,8 @@ function AdicionarPendenciaInline({ onAdd, variant = 'dashed' }: { onAdd: (p: Pe
 
       <input
         type="text"
-        value={titulo}
-        onChange={e => setTitulo(e.target.value)}
+        value={descricao}
+        onChange={e => setDescricao(e.target.value)}
         onKeyDown={e => e.key === 'Enter' && submeter()}
         placeholder="O que ficou em aberto?"
         autoFocus
@@ -335,18 +340,14 @@ function AdicionarPendenciaInline({ onAdd, variant = 'dashed' }: { onAdd: (p: Pe
       />
 
       <div className="flex gap-2 items-center">
-        {(['urgente', 'atencao', 'normal'] as PrioridadePendencia[]).map(p => {
-          const labels = { urgente: 'Urgente', atencao: 'Atenção', normal: 'Normal' }
-          const active = { urgente: 'bg-red-900/50 text-red-400 border-red-700', atencao: 'bg-amber-900/30 text-amber-400 border-amber-700', normal: 'bg-[#23272F] text-[#7D8597] border-[#23272F]' }
-          return (
-            <button key={p} type="button" onClick={() => setPrioridade(p)}
-              className={`text-[10px] font-bold px-3 py-1.5 rounded-lg border transition-all ${
-                prioridade === p ? active[p] : 'bg-transparent text-[#7D8597] border-[#23272F]'
-              }`}>
-              {labels[p]}
-            </button>
-          )
-        })}
+        <span className="text-[10px] text-[#7D8597] shrink-0">Dias p/ prazo:</span>
+        <input
+          type="number"
+          value={diasAFrente}
+          onChange={e => setDiasAFrente(Number(e.target.value))}
+          min={0}
+          className="w-20 bg-[#23272F] text-white text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#0466C8]"
+        />
       </div>
 
       <div className="flex gap-2 pt-1">
@@ -354,7 +355,7 @@ function AdicionarPendenciaInline({ onAdd, variant = 'dashed' }: { onAdd: (p: Pe
           className="flex-1 py-2.5 rounded-xl text-sm text-[#7D8597] bg-[#23272F] active:opacity-70 transition-opacity">
           Cancelar
         </button>
-        <button type="button" onClick={submeter} disabled={!titulo.trim()}
+        <button type="button" onClick={submeter} disabled={!descricao.trim()}
           className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0466C8] disabled:opacity-40 active:bg-[#0353A4] transition-colors">
           Adicionar
         </button>
@@ -375,14 +376,10 @@ function PendenciaEditavel({
 }) {
   const [expandido, setExpandido] = useState(false)
 
-  const cColor = p.prioridade === 'urgente' ? 'border-red-500' : p.prioridade === 'atencao' ? 'border-amber-400' : 'border-[#23272F]'
-  const dest   = p.prioridade === 'urgente' ? '→ Modo Caos' : '→ Planejamento'
-  const dColor = p.prioridade === 'urgente' ? 'text-red-400' : 'text-[#7D8597]'
-  const prioActive = {
-    urgente: 'bg-red-900/50 text-red-400 border-red-700',
-    atencao: 'bg-amber-900/30 text-amber-400 border-amber-700',
-    normal:  'bg-[#23272F] text-[#7D8597] border-[#23272F]',
-  }
+  const urgencia = (new Date(p.data_prazo).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+  const isUrgente = urgencia < 2
+  const cColor = isUrgente ? 'border-red-500' : 'border-[#23272F]'
+  const dColor = isUrgente ? 'text-red-400' : 'text-[#7D8597]'
 
   if (!expandido) {
     return (
@@ -391,8 +388,8 @@ function PendenciaEditavel({
         onClick={() => setExpandido(true)}
       >
         <div className="flex-1 min-w-0">
-          <p className="text-white text-sm font-semibold truncate">{p.titulo || '(sem título)'}</p>
-          <p className={`text-[10px] font-bold ${dColor}`}>{dest} · {p.prazo}</p>
+          <p className="text-white text-sm font-semibold truncate">{p.descricao || '(sem descrição)'}</p>
+          <p className={`text-[10px] font-bold ${dColor}`}>Prazo: {new Date(p.data_prazo).toLocaleDateString('pt-BR')} · Resp: {p.responsavel}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-[#7D8597] text-[10px]">editar</span>
@@ -408,41 +405,34 @@ function PendenciaEditavel({
 
   return (
     <div className={`bg-[#0d1117] border-l-4 ${cColor} rounded-r-xl px-4 py-4 space-y-3`}>
-      {/* Título */}
+      {/* Descrição */}
       <input
         type="text"
-        value={p.titulo}
-        onChange={e => onChange({ titulo: e.target.value })}
+        value={p.descricao}
+        onChange={e => onChange({ descricao: e.target.value })}
         placeholder="O que ficou pendente?"
         autoFocus
         className="w-full bg-transparent text-white text-sm font-semibold placeholder-[#7D8597] border-b border-[#23272F] pb-2 focus:outline-none focus:border-[#0466C8] transition-colors"
       />
 
-      {/* Prioridade */}
-      <div className="flex gap-1.5">
-        {(['urgente', 'atencao', 'normal'] as PrioridadePendencia[]).map(pr => (
-          <button
-            key={pr}
-            type="button"
-            onClick={() => onChange({ prioridade: pr })}
-            className={`text-[10px] font-bold px-3 py-1.5 rounded-lg border transition-all ${
-              p.prioridade === pr ? prioActive[pr] : 'bg-transparent text-[#7D8597] border-[#23272F]'
-            }`}
-          >
-            {pr === 'urgente' ? 'Urgente' : pr === 'atencao' ? 'Atenção' : 'Normal'}
-          </button>
-        ))}
-      </div>
-
       {/* Prazo */}
       <div className="flex items-center gap-2">
         <span className="text-[10px] text-[#7D8597] shrink-0">Prazo:</span>
         <input
+          type="date"
+          value={p.data_prazo}
+          onChange={e => onChange({ data_prazo: e.target.value })}
+          className="flex-1 bg-[#23272F] text-white text-xs rounded-lg px-3 py-1.5 placeholder-[#7D8597] focus:outline-none focus:ring-1 focus:ring-[#0466C8]"
+        />
+      </div>
+
+      {/* Responsável */}
+      <div className="flex items-center gap-2 mt-2">
+        <span className="text-[10px] text-[#7D8597] shrink-0">Resp:</span>
+        <input
           type="text"
-          value={p.prazo}
-          onChange={e => onChange({ prazo: e.target.value })}
-          placeholder="dd/mm/aaaa"
-          maxLength={10}
+          value={p.responsavel}
+          onChange={e => onChange({ responsavel: e.target.value })}
           className="flex-1 bg-[#23272F] text-white text-xs rounded-lg px-3 py-1.5 placeholder-[#7D8597] focus:outline-none focus:ring-1 focus:ring-[#0466C8]"
         />
       </div>
@@ -526,24 +516,65 @@ export default function NovaVisitaPage() {
    * indicando que as pendências foram enviadas mas não persistidas.
    * Remove quando pendencia.py estiver implementado no backend.
    */
-  const [pendenciasWarning, setPendenciasWarning] = useState(false)
 
   const [errorSubmit, setErrorSubmit] = useState<string | null>(null)
 
   const [form, setForm] = useState<FormState>({
     clienteId: '',
     contratoId: '',
-    tipoVisita: 'Regular',
+    status: 'realizada',
+    
+    // 🧠 Dimensões
+    tipo_visita: 'rotineira',
+    contexto_agendamento: 'planejado',
+    
+    // 🚦 Caos
+    origem_solicitacao: 'whatsapp',
+    id_contato_solicitante: '',
+    motivo_acionamento_id: '',
+    descricao_trigger: '',
+    
+    // 🔥 Métricas
+    severidade_operacional: 'baixa',
+    impacto_operacional: '',
+
     modalidade: 'presencial',
-    duracao_estimada_minutos: 60,
-    data_visita: new Date().toISOString().slice(0, 16),
+    duracao_minutos: 60,
+    data_hora: new Date().toISOString().slice(0, 16),
     descricao: '',
-    resultado: '',
-    observacoes: '',
+    resultados: '',
     pendencias: [],
   })
 
+  const [allClientes, setAllClientes] = useState<Cliente[]>([])
+  const [allContratos, setAllContratos] = useState<Contrato[]>([])
+  const [allContatos, setAllContatos] = useState<Contato[]>([])
+  const [motivosAcionamento, setMotivosAcionamento] = useState<MotivoAcionamentoRead[]>([])
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
+
+  useEffect(() => {
+    let isMounted = true
+    async function loadData() {
+      try {
+        const [cli, cont, motivos, contatos] = await Promise.all([
+          ClientesService.getAll(),
+          ContratoService.getAll(),
+          VisitasService.getMotivosAcionamento(),
+          ContatosService.getAll()
+        ])
+        if (isMounted) {
+          setAllClientes(cli.filter(c => c.status === 'ativo'))
+          setAllContratos(cont)
+          setMotivosAcionamento(motivos)
+          setAllContatos(contatos)
+        }
+      } catch (err) {
+        console.error('Erro ao carregar dados:', err)
+      }
+    }
+    loadData()
+    return () => { isMounted = false }
+  }, [])
 
   /* ── navegação entre etapas ── */
   function avancarEtapa1() {
@@ -551,7 +582,7 @@ export default function NovaVisitaPage() {
     if (!form.clienteId) e.clienteId = 'Selecione o cliente'
     if (!form.contratoId) e.contratoId = 'Selecione o contrato'
     if (!form.descricao.trim()) e.descricao = 'Descreva brevemente o que aconteceu'
-    if (!form.resultado.trim()) e.resultado = 'Informe os resultados'
+    if (form.status === 'realizada' && !form.resultados.trim()) e.resultados = 'Informe os resultados'
     setErrors(e)
     if (Object.keys(e).length === 0) {
       if (sugestoes.length === 0) {
@@ -570,9 +601,9 @@ export default function NovaVisitaPage() {
               ...f.pendencias, 
               ...paraIncluir.map(s => ({ 
                 id: s.id, 
-                titulo: s.titulo, 
-                prazo: s.prazo, 
-                prioridade: s.prioridade 
+                descricao: s.descricao, 
+                data_prazo: s.data_prazo, 
+                responsavel: s.responsavel 
               }))
             ] 
           }))
@@ -592,7 +623,7 @@ export default function NovaVisitaPage() {
     const s = sugestoes.find(s => s.id === id)
     if (!s) return
     // move para pendencias confirmadas
-    setForm(f => ({ ...f, pendencias: [...f.pendencias, { id: s.id, titulo: s.titulo, prazo: s.prazo, prioridade: s.prioridade }] }))
+    setForm(f => ({ ...f, pendencias: [...f.pendencias, { id: s.id, descricao: s.descricao, data_prazo: s.data_prazo, responsavel: s.responsavel }] }))
     setSugestoes(ss => ss.filter(s => s.id !== id))
   }
 
@@ -615,41 +646,36 @@ export default function NovaVisitaPage() {
 
     try {
       // O componente passa dados brutos. O service → adapter decide o formato da API.
-      const response = await VisitasService.criar({
+      await VisitasService.criar({
         clienteId: form.clienteId,
         contratoId: form.contratoId,
-        tipoVisita: form.tipoVisita,
+        status: form.status,
+        tipo_visita: form.tipo_visita,
+        contexto_agendamento: form.contexto_agendamento,
+        
+        origem_solicitacao: form.contexto_agendamento !== 'planejado' ? form.origem_solicitacao : undefined,
+        id_contato_solicitante: form.contexto_agendamento !== 'planejado' && form.id_contato_solicitante ? Number(form.id_contato_solicitante) : undefined,
+        motivo_acionamento_id: form.contexto_agendamento !== 'planejado' && form.motivo_acionamento_id ? Number(form.motivo_acionamento_id) : undefined,
+        descricao_trigger: form.contexto_agendamento !== 'planejado' ? form.descricao_trigger : undefined,
+        
+        severidade_operacional: form.contexto_agendamento !== 'planejado' ? form.severidade_operacional : undefined,
+        impacto_operacional: form.contexto_agendamento !== 'planejado' ? form.impacto_operacional : undefined,
+
         modalidade: form.modalidade,
-        duracao_estimada_minutos: form.duracao_estimada_minutos,
-        data_visita: form.data_visita,
+        duracao_minutos: form.duracao_minutos,
+        data_hora: form.data_hora,
         descricao: form.descricao,
-        resultado: form.resultado,
+        resultados: form.resultados,
         pendencias: form.pendencias.map(p => ({
-          titulo: p.titulo,
-          prazo: p.prazo,
-          prioridade: p.prioridade,
+          descricao: p.descricao,
+          data_prazo: p.data_prazo,
+          responsavel: p.responsavel,
         })),
       })
 
-      // Detecta ausência de persistência de pendências na resposta
-      const enviouPendencias = form.pendencias.length > 0
-      const backendConfirmou = Array.isArray(response.pendencias_ids) && response.pendencias_ids.length > 0
-      const shouldWarn = enviouPendencias && !backendConfirmou
-
-      if (shouldWarn) {
-        // BACKEND_DEPENDENCY: remover quando pendencia.py estiver implementado
-        console.warn(
-          '[WARN] Pendências não persistidas pelo backend.',
-          `Enviadas: ${form.pendencias.length}. Confirmadas: ${response.pendencias_ids?.length ?? 0}.`,
-          'Aguardando implementação de pendencia.py no backend.'
-        )
-        setPendenciasWarning(true)
-      }
-
       setSaving(false)
       setSaved(true)
-      // Usa variável local — state async pode não refletir o valor atualizado aqui
-      setTimeout(() => router.push('/dashboard'), shouldWarn ? 3000 : 1400)
+      setTimeout(() => router.push('/dashboard'), 1400)
     } catch (error: unknown) {
       console.error('[ERROR][API] Erro ao submeter visita:', error)
       setSaving(false)
@@ -662,15 +688,18 @@ export default function NovaVisitaPage() {
     weekday: 'short', day: 'numeric', month: 'short',
   })
 
-  const nomeCliente = clientesAtivos.find(c => c.id === form.clienteId)?.nome_instituicao ?? ''
+  const nomeCliente = allClientes.find(c => c.id === form.clienteId)?.nome_instituicao ?? ''
   
   const contratosDoCliente = form.clienteId 
-    ? getContratos().filter(c => c.clienteId === form.clienteId) 
+    ? allContratos.filter(c => c.clienteId === form.clienteId) 
     : []
 
   /* ────────── TELA DE CONFIRMAÇÃO ────────── */
   if (saved) {
-    const urgentes = form.pendencias.filter(p => p.prioridade === 'urgente').length
+    const urgentes = form.pendencias.filter(p => {
+      const urgencia = (new Date(p.data_prazo).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+      return urgencia < 2
+    }).length
     const total    = form.pendencias.length
 
     return (
@@ -701,18 +730,6 @@ export default function NovaVisitaPage() {
           </div>
         )}
 
-        {/* Aviso não bloqueante: pendências enviadas mas não confirmadas pelo backend */}
-        {pendenciasWarning && total > 0 && (
-          <div className="mt-4 w-full max-w-sm bg-amber-950/40 border border-amber-700/50 rounded-2xl px-4 py-3 text-left">
-            <p className="text-amber-400 text-xs font-bold uppercase tracking-widest mb-1">⚠ Aviso</p>
-            <p className="text-amber-300/80 text-sm">
-              Visita registrada, mas as {total} pendência{total > 1 ? 's' : ''} ainda não foram salvas.
-            </p>
-            <p className="text-amber-500/60 text-xs mt-1">
-              Funcionalidade em implantação no servidor.
-            </p>
-          </div>
-        )}
 
         <p className="text-[#7D8597] text-xs mt-5">Voltando ao painel...</p>
       </main>
@@ -735,7 +752,7 @@ export default function NovaVisitaPage() {
             </svg>
           </button>
           <div>
-            <h1 className="text-white text-base font-bold">Nova visita</h1>
+            <h1 className="text-white text-base font-bold">Registrar Visita</h1>
             <p className="text-[#7D8597] text-xs capitalize">{hoje}</p>
           </div>
         </div>
@@ -771,7 +788,7 @@ export default function NovaVisitaPage() {
               }`}
             >
               <option value="" className="bg-[#0d1117]">Selecione o cliente...</option>
-              {clientesAtivos.map(c => (
+              {allClientes.map(c => (
                 <option key={c.id} value={c.id} className="bg-[#0d1117]">{c.nome_instituicao}</option>
               ))}
             </select>
@@ -803,31 +820,181 @@ export default function NovaVisitaPage() {
             </div>
           )}
 
-          {/* Tipo de visita */}
+          {/* Status da Visita */}
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
-              Tipo
+              Status *
             </label>
             <div className="flex gap-2">
-              {(['Regular', 'Extra'] as TipoVisita[]).map(tipo => (
+              {(['agendada', 'realizada', 'cancelada'] as StatusVisita[]).map(status => (
                 <button
                   type="button"
-                  key={tipo}
-                  onClick={() => setForm(f => ({ ...f, tipoVisita: tipo }))}
-                  className={`flex-1 py-3 rounded-xl text-sm font-semibold border transition-colors ${
-                    form.tipoVisita === tipo
+                  key={status}
+                  onClick={() => setForm(f => ({ ...f, status: status }))}
+                  className={`flex-1 py-3 rounded-xl text-sm font-semibold border transition-colors capitalize ${
+                    form.status === status
                       ? 'bg-[#001845] text-white border-[#0466C8]'
                       : 'bg-[#0d1117] text-[#7D8597] border-[#23272F]'
                   }`}
                 >
-                  {tipo}
-                  {tipo === 'Extra' && (
-                    <span className="block text-[10px] text-white font-normal opacity-80">Fora do contrato</span>
-                  )}
+                  {status}
                 </button>
               ))}
             </div>
           </div>
+
+          {/* Natureza Operacional */}
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
+              Natureza da Visita *
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { id: 'rotineira', label: 'Rotineira' },
+                { id: 'estruturada', label: 'Estruturada' },
+                { id: 'urgente', label: 'Urgente' },
+                { id: 'pontual', label: 'Pontual' },
+                { id: 'acompanhamento_direcionado', label: 'Acompanhamento' },
+              ].map(natureza => (
+                <button
+                  type="button"
+                  key={natureza.id}
+                  onClick={() => setForm(f => ({ ...f, tipo_visita: natureza.id as TipoVisitaUI }))}
+                  className={`py-3 rounded-xl text-xs font-semibold border transition-colors ${
+                    form.tipo_visita === natureza.id
+                      ? 'bg-[#001845] text-white border-[#0466C8]'
+                      : 'bg-[#0d1117] text-[#7D8597] border-[#23272F]'
+                  }`}
+                >
+                  {natureza.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Contexto da Agenda (A grande mudança semântica) */}
+          <div>
+            <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
+              Contexto da Agenda (Goodwill/Caos) *
+            </label>
+            <div className="flex gap-2">
+              {[
+                { id: 'planejado', label: 'Planejado' },
+                { id: 'extra_proativo', label: 'Extra (Proativo)' },
+                { id: 'extra_reativo', label: 'Extra (Reativo)' },
+              ].map(contexto => (
+                <button
+                  type="button"
+                  key={contexto.id}
+                  onClick={() => setForm(f => ({ ...f, contexto_agendamento: contexto.id as ContextoAgendamentoUI }))}
+                  className={`flex-1 py-3 rounded-xl text-[10px] font-bold border transition-colors uppercase tracking-tight ${
+                    form.contexto_agendamento === contexto.id
+                      ? 'bg-emerald-950/30 text-emerald-400 border-emerald-500'
+                      : 'bg-[#0d1117] text-[#7D8597] border-[#23272F]'
+                  }`}
+                >
+                  {contexto.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* CAMPOS DE CAOS (Condicionais) */}
+          {form.contexto_agendamento !== 'planejado' && (
+            <div className="bg-[#0d1117] border border-[#0466C8]/30 rounded-2xl p-5 space-y-5">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0466C8]">Sensores de Demanda Extra</p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                {/* Origem */}
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">Origem</label>
+                  <select
+                    value={form.origem_solicitacao}
+                    onChange={e => setForm(f => ({ ...f, origem_solicitacao: e.target.value as OrigemSolicitacaoUI }))}
+                    className="w-full bg-[#161b22] border border-[#23272F] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#0466C8]"
+                  >
+                    <option value="whatsapp">WhatsApp</option>
+                    <option value="telefone">Telefone</option>
+                    <option value="email">E-mail</option>
+                    <option value="presencial">Presencial</option>
+                  </select>
+                </div>
+
+                {/* Solicitante */}
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">Quem chamou?</label>
+                  <select
+                    value={form.id_contato_solicitante}
+                    onChange={e => setForm(f => ({ ...f, id_contato_solicitante: e.target.value }))}
+                    className="w-full bg-[#161b22] border border-[#23272F] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#0466C8]"
+                  >
+                    <option value="">Selecione o contato...</option>
+                    {allContatos.filter(c => c.clienteId === form.clienteId).map(c => (
+                      <option key={c.id} value={c.id}>{c.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Motivo do Acionamento */}
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">Motivo do Acionamento</label>
+                <select
+                  value={form.motivo_acionamento_id}
+                  onChange={e => setForm(f => ({ ...f, motivo_acionamento_id: e.target.value }))}
+                  className="w-full bg-[#161b22] border border-[#23272F] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#0466C8]"
+                >
+                  <option value="">Selecione a categoria...</option>
+                  {motivosAcionamento.map(m => (
+                    <option key={m.id_motivo} value={m.id_motivo}>{m.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Severidade e Impacto */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">Severidade</label>
+                  <select
+                    value={form.severidade_operacional}
+                    onChange={e => setForm(f => ({ ...f, severidade_operacional: e.target.value as SeveridadeUI }))}
+                    className="w-full bg-[#161b22] border border-[#23272F] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#0466C8]"
+                  >
+                    <option value="baixa">Baixa</option>
+                    <option value="moderada">Moderada</option>
+                    <option value="alta">Alta</option>
+                    <option value="critica">Crítica</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">Impacto Principal</label>
+                  <select
+                    value={form.impacto_operacional}
+                    onChange={e => setForm(f => ({ ...f, impacto_operacional: e.target.value }))}
+                    className="w-full bg-[#161b22] border border-[#23272F] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#0466C8]"
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="equipe">Equipe</option>
+                    <option value="financeiro">Financeiro</option>
+                    <option value="pacientes">Pacientes</option>
+                    <option value="contrato">Contrato</option>
+                    <option value="reputação">Reputação</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Descrição do Trigger */}
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">Relato do Gatilho (O que disparou o caos?)</label>
+                <textarea
+                  value={form.descricao_trigger}
+                  onChange={e => setForm(f => ({ ...f, descricao_trigger: e.target.value }))}
+                  placeholder="Ex: Ligação desesperada da coordenação informando falta de pessoal..."
+                  className="w-full bg-[#161b22] border border-[#23272F] rounded-xl px-4 py-3 text-sm text-white placeholder-[#7D8597] focus:outline-none focus:border-[#0466C8] min-h-[80px]"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Resumo — curto e objetivo */}
           <div>
@@ -850,24 +1017,26 @@ export default function NovaVisitaPage() {
           </div>
 
           {/* Resultados detalhados */}
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
-              Resultados *
-            </label>
-            <textarea
-              value={form.resultado}
-              onChange={e => {
-                setForm(f => ({ ...f, resultado: e.target.value }))
-                setErrors(er => ({ ...er, resultado: undefined }))
-              }}
-              rows={4}
-              placeholder="Ex: Tudo conforme, exceto lixeiras sem pedal..."
-              className={`w-full rounded-xl border px-4 py-3.5 text-base text-white bg-[#0d1117] placeholder-[#7D8597] focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40 resize-none ${
-                errors.resultado ? 'border-red-500' : 'border-[#23272F]'
-              }`}
-            />
-            {errors.resultado && <p className="mt-1 text-xs text-red-400">{errors.resultado}</p>}
-          </div>
+          {form.status === 'realizada' && (
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
+                Resultados *
+              </label>
+              <textarea
+                value={form.resultados}
+                onChange={e => {
+                  setForm(f => ({ ...f, resultados: e.target.value }))
+                  setErrors(er => ({ ...er, resultados: undefined }))
+                }}
+                rows={4}
+                placeholder="Ex: Tudo conforme, exceto lixeiras sem pedal..."
+                className={`w-full rounded-xl border px-4 py-3.5 text-base text-white bg-[#0d1117] placeholder-[#7D8597] focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40 resize-none ${
+                  errors.resultados ? 'border-red-500' : 'border-[#23272F]'
+                }`}
+              />
+              {errors.resultados && <p className="mt-1 text-xs text-red-400">{errors.resultados}</p>}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             {/* Data da Visita */}
@@ -877,8 +1046,8 @@ export default function NovaVisitaPage() {
               </label>
               <input
                 type="datetime-local"
-                value={form.data_visita}
-                onChange={e => setForm(f => ({ ...f, data_visita: e.target.value }))}
+                value={form.data_hora}
+                onChange={e => setForm(f => ({ ...f, data_hora: e.target.value }))}
                 style={{ colorScheme: 'dark' }}
                 className="w-full rounded-xl border border-[#23272F] px-4 py-3.5 text-base text-white bg-[#0d1117] focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40 transition-all cursor-pointer"
               />
@@ -891,8 +1060,8 @@ export default function NovaVisitaPage() {
               </label>
               <input
                 type="number"
-                value={form.duracao_estimada_minutos}
-                onChange={e => setForm(f => ({ ...f, duracao_estimada_minutos: Number(e.target.value) }))}
+                value={form.duracao_minutos}
+                onChange={e => setForm(f => ({ ...f, duracao_minutos: Number(e.target.value) }))}
                 className="w-full rounded-xl border border-[#23272F] px-4 py-3.5 text-base text-white bg-[#0d1117] focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40"
               />
             </div>
@@ -904,7 +1073,7 @@ export default function NovaVisitaPage() {
               Modalidade
             </label>
             <div className="flex gap-2">
-              {(['presencial', 'online'] as const).map(mod => (
+              {(['presencial', 'online', 'hibrida'] as ModalidadeVisita[]).map(mod => (
                 <button
                   type="button"
                   key={mod}
@@ -920,23 +1089,7 @@ export default function NovaVisitaPage() {
               ))}
             </div>
           </div>
-
-
-          {/* Observações opcionais */}
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
-              Anotação livre
-              <span className="ml-1.5 text-[9px] normal-case font-normal">opcional</span>
-            </label>
-            <textarea
-              value={form.observacoes}
-              onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))}
-              placeholder="Lembretes pessoais, impressões, contexto extra..."
-              rows={3}
-              className="w-full rounded-xl border border-[#23272F] px-4 py-3.5 text-sm text-white bg-[#0d1117] placeholder-[#7D8597] resize-none leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40"
-            />
           </div>
-        </div>
       )}
 
       {/* ════════════════════════════
@@ -973,13 +1126,15 @@ export default function NovaVisitaPage() {
               </p>
               <div className="space-y-2">
                 {sugestoes.map(s => {
-                  const dest   = s.prioridade === 'atencao' ? '→ Planejamento hoje' : '→ Planejamento'
-                  const dColor = s.prioridade === 'atencao' ? 'text-amber-400' : 'text-[#7D8597]'
+                  const urgencia = (new Date(s.data_prazo).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+                  const isUrgente = urgencia < 2
+                  const dest   = isUrgente ? '→ Planejamento hoje' : '→ Planejamento'
+                  const dColor = isUrgente ? 'text-amber-400' : 'text-[#7D8597]'
                   return (
                     <div key={s.id} className="flex items-center gap-3 bg-[#0d1117] border border-[#23272F] rounded-xl px-4 py-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-semibold truncate">{s.titulo}</p>
-                        <p className={`text-[10px] font-bold ${dColor}`}>{dest} · {s.prazo}</p>
+                        <p className="text-white text-sm font-semibold truncate">{s.descricao}</p>
+                        <p className={`text-[10px] font-bold ${dColor}`}>{dest} · {new Date(s.data_prazo).toLocaleDateString('pt-BR')}</p>
                       </div>
                       <div className="flex gap-2 shrink-0">
                         <button type="button" onClick={() => aceitarSugestao(s.id)}
@@ -1029,16 +1184,27 @@ export default function NovaVisitaPage() {
           </p>
 
           {/* Visita */}
-          <div className="bg-[#0d1117] border border-[#23272F] rounded-2xl px-4 py-4 space-y-2">
+          <div className="bg-[#0d1117] border border-[#23272F] rounded-2xl px-4 py-4 space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-white font-semibold text-sm">{nomeCliente}</p>
-              <span className="text-[10px] font-bold text-sky-400 bg-sky-900/30 px-2 py-0.5 rounded-lg">
-                {form.tipoVisita}
-              </span>
+              <div className="flex gap-1">
+                <span className="text-[10px] font-bold text-sky-400 bg-sky-900/30 px-2 py-0.5 rounded-lg capitalize">
+                  {form.tipo_visita}
+                </span>
+                <span className="text-[10px] font-bold text-zinc-400 bg-zinc-800/50 px-2 py-0.5 rounded-lg capitalize">
+                  {form.status}
+                </span>
+              </div>
             </div>
-            <p className="text-[#979DAC] text-xs leading-snug">{form.descricao}</p>
-            {form.observacoes && (
-              <p className="text-[#7D8597] text-xs italic">{form.observacoes}</p>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-0.5">Descrição</p>
+              <p className="text-[#979DAC] text-xs leading-snug">{form.descricao}</p>
+            </div>
+            {form.status === 'realizada' && form.resultados && (
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-0.5">Resultados</p>
+                <p className="text-[#979DAC] text-xs leading-snug">{form.resultados}</p>
+              </div>
             )}
           </div>
 
@@ -1050,16 +1216,18 @@ export default function NovaVisitaPage() {
               </p>
               <div className="space-y-2">
                 {form.pendencias.map(p => {
-                  const cor = p.prioridade === 'urgente' ? 'border-red-500' : p.prioridade === 'atencao' ? 'border-amber-400' : 'border-[#23272F]'
-                  const label = p.prioridade === 'urgente' ? '→ Modo Caos' : '→ Planejamento'
-                  const labelColor = p.prioridade === 'urgente' ? 'text-red-400' : 'text-[#7D8597]'
+                  const urgencia = (new Date(p.data_prazo).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+                  const isUrgente = urgencia < 2
+                  const cor = isUrgente ? 'border-red-500' : 'border-[#23272F]'
+                  const label = isUrgente ? '→ Modo Caos' : '→ Planejamento'
+                  const labelColor = isUrgente ? 'text-red-400' : 'text-[#7D8597]'
                   return (
                     <div key={p.id} className={`bg-[#0d1117] border-l-4 ${cor} rounded-r-xl px-4 py-3`}>
                       <div className="flex items-start justify-between gap-2">
-                        <p className="text-white text-sm flex-1">{p.titulo || '(sem título)'}</p>
+                        <p className="text-white text-sm flex-1">{p.descricao || '(sem descrição)'}</p>
                         <span className={`text-[10px] font-bold shrink-0 ${labelColor}`}>{label}</span>
                       </div>
-                      {p.prazo && <p className="text-[#7D8597] text-xs mt-0.5">Prazo: {p.prazo}</p>}
+                      {p.data_prazo && <p className="text-[#7D8597] text-xs mt-0.5">Prazo: {new Date(p.data_prazo).toLocaleDateString('pt-BR')}</p>}
                     </div>
                   )
                 })}

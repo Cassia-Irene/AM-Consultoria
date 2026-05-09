@@ -3,20 +3,28 @@
 import { TiposPagamento as Mock } from '@/lib/mocks'
 import type { TipoPagamento } from '@/domain/tipoPagamento'
 import type { TipoPagamentoRaw } from '@/types/tipoPagamento.raw'
-import { validateShape } from '@/utils/schemaGuard'
+import { validateShape, warnInvalidShape } from '@/utils/schemaGuard'
 
 export function getTiposPagamento(): TipoPagamento[] {
   return (Mock as TipoPagamentoRaw[]).map(mapTipo)
 }
 
 function mapTipo(raw: TipoPagamentoRaw): TipoPagamento {
-  validateShape<TipoPagamentoRaw>('TipoPagamentoRaw', raw, [
-    'id_tipo',
-    'tipo'
-  ])
+  const idResolved = raw.id_tipo ?? raw.id
+
+  // Validação Estrita
+  if (!idResolved) {
+    warnInvalidShape('TipoPagamento:ID_MISSING', raw)
+    throw new Error('[MAPPER][TIPO_PAGAMENTO] Campo obrigatório ausente: id_tipo/id')
+  }
+
+  // Validação Importante
+  if (!raw.tipo) {
+    warnInvalidShape('TipoPagamento:TIPO_MISSING', raw, 'Usando fallback: "Tipo não informado"')
+  }
 
   return {
-    id: String(raw.id_tipo),
-    tipo: raw.tipo
+    id: String(idResolved),
+    tipo: raw.tipo || 'Tipo não informado'
   }
 }

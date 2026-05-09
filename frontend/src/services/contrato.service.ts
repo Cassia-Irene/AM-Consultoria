@@ -7,13 +7,8 @@ import { mapContrato, mapHistorico } from '@/mappers/contrato.mapper'
 import { mapFaturamento } from '@/mappers/faturamento.mapper'
 import { mapVisita } from '@/mappers/visita.mapper'
 import { mapCliente } from '@/mappers/cliente.mapper'
-import { getContratos, getHistoricos } from '@/mappers/contrato.mapper'
-import { getFaturamentos } from '@/mappers/faturamento.mapper'
-import { getVisitas } from '@/mappers/visita.mapper'
-import { getClientes } from '@/mappers/cliente.mapper'
 import { getFaturamentoMaisRecente } from '@/domain/faturamento'
 import { fetchApi } from './api'
-import { USE_MOCKS } from '@/config/env'
 import type { Contrato, HistoricoContrato } from '@/domain/contrato'
 import type { FaturamentoCliente } from '@/domain/faturamento'
 import type { Visita } from '@/domain/visita'
@@ -22,6 +17,7 @@ import type { ContratoRaw, HistoricoContratoRaw } from '@/types/contrato.raw'
 import type { FaturamentoRaw } from '@/types/faturamento.raw'
 import type { VisitaRaw } from '@/types/visita.raw'
 import type { ClienteRaw } from '@/types/cliente.raw'
+import { toReplacePayload, type ReplaceContratoInput } from '@/adapters/contrato.adapter'
 
 export interface ContratoDetail {
   contrato: Contrato
@@ -34,13 +30,12 @@ export interface ContratoDetail {
 
 export const ContratoService = {
   async getAll(): Promise<Contrato[]> {
-    if (USE_MOCKS) return getContratos()
     try {
       const data = await fetchApi<ContratoRaw[]>('/contratos/')
       return data.map(mapContrato)
     } catch (err) {
       console.error('[SERVICE][CONTRATO] Erro ao buscar todos:', err)
-      return getContratos()
+      throw err 
     }
   },
 
@@ -53,18 +48,10 @@ export const ContratoService = {
     try {
       const [contratos, faturamentos, visitas, clientes, historicos] = await Promise.all([
         this.getAll(),
-        fetchApi<FaturamentoRaw[]>('/faturamento-cliente', undefined, []).then(data => 
-          data.length > 0 ? data.map(mapFaturamento) : getFaturamentos()
-        ),
-        fetchApi<VisitaRaw[]>('/visitas', undefined, []).then(data => 
-          data.length > 0 ? data.map(mapVisita) : getVisitas()
-        ),
-        fetchApi<ClienteRaw[]>('/clientes', undefined, []).then(data => 
-          data.length > 0 ? data.map(mapCliente) : getClientes()
-        ),
-        fetchApi<HistoricoContratoRaw[]>('/contratos/historico', undefined, []).then(data => 
-          data.length > 0 ? data.map(mapHistorico) : getHistoricos()
-        )
+        fetchApi<FaturamentoRaw[]>('/faturamento-cliente/').then(data => data.map(mapFaturamento)),
+        fetchApi<VisitaRaw[]>('/visitas/').then(data => data.map(mapVisita)),
+        fetchApi<ClienteRaw[]>('/clientes/').then(data => data.map(mapCliente)),
+        fetchApi<HistoricoContratoRaw[]>('/contratos/historico/').then(data => data.map(mapHistorico))
       ])
 
       const contrato = contratos.find(c => c.id === id)
@@ -79,7 +66,14 @@ export const ContratoService = {
 
       return {
         contrato,
-        cliente: cliente || { id: contrato.clienteId, nome_instituicao: `Cliente ${contrato.clienteId}`, tipo_instituicao: 'Não informada', cidade: 'Não informada', nivel_complexidade: 'baixa', status: 'ativo' },
+        cliente: cliente || { 
+          id: contrato.clienteId, 
+          nome_instituicao: `Cliente ${contrato.clienteId}`, 
+          tipo_instituicao: 'Não informada', 
+          cidade: 'Não informada', 
+          nivel_complexidade: 'baixa', 
+          status: 'ativo' 
+        },
         faturamentoAtual,
         visitas: visitasDoContrato,
         historicos,
@@ -91,20 +85,12 @@ export const ContratoService = {
     }
   },
 
-  async replace(input: {
-    contratoId: string
-    novoValorMensal: number
-    visitas: number
-    motivo: string
-  }): Promise<Contrato> {
-    return fetchApi<Contrato>('/contratos/replace', {
+  async replace(input: ReplaceContratoInput): Promise<Contrato> {
+    const payload = toReplacePayload(input)
+    const raw = await fetchApi<ContratoRaw>('/contratos/replace', {
       method: 'POST',
-      body: JSON.stringify({
-        contrato_id: Number(input.contratoId),
-        novo_valor_mensal: input.novoValorMensal,
-        visitas_previstas_mes: input.visitas,
-        motivo_alteracao: input.motivo
-      })
+      body: JSON.stringify(payload)
     })
+    return mapContrato(raw)
   }
 }

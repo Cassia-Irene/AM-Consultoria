@@ -1,18 +1,16 @@
 import { fetchApi } from './api'
-import { mapProjeto, getProjetos } from '@/mappers/projeto.mapper'
+import { mapProjeto } from '@/mappers/projeto.mapper'
 import type { Projeto } from '@/domain/projeto'
 import type { ProjetoRaw } from '@/types/projeto.raw'
-import { USE_MOCKS } from '@/config/env'
 
 export const ProjetosService = {
   async getAll(): Promise<Projeto[]> {
-    if (USE_MOCKS) return getProjetos()
     try {
       const data = await fetchApi<ProjetoRaw[]>('/projetos/')
       return data.map(mapProjeto)
     } catch (error) {
       console.error('[SERVICE][ERROR] Falha ao buscar projetos:', error)
-      return getProjetos()
+      throw error // Não cai mais para mock silencioso
     }
   },
 
@@ -22,7 +20,12 @@ export const ProjetosService = {
   },
 
   async getById(id: string): Promise<Projeto | null> {
-    const all = await this.getAll()
-    return all.find(p => p.id === id) || null
+    try {
+      const data = await fetchApi<ProjetoRaw>(`/projetos/${id}`)
+      return mapProjeto(data)
+    } catch (error) {
+       console.error(`[SERVICE][ERROR] Falha ao buscar projeto ${id}:`, error)
+       throw error
+    }
   }
 }

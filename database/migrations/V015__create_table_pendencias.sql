@@ -3,10 +3,9 @@ CREATE TABLE pendencias (
     id_contrato INT NOT NULL REFERENCES contratos(id_contrato),
     id_visita INT REFERENCES visitas(id_visita),
     descricao TEXT NOT NULL,
-    responsavel VARCHAR(100) NOT NULL,
-    data_origem TIMESTAMP WITH TIME ZONE NOT NULL,
-    data_prazo TIMESTAMP WITH TIME ZONE,
+    responsavel VARCHAR(20) NOT NULL,
+    data_origem DATE NOT NULL,
+    data_prazo DATE,
     resolvida BOOLEAN NOT NULL DEFAULT FALSE,
-    data_resolucao TIMESTAMP WITH TIME ZONE,
-    observacoes TEXT
+    data_resolucao DATE
 );

@@ -39,6 +39,13 @@ def criar_pendencia(pendencia: PendenciaCreate, db: Session = Depends(get_db)):
 def listar_pendencias(db: Session = Depends(get_db)):
     return db.query(Pendencia).all()
 
+@router.get("/{id_pendencia}", response_model=PendenciaRead)
+def buscar_pendencia(id_pendencia: int, db: Session = Depends(get_db)):
+    pendencia = db.query(Pendencia).filter(Pendencia.id_pendencia == id_pendencia).first()
+    if not pendencia:
+        raise HTTPException(status_code=404, detail="Pendência não encontrada")
+    return pendencia
+
 @router.patch("/{id_pendencia}", response_model=PendenciaRead)
 def atualizar_pendencia(id_pendencia: int, pendencia_update: PendenciaUpdate, db: Session = Depends(get_db)):
     db_pendencia = db.query(Pendencia).filter(Pendencia.id_pendencia == id_pendencia).first()

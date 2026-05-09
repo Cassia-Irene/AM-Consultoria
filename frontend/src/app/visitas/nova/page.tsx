@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 // app/visitas/nova/page.tsx
 //
 // Nova Visita = Gerador de ações futuras.
@@ -16,6 +16,7 @@ import { ContatosService } from '@/services/contatos.service'
 import type { Cliente } from '@/domain/cliente'
 import type { Contrato } from '@/domain/contrato'
 import type { Contato } from '@/domain/contato'
+import type { StatusVisita, ModalidadeVisita } from '@/domain/visita'
 
 /* ─────────────────────────────────────────────
    TYPES
@@ -23,8 +24,6 @@ import type { Contato } from '@/domain/contato'
 
 import type { 
   TipoVisitaUI, 
-  StatusVisitaUI, 
-  ModalidadeVisitaUI,
   ContextoAgendamentoUI,
   OrigemSolicitacaoUI,
   SeveridadeUI,
@@ -48,7 +47,7 @@ interface PendenciaSugerida extends PendenciaGerada {
 interface FormState {
   clienteId: string
   contratoId: string
-  status: StatusVisitaUI
+  status: StatusVisita
   
   // 🧠 Dimensões Operacionais
   tipo_visita: TipoVisitaUI
@@ -64,7 +63,7 @@ interface FormState {
   severidade_operacional: SeveridadeUI
   impacto_operacional: string
   
-  modalidade: ModalidadeVisitaUI
+  modalidade: ModalidadeVisita
   duracao_minutos: number
   data_hora: string
   descricao: string
@@ -827,7 +826,7 @@ export default function NovaVisitaPage() {
               Status *
             </label>
             <div className="flex gap-2">
-              {(['agendada', 'realizada', 'cancelada'] as StatusVisitaUI[]).map(status => (
+              {(['agendada', 'realizada', 'cancelada'] as StatusVisita[]).map(status => (
                 <button
                   type="button"
                   key={status}
@@ -1074,7 +1073,7 @@ export default function NovaVisitaPage() {
               Modalidade
             </label>
             <div className="flex gap-2">
-              {(['presencial', 'online'] as const).map(mod => (
+              {(['presencial', 'online', 'hibrida'] as ModalidadeVisita[]).map(mod => (
                 <button
                   type="button"
                   key={mod}

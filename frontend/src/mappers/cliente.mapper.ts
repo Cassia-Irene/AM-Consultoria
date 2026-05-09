@@ -17,36 +17,31 @@ export function getClientes(): Cliente[] {
 }
 
 export function mapCliente(raw: ClienteRaw): Cliente {
-  // 1. Tenta resolver o ID (alias híbrido)
-  const idResolved = raw.id ?? raw.id_cliente
-  
-  // 2. Tenta resolver o Nome (alias híbrido)
-  const nomeResolved = raw.nome_instituicao ?? raw.nome
-
-  // Validação Estrita: Se não tiver ID ou Nome, o objeto é inválido
-  if (!idResolved) {
+  // Validação Estrita conforme ClienteRead (Backend)
+  if (!raw.id_cliente) {
     warnInvalidShape('Cliente:ID_MISSING', raw)
-    throw new Error('[MAPPER][CLIENTE] Campo obrigatório ausente: id/id_cliente')
+    throw new Error('[MAPPER][CLIENTE] Campo obrigatório ausente: id_cliente')
   }
-  if (!nomeResolved) {
+  if (!raw.nome) {
     warnInvalidShape('Cliente:NAME_MISSING', raw)
-    throw new Error('[MAPPER][CLIENTE] Campo obrigatório ausente: nome/nome_instituicao')
+    throw new Error('[MAPPER][CLIENTE] Campo obrigatório ausente: nome')
   }
 
-  // Validação de Forma para os demais campos (não-crítica)
-  validateShape<ClienteRaw>('ClienteRaw', raw, [
+  validateShape<ClienteRaw>('ClienteRead', raw, [
+    'id_cliente',
+    'nome',
     'tipo_instituicao',
     'cidade',
     'status'
   ])
 
   return {
-    id: String(idResolved),
-    nome_instituicao: nomeResolved,
+    id: String(raw.id_cliente),
+    nome_instituicao: raw.nome,
     tipo_instituicao: raw.tipo_instituicao || 'Não informada',
     cidade: raw.cidade || 'Não informada',
-    nivel_complexidade: raw.nivel_complexidade,
-    observacoes_gerais: raw.observacoes_gerais,
+    nivel_complexidade: raw.nivel_complexidade ?? undefined,
+    observacoes_gerais: raw.observacoes_gerais ?? undefined,
     status: normalizeStatus(raw.status || 'ativo'),
   }
 }

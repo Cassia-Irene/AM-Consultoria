@@ -23,15 +23,15 @@ export interface ValidationResult {
 
 // ─── Tipos de saída (contrato exato da API) ───────────────────────────────────
 
-export interface CriarPendenciaRequest {
+export interface PendenciaCreateDTO {
   id_contrato: number
   id_visita: number | null
   descricao: string
   responsavel: string
-  data_origem: string
-  data_prazo: string | null
+  data_origem: string      // YYYY-MM-DD
+  data_prazo: string | null // YYYY-MM-DD
   resolvida: boolean
-  data_resolucao: string | null
+  data_resolucao: string | null // YYYY-MM-DD
 }
 
 export interface CriarPendenciaResponse {
@@ -53,18 +53,18 @@ export function validateNovaPendenciaInput(input: NovaPendenciaInput): Validatio
 
 // ─── Conversão ────────────────────────────────────────────────────────────────
 
-export function toPendenciaPayload(input: NovaPendenciaInput): CriarPendenciaRequest {
-  const hojeISO = new Date().toISOString()
+export function toPendenciaPayload(input: NovaPendenciaInput): PendenciaCreateDTO {
+  const hoje = new Date().toISOString().split('T')[0]
   
   return {
     id_contrato: Number(input.contratoId),
-    id_visita: null, // Pendência manual não nasce atrelada a visita
+    id_visita: null,
     descricao: input.descricao.trim(),
     responsavel: input.responsavel.trim(),
-    data_origem: hojeISO,
+    data_origem: hoje,
     data_prazo: input.data_prazo || null,
     resolvida: input.resolvida,
-    data_resolucao: input.resolvida ? hojeISO : null,
+    data_resolucao: input.resolvida ? hoje : null,
   }
 }
 

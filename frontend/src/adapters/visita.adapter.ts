@@ -1,3 +1,5 @@
+import type { StatusVisita, ModalidadeVisita } from '@/domain/visita'
+import type { PendenciaCreateDTO } from './pendencia.adapter'
 /**
  * visita.adapter.ts
  *
@@ -8,8 +10,6 @@
 // ─── Tipos de entrada (o que a UI fornece) ────────────────────────────────────
 
 export type TipoVisitaUI = 'rotineira' | 'urgente' | 'pontual' | 'estruturada' | 'acompanhamento_direcionado'
-export type StatusVisitaUI = 'agendada' | 'realizada' | 'cancelada'
-export type ModalidadeVisitaUI = 'presencial' | 'online' | 'hibrida'
 export type ContextoAgendamentoUI = 'planejado' | 'extra_proativo' | 'extra_reativo'
 export type OrigemSolicitacaoUI = 'whatsapp' | 'telefone' | 'email' | 'presencial'
 export type SeveridadeUI = 'baixa' | 'moderada' | 'alta' | 'critica'
@@ -24,7 +24,7 @@ export interface NovaVisitaInput {
   clienteId: string // Apenas para UI
   contratoId: string
   projetoId?: string
-  status: StatusVisitaUI
+  status: StatusVisita
   
   // 🧠 Novas Dimensões Operacionais
   tipo_visita: TipoVisitaUI
@@ -41,7 +41,7 @@ export interface NovaVisitaInput {
   tempo_resposta_minutos?: number
   impacto_operacional?: string
   
-  modalidade: ModalidadeVisitaUI
+  modalidade: ModalidadeVisita
   duracao_minutos: number
   data_hora: string // YYYY-MM-DDTHH:mm
   descricao: string
@@ -55,17 +55,6 @@ export interface ValidationResult {
 }
 
 // ─── Tipos de saída (contrato exato da API OFICIAL) ──────────────────────────
-
-export interface PendenciaCriacaoDTO {
-  id_visita: number | null // Adicionado para facilitar o vínculo
-  id_contrato: number
-  descricao: string
-  responsavel: string
-  data_origem: string
-  data_prazo: string | null
-  resolvida: boolean
-  data_resolucao: string | null
-}
 
 export interface CriarVisitaRequest {
   id_contrato: number
@@ -82,6 +71,7 @@ export interface CriarVisitaRequest {
 export interface CriarVisitaResponse {
   id_visita: number
   message?: string
+  pendencias_falhas?: string[] // Descrições das pendências que não puderam ser salvas
 }
 
 export interface MotivoAcionamentoRead {
@@ -136,7 +126,7 @@ export function toVisitaPayload(input: NovaVisitaInput): CriarVisitaRequest {
 /**
  * Converte pendências da UI para o formato esperado pelo endpoint /pendencias/
  */
-export function toPendenciasPayload(input: NovaVisitaInput, idVisita: number): PendenciaCriacaoDTO[] {
+export function toPendenciasPayload(input: NovaVisitaInput, idVisita: number): PendenciaCreateDTO[] {
   return input.pendencias.map(p => ({
     id_visita: idVisita,
     id_contrato: Number(input.contratoId),

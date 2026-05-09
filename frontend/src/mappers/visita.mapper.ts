@@ -1,24 +1,18 @@
-import { Visitas as Mock } from '@/lib/mocks'
 import type { Visita, StatusVisita, TipoVisita, ModalidadeVisita } from '@/domain/visita'
 import type { VisitaRaw } from '@/types/visita.raw'
 import { validateShape, warnInvalidShape } from '@/utils/schemaGuard'
+import { IntegrationError } from '@/utils/errors'
 
-export function getVisitas(): Visita[] {
-  return (Mock as unknown as VisitaRaw[]).map(mapVisita)
-}
 
 export function mapVisita(raw: VisitaRaw): Visita {
-  const idResolved = raw.id_visita ?? raw.id
-  const contratoIdResolved = raw.id_contrato ?? raw.contratoId
-
-  // Validação Estrita
-  if (!idResolved) {
+  // Validação Estrita (Back-First)
+  if (!raw.id_visita) {
     warnInvalidShape('Visita:ID_MISSING', raw)
-    throw new Error('[MAPPER][VISITA] Campo obrigatório ausente: id_visita/id')
+    throw new IntegrationError('Visita', 'id_visita ausente no contrato real', raw)
   }
-  if (!contratoIdResolved) {
+  if (!raw.id_contrato) {
     warnInvalidShape('Visita:CONTRATO_ID_MISSING', raw)
-    throw new Error('[MAPPER][VISITA] Campo obrigatório ausente: id_contrato/contratoId')
+    throw new IntegrationError('Visita', 'id_contrato ausente no contrato real', raw)
   }
 
   validateShape<VisitaRaw>('VisitaRaw', raw, [
@@ -30,11 +24,9 @@ export function mapVisita(raw: VisitaRaw): Visita {
   ])
 
   return {
-    id: String(idResolved),
-    contratoId: String(contratoIdResolved),
-    projetoId: (raw.id_projeto ?? raw.projetoId) != null
-      ? String(raw.id_projeto ?? raw.projetoId)
-      : undefined,
+    id: String(raw.id_visita),
+    contratoId: String(raw.id_contrato),
+    projetoId: raw.id_projeto ? String(raw.id_projeto) : undefined,
 
     status: normalizeStatus(raw.status || 'agendada'),
     data_hora: raw.data_hora || new Date().toISOString(),
@@ -53,24 +45,21 @@ function normalizeStatus(value: string): StatusVisita {
   if (v === 'agendada' || v === 'realizada' || v === 'cancelada') {
     return v as StatusVisita
   }
-  console.warn('[MAPPER][VISITA] Status inválido:', value)
   return 'agendada'
 }
 
 function normalizeTipo(value: string): TipoVisita {
   const v = String(value || '').toLowerCase()
-  if (v === 'rotina' || v === 'extra' || v === 'projeto') {
-    return v as TipoVisita
-  }
-  console.warn('[MAPPER][VISITA] Tipo inválido:', value)
+  if (v === 'rotina' || v === 'rotineira') return 'rotina'
+  if (v === 'extra' || v === 'urgente' || v === 'pontual') return 'extra'
+  if (v === 'projeto') return 'projeto'
   return 'rotina'
 }
 
 function normalizeModalidade(value: string): ModalidadeVisita {
   const v = String(value || '').toLowerCase()
-  if (v === 'presencial' || v === 'online' || v === 'hibrida') {
-    return v as ModalidadeVisita
-  }
-  console.warn('[MAPPER][VISITA] Modalidade inválida:', value)
+  if (v === 'presencial') return 'presencial'
+  if (v === 'online' || v === 'remota' || v === 'remoto') return 'online'
+  if (v === 'hibrida') return 'hibrida'
   return 'presencial'
 }

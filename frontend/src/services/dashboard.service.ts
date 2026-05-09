@@ -17,12 +17,6 @@ import { mapContrato } from '@/mappers/contrato.mapper'
 import { mapFaturamento } from '@/mappers/faturamento.mapper'
 import { mapProjeto } from '@/mappers/projeto.mapper'
 
-import { Pendencias as MockPendencias } from '@/mocks/pendencias'
-import { Visitas as MockVisitas } from '@/mocks/visitas'
-import { Clientes as MockClientes } from '@/mocks/clientes'
-import { Contratos as MockContratos } from '@/mocks/contratos'
-import { Faturamentos as MockFaturamentos } from '@/mocks/faturamentos'
-import { Projetos as MockProjetos } from '@/mocks/projetos'
 import type { PendenciaRaw } from '@/types/pendencia.raw'
 import type { VisitaRaw } from '@/types/visita.raw'
 import type { ClienteRaw } from '@/types/cliente.raw'
@@ -46,12 +40,12 @@ export const DashboardService = {
   async getDashboardData(): Promise<DashboardResponse> {
     try {
       const [pendRaw, cliRaw, conRaw, fatRaw, visRaw, proRaw] = await Promise.all([
-        fetchApi<PendenciaRaw[]>('/pendencias/', undefined, (MockPendencias as unknown as PendenciaRaw[])),
-        fetchApi<ClienteRaw[]>('/clientes/', undefined, (MockClientes as unknown as ClienteRaw[])),
-        fetchApi<ContratoRaw[]>('/contratos/', undefined, (MockContratos as unknown as ContratoRaw[])),
-        fetchApi<FaturamentoRaw[]>('/faturamento-cliente/', undefined, (MockFaturamentos as unknown as FaturamentoRaw[])),
-        fetchApi<VisitaRaw[]>('/visitas/', undefined, (MockVisitas as unknown as VisitaRaw[])),
-        fetchApi<ProjetoRaw[]>('/projetos/', undefined, (MockProjetos as unknown as ProjetoRaw[])),
+        fetchApi<PendenciaRaw[]>('/pendencias/'),
+        fetchApi<ClienteRaw[]>('/clientes/'),
+        fetchApi<ContratoRaw[]>('/contratos/'),
+        fetchApi<FaturamentoRaw[]>('/faturamento-cliente/'),
+        fetchApi<VisitaRaw[]>('/visitas/'),
+        fetchApi<ProjetoRaw[]>('/projetos/'),
       ])
 
       return {

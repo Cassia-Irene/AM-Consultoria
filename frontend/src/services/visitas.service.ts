@@ -89,13 +89,12 @@ export const VisitasService = {
       })
 
       const { id_visita } = responseVisita
+      const pendenciasFalhas: string[] = []
 
       // PASSO 2: Criar Pendências (se houver)
       if (input.pendencias && input.pendencias.length > 0) {
         const payloadPendencias = toPendenciasPayload(input, id_visita)
         
-        // Disparamos as criações de pendências individualmente
-        // Nota: Em um sistema crítico, usaríamos Promise.allSettled ou trataríamos falhas parciais
         for (const pendencia of payloadPendencias) {
           try {
             await fetchApi('/pendencias/', {
@@ -104,14 +103,17 @@ export const VisitasService = {
             })
           } catch (pErr) {
             console.error('[SERVICE][WARN] Falha ao criar pendência individual:', pErr)
-            // Não barramos o fluxo principal se uma pendência falhar, apenas logamos
+            pendenciasFalhas.push(pendencia.descricao)
           }
         }
       }
 
       return { 
         id_visita, 
-        message: 'Visita e pendências registradas com sucesso no backend oficial.' 
+        message: pendenciasFalhas.length > 0 
+          ? `Visita criada, mas ${pendenciasFalhas.length} pendência(s) falharam.` 
+          : 'Visita e pendências registradas com sucesso no backend oficial.',
+        pendencias_falhas: pendenciasFalhas.length > 0 ? pendenciasFalhas : undefined
       }
     } catch (err) {
       throw new AppError(

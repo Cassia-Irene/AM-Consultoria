@@ -5,7 +5,7 @@ from src.database import get_db
 from src.models.visita import Visita
 from src.models.contrato import Contrato
 from src.models.projeto import Projeto 
-from src.schemas.visita import VisitaCreate, VisitaRead
+from src.schemas.visita import VisitaCreate, VisitaRead, VisitaUpdate
 
 router = APIRouter(prefix="/visitas", tags=["Visitas"])
 
@@ -38,3 +38,27 @@ def registrar_visita(visita: VisitaCreate, db: Session = Depends(get_db)):
 def listar_visitas(db: Session = Depends(get_db)):
     # Busca todas as visitas na tabela "visitas"
     return db.query(Visita).all()
+
+@router.patch("/{id_visita}", response_model=VisitaRead)
+def atualizar_visita(
+    id_visita: int, 
+    visita_update: VisitaUpdate, 
+    db: Session = Depends(get_db)
+):
+    db_visita = db.query(Visita).filter(Visita.id_visita == id_visita).first()
+    
+    if not db_visita:
+        raise HTTPException(status_code=404, detail="Visita não encontrada")
+
+    update_data = visita_update.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(db_visita, key, value)
+
+    try:
+        db.commit()
+        db.refresh(db_visita)
+        return db_visita
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Erro ao atualizar visita: {str(e)}")

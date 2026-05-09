@@ -8,8 +8,6 @@ class FaturamentoClienteBase(BaseModel):
     id_contrato: int
     mes_ano: date
     visitas_realizadas: int = 0
-    valor_base: Decimal
-    valor_extra: Decimal = Decimal('0.00')
     desconto: Decimal = Decimal('0.00')
     pago: bool = False
     data_pagamento: Optional[date] = None
@@ -19,6 +17,9 @@ class FaturamentoClienteCreate(FaturamentoClienteBase):
 
 class FaturamentoClienteRead(FaturamentoClienteBase):
     id_faturamento: int
+    valor_base: Decimal
+    valor_total: Decimal
+    valor_extra: Decimal
     model_config = ConfigDict(from_attributes=True)
 
 @field_validator('mes_ano')

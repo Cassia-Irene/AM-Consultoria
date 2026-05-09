@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 from calendar import monthrange
 from sqlalchemy.orm import Session
-from backend.src.models.tipo_pagamento import TipoPagamento
+from src.models.tipo_pagamento import TipoPagamento
 from src.models.contrato_pagamento import ContratoPagamento
 from src.models.visita import Visita
 from src.models.visita_extra import VisitaExtra

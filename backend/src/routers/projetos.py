@@ -37,3 +37,35 @@ def criar_projeto(projeto: ProjetoCreate, db: Session = Depends(get_db)):
 def listar_projetos(db: Session = Depends(get_db)):
     # Busca todos os projetos cadastrados
     return db.query(Projeto).all()
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from src.database import get_db
+from src.models.projeto import Projeto # Ajuste o import
+from src.schemas.projeto import ProjetoRead, ProjetoUpdate # Ajuste o import
+
+# ... suas rotas POST e GET ...
+
+@router.patch("/{id_projeto}", response_model=ProjetoRead)
+def atualizar_projeto(
+    id_projeto: int, 
+    projeto_update: ProjetoUpdate, 
+    db: Session = Depends(get_db)
+):
+    db_projeto = db.query(Projeto).filter(Projeto.id_projeto == id_projeto).first()
+    
+    if not db_projeto:
+        raise HTTPException(status_code=404, detail="Projeto não encontrado")
+
+    update_data = projeto_update.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(db_projeto, key, value)
+
+    try:
+        db.commit()
+        db.refresh(db_projeto)
+        return db_projeto
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Erro ao atualizar projeto: {str(e)}")

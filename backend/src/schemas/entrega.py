@@ -4,7 +4,7 @@ from datetime import date
 
 class EntregaBase(BaseModel):
     id_projeto: int
-    descricao: Optional[str] = None
+    descricao: str
     data_entrega_prevista: date
     data_entrega_real: Optional[date] = None
     entregue: bool = False

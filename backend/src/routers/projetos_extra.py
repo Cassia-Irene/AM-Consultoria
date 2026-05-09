@@ -16,6 +16,11 @@ def criar_projeto_extra(projeto_extra: ProjetoExtraCreate, db: Session = Depends
     if not projeto:
         raise HTTPException(status_code=404, detail="Projeto não encontrado. Não é possível cadastrar um escopo extra.")
 
+    # ✅ Verifica se esse projeto ja foi marcado como extra
+    extra_existente = db.query(ProjetoExtra).filter(ProjetoExtra.id_projeto == projeto_extra.id_projeto).first()
+    if extra_existente:
+        raise HTTPException(status_code=409, detail="Este projeto já está marcado como extra. Não é possível cadastrar novamente.")
+    
     novo_projeto_extra = ProjetoExtra(**projeto_extra.model_dump())
     
     try:

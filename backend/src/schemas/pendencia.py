@@ -3,7 +3,7 @@ from typing import Optional
 from datetime import date
 
 class PendenciaBase(BaseModel):
-    id_visita: int
+    id_visita: Optional[int] = None
     id_contrato: int
     descricao: str
     data_origem: date

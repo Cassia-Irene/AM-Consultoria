@@ -10,7 +10,7 @@ class Entrega(Base):
     # 🔗 FK apontando para o Projeto
     id_projeto = Column(Integer, ForeignKey("projetos.id_projeto"), nullable=False)
     
-    descricao = Column(Text)
+    descricao = Column(Text, nullable=False)
     data_entrega_prevista = Column(Date, nullable=False)
     data_entrega_real = Column(Date) # Pode ser nulo se ainda não foi entregue
     entregue = Column(Boolean, default=False)

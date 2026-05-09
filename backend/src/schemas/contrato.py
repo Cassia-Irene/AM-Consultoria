@@ -8,13 +8,9 @@ class ContratoBase(BaseModel):
     id_cliente: int
     data_inicio: date
     data_fim: Optional[date] = None
-    # ✅ Adicionado: Obrigatório no SQL (V003)
     servicos_contratados: str 
     visitas_previstas_mes: int
     inclui_relatorio: bool = False
-    valor_mensal: Decimal = Decimal("0.00")
-    status: str = "ativo"
-    # ✅ Renomeado: De 'observacoes' para 'observacoes_gerais' para espelhar o banco
     observacoes_gerais: Optional[str] = None
 
 class ContratoCreate(ContratoBase):
@@ -27,6 +23,10 @@ class ContratoRead(ContratoBase):
 
 class ContratoReplaceRequest(BaseModel):
     contrato_id: int
-    novo_valor_mensal: Decimal
     visitas_previstas_mes: int
-    motivo_alteracao: str
+
+class ContratoUpdateRestrito(BaseModel):
+    # Campos que NÃO afetam o financeiro ou a estrutura legal
+    servicos_contratados: str | None = None
+    observacoes_gerais: str | None = None
+    inclui_relatorio: bool | None = None

@@ -4,7 +4,7 @@ from typing import List
 
 from src.database import get_db
 from src.models.cliente import Cliente
-from src.schemas.cliente import ClienteCreate, ClienteRead
+from src.schemas.cliente import ClienteCreate, ClienteRead, ClienteUpdate
 
 router = APIRouter(prefix="/clientes", tags=["Clientes"])
 
@@ -29,10 +29,26 @@ def listar_clientes(db: Session = Depends(get_db)):
     # O SQLAlchemy vai buscar na tabela "clientes" (plural) porque já arrumamos o Model
     return db.query(Cliente).all()
 
-@router.get("/{id_cliente}", response_model=ClienteRead)
-def buscar_cliente(id_cliente: int, db: Session = Depends(get_db)):
-    cliente = db.query(Cliente).filter(Cliente.id_cliente == id_cliente).first()
-    if not cliente:
+@router.patch("/{id_cliente}", response_model=ClienteRead)
+def atualizar_cliente(
+    id_cliente: int, 
+    cliente_update: ClienteUpdate, 
+    db: Session = Depends(get_db)
+):
+    db_cliente = db.query(Cliente).filter(Cliente.id_cliente == id_cliente).first()
+    
+    if not db_cliente:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
-    return cliente
 
+    update_data = cliente_update.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(db_cliente, key, value)
+
+    try:
+        db.commit()
+        db.refresh(db_cliente)
+        return db_cliente
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Erro ao atualizar cliente: {str(e)}")

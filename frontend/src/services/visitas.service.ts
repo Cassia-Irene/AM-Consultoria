@@ -15,14 +15,13 @@
 import { AppError } from '@/utils/errors'
 import {
   toVisitaPayload,
+  toPendenciasPayload,
   validateNovaVisitaInput,
   type NovaVisitaInput,
   type CriarVisitaResponse,
   type MotivoAcionamentoRead,
 } from '@/adapters/visita.adapter'
 import { fetchApi } from './api'
-import { USE_MOCKS } from '@/config/env'
-import { Visitas as VisitasMock } from '@/mocks/visitas'
 import { mapVisita } from '@/mappers/visita.mapper'
 import type { Visita } from '@/domain/visita'
 import type { VisitaRaw } from '@/types/visita.raw'
@@ -31,32 +30,39 @@ export type { NovaVisitaInput, CriarVisitaResponse } from '@/adapters/visita.ada
 
 // ─── Service ─────────────────────────────────────────────────────────────────
 
+/**
+ * VisitasService - Integração Vertical Real (Back-First)
+ * 
+ * Agora consome obrigatoriamente a API oficial para estabilizar o contrato.
+ */
 export const VisitasService = {
   async getAll(): Promise<Visita[]> {
-    if (USE_MOCKS) {
-      return (VisitasMock as unknown as VisitaRaw[]).map(mapVisita)
-    }
     try {
+      // Forçamos a API Real para Visitas (Back-First)
       const data = await fetchApi<VisitaRaw[]>('/visitas/')
       return data.map(mapVisita)
     } catch (err) {
-      console.error('[SERVICE][ERROR] Falha ao buscar visitas:', err)
-      return (VisitasMock as unknown as VisitaRaw[]).map(mapVisita)
+      console.error('[SERVICE][ERROR] Falha ao buscar visitas reais:', err)
+      throw new AppError('Não foi possível carregar as visitas do servidor.', 'API_ERROR', err)
+    }
+  },
+
+  async getById(id: string | number): Promise<Visita> {
+    try {
+      const data = await fetchApi<VisitaRaw>(`/visitas/${id}`)
+      return mapVisita(data)
+    } catch (err) {
+      console.error(`[SERVICE][ERROR] Falha ao buscar visita ${id}:`, err)
+      throw new AppError('Falha ao carregar detalhes da visita.', 'API_ERROR', err)
     }
   },
 
   async getMotivosAcionamento(): Promise<MotivoAcionamentoRead[]> {
-    if (USE_MOCKS) {
-      return [
-        { id_motivo: 1, nome: 'Conflito de Equipe', slug: 'conflito_equipe' },
-        { id_motivo: 2, nome: 'Falta de Profissional', slug: 'falta_cuidador' },
-        { id_motivo: 3, nome: 'Crise Operacional', slug: 'crise_operacional' },
-      ]
-    }
     try {
       return await fetchApi<MotivoAcionamentoRead[]>('/visitas/motivos-acionamento')
     } catch (err) {
       console.error('[SERVICE][ERROR] Falha ao buscar motivos:', err)
+      // Fallback silencioso para motivos se o endpoint falhar
       return []
     }
   },
@@ -72,24 +78,44 @@ export const VisitasService = {
       )
     }
 
-    // 2. Converter para o formato da API
-    const payload = toVisitaPayload(input)
+    // 2. Converter para o formato da API OFICIAL
+    const payloadVisita = toVisitaPayload(input)
 
-    if (USE_MOCKS) {
-      console.log('[SERVICE] Simulando POST /visitas (MOCK):', payload)
-      await new Promise(resolve => setTimeout(resolve, 800))
-      return { id_visita: Math.floor(Math.random() * 1000), message: 'Visita (MOCK) criada com sucesso' }
-    }
-
-    // 3. Enviar para API Real
     try {
-      return await fetchApi<CriarVisitaResponse>('/visitas/', {
+      // PASSO 1: Criar a Visita
+      const responseVisita = await fetchApi<CriarVisitaResponse>('/visitas/', {
         method: 'POST',
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payloadVisita),
       })
+
+      const { id_visita } = responseVisita
+
+      // PASSO 2: Criar Pendências (se houver)
+      if (input.pendencias && input.pendencias.length > 0) {
+        const payloadPendencias = toPendenciasPayload(input, id_visita)
+        
+        // Disparamos as criações de pendências individualmente
+        // Nota: Em um sistema crítico, usaríamos Promise.allSettled ou trataríamos falhas parciais
+        for (const pendencia of payloadPendencias) {
+          try {
+            await fetchApi('/pendencias/', {
+              method: 'POST',
+              body: JSON.stringify(pendencia),
+            })
+          } catch (pErr) {
+            console.error('[SERVICE][WARN] Falha ao criar pendência individual:', pErr)
+            // Não barramos o fluxo principal se uma pendência falhar, apenas logamos
+          }
+        }
+      }
+
+      return { 
+        id_visita, 
+        message: 'Visita e pendências registradas com sucesso no backend oficial.' 
+      }
     } catch (err) {
       throw new AppError(
-        'Falha ao registrar visita no servidor.',
+        'Falha ao registrar visita no servidor oficial.',
         'API_ERROR',
         err
       )

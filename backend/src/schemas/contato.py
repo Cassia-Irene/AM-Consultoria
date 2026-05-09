@@ -7,9 +7,8 @@ class ContatoBase(BaseModel):
     nome: str
     cargo: Optional[str] = None
     papel: str
-    telefone_whatsapp: Optional[str] = None
+    telefone: Optional[str] = None
     email: Optional[EmailStr] = None
-    # ✅ Adicionado observacoes_gerais que existe no SQL e no diagrama
     observacoes_gerais: Optional[str] = None
 
 class ContatoCreate(ContatoBase):
@@ -19,3 +18,11 @@ class ContatoRead(ContatoBase):
     id_contato: int
     
     model_config = ConfigDict(from_attributes=True)
+
+class ContatoUpdate(BaseModel):
+    nome: str | None = None
+    cargo: str | None = None
+    papel: str | None = None
+    telefone: str | None = None
+    email: str | None = None
+    observacoes_gerais: str | None = None

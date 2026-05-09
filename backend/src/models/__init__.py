@@ -16,5 +16,4 @@ from src.models.pendencia import Pendencia
 from src.models.evento_critico import EventoCritico
 from src.models.tipo_pagamento import TipoPagamento
 from src.models.contrato_pagamento import ContratoPagamento
-from src.models.recebimento import Recebimento
 from src.models.faturamento_cliente import FaturamentoCliente

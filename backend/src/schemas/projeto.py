@@ -1,4 +1,5 @@
 from decimal import Decimal
+
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import date
@@ -8,13 +9,13 @@ class ProjetoBase(BaseModel):
     id_contrato: int
     titulo: str
     descricao: Optional[str] = None
+    valor_total: Decimal
     status: str
     data_inicio: date
     data_fim_prevista: Optional[date] = None
     data_fim_real: Optional[date] = None
-    valor_total: Decimal = Decimal("0.00")
     observacoes_gerais: Optional[str] = None
-
+    
 class ProjetoCreate(ProjetoBase):
     pass
 
@@ -22,3 +23,13 @@ class ProjetoRead(ProjetoBase):
     id_projeto: int
     
     model_config = ConfigDict(from_attributes=True)
+
+class ProjetoUpdate(BaseModel):
+    titulo: str | None = None
+    descricao: str | None = None
+    valor_total: Decimal | None = None
+    status: str | None = None
+    data_inicio: date | None = None
+    data_fim_prevista: date | None = None
+    data_fim_real: date | None = None
+    observacoes_gerais: str | None = None

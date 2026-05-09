@@ -3,7 +3,7 @@ from datetime import date
 
 class HistoricoContratoBase(BaseModel):
     id_contrato: int
-    data_alteracao: date
+    data_alteracao: date # Data e hora da alteração do contrato
     motivo_alteracao: str
 
 class HistoricoContratoCreate(HistoricoContratoBase):

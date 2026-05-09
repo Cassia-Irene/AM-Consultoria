@@ -54,7 +54,7 @@ def atualizar_faturamento(
     
     if not db_faturamento:
         raise HTTPException(status_code=404, detail="Faturamento não encontrado")
-
+    
     # 2. Converte o schema em dicionário, ignorando o que não foi enviado
     update_data = faturamento_update.model_dump(exclude_unset=True)
 
@@ -62,7 +62,17 @@ def atualizar_faturamento(
     for key, value in update_data.items():
         setattr(db_faturamento, key, value)
 
-    # 4. Commit e Refresh
+   # 🚨 DICA SÊNIOR: Recálculo de Integridade
+    # Se qualquer campo que compõe o cálculo foi alterado, recalculamos o total
+    campos_calculo = ["valor_base", "valor_extra", "desconto"]
+    if any(campo in update_data for campo in campos_calculo):
+        # Usamos os valores já atualizados no objeto db_faturamento
+        db_faturamento.valor_total = (
+            db_faturamento.valor_base + 
+            db_faturamento.valor_extra - 
+            db_faturamento.desconto
+        )
+
     db.commit()
     db.refresh(db_faturamento)
     return db_faturamento

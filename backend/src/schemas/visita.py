@@ -20,3 +20,12 @@ class VisitaRead(VisitaBase):
     id_visita: int
     
     model_config = ConfigDict(from_attributes=True)
+
+class VisitaUpdate(BaseModel):
+    status: str | None = None
+    data_hora: datetime | None = None
+    duracao_minutos: int | None = None
+    tipo_visita: str | None = None
+    modalidade: str | None = None
+    descricao: str | None = None
+    resultados: str | None = None

@@ -23,3 +23,13 @@ class ProjetoRead(ProjetoBase):
     id_projeto: int
     
     model_config = ConfigDict(from_attributes=True)
+
+class ProjetoUpdate(BaseModel):
+    titulo: str | None = None
+    descricao: str | None = None
+    valor_total: Decimal | None = None
+    status: str | None = None
+    data_inicio: date | None = None
+    data_fim_prevista: date | None = None
+    data_fim_real: date | None = None
+    observacoes_gerais: str | None = None

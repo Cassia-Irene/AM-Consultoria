@@ -24,3 +24,9 @@ class ContratoRead(ContratoBase):
 class ContratoReplaceRequest(BaseModel):
     contrato_id: int
     visitas_previstas_mes: int
+
+class ContratoUpdateRestrito(BaseModel):
+    # Campos que NÃO afetam o financeiro ou a estrutura legal
+    servicos_contratados: str | None = None
+    observacoes_gerais: str | None = None
+    inclui_relatorio: bool | None = None

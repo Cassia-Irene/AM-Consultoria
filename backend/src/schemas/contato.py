@@ -18,3 +18,11 @@ class ContatoRead(ContatoBase):
     id_contato: int
     
     model_config = ConfigDict(from_attributes=True)
+
+class ContatoUpdate(BaseModel):
+    nome: str | None = None
+    cargo: str | None = None
+    papel: str | None = None
+    telefone: str | None = None
+    email: str | None = None
+    observacoes_gerais: str | None = None

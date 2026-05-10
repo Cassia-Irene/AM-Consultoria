@@ -1,13 +1,17 @@
 from datetime import date
 from seeds.scenarios.base import Scenario
-from seeds.utils import subtrair_meses, data_relativa_datetime, data_relativa_dias, create_causal_pendency, create_causal_event
-from src.models import Cliente, Contrato, Visita, FaturamentoCliente
+from seeds.utils import (
+    subtrair_meses, data_relativa_datetime, get_hoje_date,
+    create_causal_pendency, create_causal_event
+)
+from src.models import (
+    Cliente, Contrato, Visita, FaturamentoCliente, Entrega, 
+    ProjetoParcela, VisitaExtra
+)
 
 class APAEScenario(Scenario):
     """
     Cenário: APAE Bacabal
-    Realidade Operacional: Múltiplos convênios, necessidade de prestação de contas rigorosa (PIA),
-    auditorias longas, imersões e deslocamento físico.
     """
 
     def generate_structure(self):
@@ -19,6 +23,11 @@ class APAEScenario(Scenario):
             nivel_complexidade="alta"
         )
 
+        # 1. Contatos
+        contato_pres = self.add_contato(cliente, "Maria das Dores", "Presidente", "Institucional")
+        self.add_contato(cliente, "João Kleber", "Contador", "Financeiro")
+
+        # 2. Contrato
         contrato = self.db.query(Contrato).filter(Contrato.id_cliente == cliente.id_cliente).first()
         if not contrato:
             contrato = Contrato(
@@ -26,87 +35,88 @@ class APAEScenario(Scenario):
                 servicos_contratados="Adequação de Processos e PIA",
                 visitas_previstas_mes=2,
                 inclui_relatorio=True,
-                data_inicio=date(2025, 6, 1)
+                data_inicio=date(2024, 6, 1)
             )
             self.db.add(contrato)
             self.db.flush()
         
+        # 3. Pagamento
+        self.add_contrato_pagamento(contrato, "Mensal", 3800.00)
+        self.add_contrato_pagamento(contrato, "Por Visita", 800.00)
+
         return cliente, contrato
 
     def simulate_timeline(self, cliente, contrato, mode="realistic"):
-        hoje_date = date.today()
+        hoje_date = get_hoje_date()
         mes_passado = subtrair_meses(hoje_date, 1)
         dois_meses_atras = subtrair_meses(hoje_date, 2)
+
+        # 1. Projeto: Mapeamento Curricular Inclusivo
+        projeto = self.add_projeto(contrato, "Mapeamento Curricular Inclusivo", valor_total=2400.00)
+        self._add_and_commit([
+            Entrega(id_projeto=projeto.id_projeto, descricao="Diagnóstico Inicial", data_entrega_prevista=dois_meses_atras, entregue=True),
+            Entrega(id_projeto=projeto.id_projeto, descricao="Plano de Aula Adaptado", data_entrega_prevista=hoje_date, entregue=False)
+        ])
+        self._add_and_commit([
+            ProjetoParcela(id_projeto=projeto.id_projeto, numero_parcela=1, valor_parcela=1200.00, data_pagamento_prevista=dois_meses_atras, pago=True, data_pagamento=dois_meses_atras),
+            ProjetoParcela(id_projeto=projeto.id_projeto, numero_parcela=2, valor_parcela=1200.00, data_pagamento_prevista=mes_passado, pago=False)
+        ])
 
         visitas = []
         pendencias = []
         eventos = []
         
-        # 1. Visita de Imersão (Passado)
+        # Visita de Imersão
         v_imersao = Visita(
             id_contrato=contrato.id_contrato,
             status="realizada",
             data_hora=data_relativa_datetime(-10),
-            duracao_minutos=480, # 8 horas de imersão
+            duracao_minutos=480,
             tipo_visita="rotineira",
             modalidade="presencial",
             descricao="Imersão Bacabal - Auditoria de Convênios",
-            resultados="Identificada divergência no rateio do SUS. Mapeamento completo concluído."
+            resultados="Identificada divergência no rateio do SUS."
         )
-        visitas.append(v_imersao)
-        self._add_and_commit(visitas) # Commit para pegar ID para as pendências
-
-        # Causalidade: Imersão gera pendência longa
-        pendencias.append(create_causal_pendency(v_imersao, "Revisar planilha de rateio do convênio estadual", responsavel="Adriano", dias_prazo=15))
+        self._add_and_commit([v_imersao])
+        pendencias.append(create_causal_pendency(v_imersao, "Revisar rateio do convênio", responsavel="Adriano", dias_prazo=15))
 
         if mode in ["realistic", "stress"]:
-            v_reuniao_remota = Visita(
+            # Visita Extra: Suporte a Fiscalização do MEC/SEC
+            v_extra = Visita(
                 id_contrato=contrato.id_contrato,
                 status="realizada",
-                data_hora=data_relativa_datetime(-2),
-                duracao_minutos=90,
+                data_hora=data_relativa_datetime(-3),
+                duracao_minutos=300,
                 tipo_visita="urgente",
-                modalidade="remota",
-                descricao="Alinhamento sobre Prestação de Contas",
-                resultados="Orientação passada para o financeiro local."
+                modalidade="presencial",
+                descricao="SUPORTE TÉCNICO: Fiscalização da Secretaria de Educação",
+                resultados="Documentação apresentada sem ressalvas."
             )
-            self._add_and_commit([v_reuniao_remota])
-            pendencias.append(create_causal_pendency(v_reuniao_remota, "Cobrar assinatura da diretoria na ata de auditoria", atrasada=True))
+            self._add_and_commit([v_extra])
+            
+            contato_maria = self.db.query(Cliente).join(Cliente.contatos).filter(Cliente.id_cliente == cliente.id_cliente).first().contatos[0]
+            self.db.add(VisitaExtra(id_visita=v_extra.id_visita, solicitado_por=contato_maria.id_contato))
 
-        if mode == "stress":
-            eventos.append(create_causal_event(v_imersao, "Atraso no Repasse: Prefeitura atrasou repasse da subvenção, cliente em risco de fluxo de caixa.", acao_tomada="Ofício enviado à SMS"))
+            if mode == "stress":
+                eventos.append(create_causal_event(v_imersao, "Atraso no Repasse Municipal", acao_tomada="Ofício enviado à SMS"))
 
         self._add_and_commit(pendencias)
         self._add_and_commit(eventos)
 
-        # 5. Financeiro
+        # Financeiro
         faturamentos = [
             FaturamentoCliente(
                 id_contrato=contrato.id_contrato,
                 mes_ano=date(dois_meses_atras.year, dois_meses_atras.month, 1),
-                valor_base=3800.00,
-                valor_extra=0.00,
-                desconto=0.00,
-                valor_total=3800.00,
-                pago=True,
-                data_pagamento=date(dois_meses_atras.year, dois_meses_atras.month, 5)
-            )
-        ]
-        
-        # Causalidade Financeira
-        valor_extra_viagem = 400.00 if mode in ["realistic", "stress"] else 0.00
-        pago_mes = False if mode == "stress" else True
-
-        faturamentos.append(
+                valor_base=3800.00, valor_extra=0.00, desconto=0.00, valor_total=3800.00,
+                pago=True, data_pagamento=date(dois_meses_atras.year, dois_meses_atras.month, 5)
+            ),
             FaturamentoCliente(
                 id_contrato=contrato.id_contrato,
                 mes_ano=date(mes_passado.year, mes_passado.month, 1),
-                valor_base=3800.00,
-                valor_extra=valor_extra_viagem, # Deslocamento/Viagem
-                desconto=0.00,
-                valor_total=3800.00 + valor_extra_viagem,
-                pago=pago_mes,
-                data_pagamento=date(mes_passado.year, mes_passado.month, 5) if pago_mes else None
+                valor_base=3800.00, valor_extra=800.00 if mode != "simple" else 0.0,
+                desconto=0.00, valor_total=4600.00 if mode != "simple" else 3800.0,
+                pago=True, data_pagamento=date(mes_passado.year, mes_passado.month, 5)
             )
-        )
+        ]
         self._add_and_commit(faturamentos)

@@ -1,12 +1,17 @@
 import random
 from datetime import datetime, date, timedelta
-from src.models import Pendencia, EventoCritico
+from src.models import (
+    Pendencia, EventoCritico, TipoPagamento, Projeto, 
+    Entrega, ProjetoParcela, HistoricoContrato, ContratoPagamento,
+    Contato, VisitaExtra
+)
 
 # Inicializar seed fixa para garantir determinismo nas simulações
 random.seed(42)
 
 def get_hoje() -> datetime:
-    return datetime.now()
+    # Fixar uma data de referência para a simulação ser reprodutível
+    return datetime(2026, 5, 10, 10, 0, 0)
 
 def get_hoje_date() -> date:
     return get_hoje().date()
@@ -57,6 +62,19 @@ def create_causal_event(visita, descricao, acao_tomada=None):
         descricao=descricao,
         acao_tomada=acao_tomada
     )
+
+def ensure_tipos_pagamento(db):
+    """Garante que os tipos de pagamento padrão existam."""
+    tipos = ["Mensal", "Por Visita", "Por Projeto"]
+    results = {}
+    for t in tipos:
+        tp = db.query(TipoPagamento).filter(TipoPagamento.tipo.ilike(t)).first()
+        if not tp:
+            tp = TipoPagamento(tipo=t)
+            db.add(tp)
+            db.flush()
+        results[t.lower()] = tp
+    return results
 
 def apply_stress_limits(lista, max_items=5):
     """Aplica o 'cap de ruído' para evitar saturação da UI."""

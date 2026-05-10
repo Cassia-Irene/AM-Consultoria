@@ -24,3 +24,11 @@ class Visita(Base):
     projeto = relationship("Projeto", back_populates="visitas")
     visita_extra = relationship("VisitaExtra", back_populates="visita", uselist=False) 
     pendencias = relationship("Pendencia", back_populates="visita")
+
+class MotivoAcionamento(Base):
+    __tablename__ = "motivos_acionamento"
+
+    id_motivo = Column(Integer, primary_key=True, index=True)
+    nome = Column(String(100), nullable=False)
+    slug = Column(String(50), nullable=False, unique=True)
+    descricao = Column(Text)

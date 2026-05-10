@@ -23,13 +23,13 @@ export function DashboardTabs() {
   return (
     <div className="sticky top-0 z-50 bg-[#07090D]/90 backdrop-blur-md border-b border-[#23272F] px-4 pt-8 pb-4 sm:pt-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-2">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-center sm:justify-between">
           <h1 className="text-white text-lg sm:text-xl font-black tracking-tight">
             {activeTab === 'caos' ? 'Modo Caos' : activeTab === 'planejamento' ? 'Modo Planejamento' : 'Modo Reflexão'}
           </h1>
         </div>
         
-        <div className="flex items-center gap-1 bg-[#0d1117] border border-[#23272F] p-1 rounded-full w-fit">
+        <div className="flex items-center gap-1 bg-[#0d1117] border border-[#23272F] p-1 rounded-full w-fit mx-auto sm:mx-0">
           {tabs.map(tab => (
             <Link 
               key={tab.id} 

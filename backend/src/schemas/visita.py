@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 class VisitaBase(BaseModel):
@@ -22,10 +22,18 @@ class VisitaRead(VisitaBase):
     model_config = ConfigDict(from_attributes=True)
 
 class VisitaUpdate(BaseModel):
-    status: str | None = None
-    data_hora: datetime | None = None
-    duracao_minutos: int | None = None
-    tipo_visita: str | None = None
-    modalidade: str | None = None
-    descricao: str | None = None
-    resultados: str | None = None
+    status: Optional[str] = None
+    data_hora: Optional[datetime] = None
+    duracao_minutos: Optional[int] = None
+    tipo_visita: Optional[str] = None
+    modalidade: Optional[str] = None
+    descricao: Optional[str] = None
+    resultados: Optional[str] = None
+
+class MotivoAcionamentoRead(BaseModel):
+    id_motivo: int
+    nome: str
+    slug: str
+    descricao: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)

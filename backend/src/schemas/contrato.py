@@ -1,5 +1,4 @@
 from decimal import Decimal
-
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import date
@@ -26,7 +25,10 @@ class ContratoReplaceRequest(BaseModel):
     visitas_previstas_mes: int
 
 class ContratoUpdateRestrito(BaseModel):
+<<<<<<< HEAD
     # Campos que NÃO afetam o financeiro ou a estrutura legal
+=======
+>>>>>>> origin/cass
     servicos_contratados: str | None = None
     observacoes_gerais: str | None = None
     inclui_relatorio: bool | None = None

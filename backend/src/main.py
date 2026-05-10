@@ -1,10 +1,20 @@
 from fastapi import FastAPI
-from src.routers import clientes, contatos, contratos, visitas, projetos, pendencias, eventos_criticos, visitas_extra, projeto_parcelas, projetos_extra, tipos_pagamento, contrato_pagamento, faturamento_cliente, entregas
+from fastapi.middleware.cors import CORSMiddleware
+from src.routers import clientes, contatos, contratos, visitas, projetos, pendencias, eventos_criticos, visitas_extra, projeto_parcelas, projetos_extra, tipos_pagamento, contrato_pagamento, faturamento_cliente, entregas, analytics
 
 # 1º Criar a instância da aplicação
 app = FastAPI(title="AM Consultoria API")
 
-# 2º Incluir os routers (DEPOIS de criar o app)
+# 2º Configurar CORS (Essencial para integração local)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Em produção, especificar o domínio do frontend
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 3º Incluir os routers
 app.include_router(clientes.router)
 app.include_router(contatos.router) 
 app.include_router(contratos.router) 
@@ -19,7 +29,13 @@ app.include_router(tipos_pagamento.router)
 app.include_router(contrato_pagamento.router)
 app.include_router(faturamento_cliente.router)
 app.include_router(entregas.router)
+app.include_router(analytics.router)
 
 @app.get("/")
 def root():
     return {"msg": "API AM Consultoria rodando 🚀"}
+
+if __name__ == "__main__":
+    import uvicorn
+    print("[BACKEND] Iniciando servidor na porta 8002...")
+    uvicorn.run(app, host="127.0.0.1", port=8002)

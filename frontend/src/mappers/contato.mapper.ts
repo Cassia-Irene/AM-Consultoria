@@ -1,35 +1,45 @@
 import { Contatos as Mock } from '@/lib/mocks'
 import type { Contato } from '@/domain/contato'
 import type { ContatoRaw } from '@/types/contato.raw'
-import { validateShape } from '@/utils/schemaGuard'
+import { validateShape, warnInvalidShape } from '@/utils/schemaGuard'
 
 export function getContatos(): Contato[] {
   return (Mock as ContatoRaw[]).map(mapContato)
 }
 
 export function mapContato(raw: ContatoRaw): Contato {
+  const idResolved = raw.id_contato ?? raw.id
+  const clienteIdResolved = raw.id_cliente ?? raw.clienteId
+
+  // Validação Estrita
+  if (!idResolved) {
+    warnInvalidShape('Contato:ID_MISSING', raw)
+    throw new Error('[MAPPER][CONTATO] Campo obrigatório ausente: id_contato/id')
+  }
+  if (!clienteIdResolved) {
+    warnInvalidShape('Contato:CLIENTE_ID_MISSING', raw)
+    throw new Error('[MAPPER][CONTATO] Campo obrigatório ausente: id_cliente/clienteId')
+  }
+
+  // Validação Importante (não-crítica)
+  if (!raw.nome) {
+    warnInvalidShape('Contato:NOME_MISSING', raw, 'Usando fallback: "Nome não informado"')
+  }
+  if (!raw.papel) {
+    warnInvalidShape('Contato:PAPEL_MISSING', raw, 'Usando fallback: "Contato"')
+  }
+
   validateShape<ContatoRaw>('ContatoRaw', raw, [
-    'id_contato',
-    'id_cliente',
-    'nome',
-    'papel'
+    'cargo'
   ])
 
-  if (!raw.nome) {
-    throw new Error(`ContatoRaw (ID: ${raw.id_contato}) missing nome`)
-  }
-
-  if (!raw.papel) {
-    throw new Error(`ContatoRaw (ID: ${raw.id_contato}) missing papel`)
-  }
-
   return {
-    id: String(raw.id_contato),
-    clienteId: String(raw.id_cliente),
+    id: String(idResolved),
+    clienteId: String(clienteIdResolved),
 
-    nome: raw.nome,
+    nome: raw.nome || 'Nome não informado',
     cargo: raw.cargo ?? undefined,
-    papel: raw.papel,
+    papel: raw.papel || 'Contato',
 
     telefone_whatsapp: raw.telefone_whatsapp ?? undefined,
     email: raw.email ?? undefined,

@@ -1,23 +1,36 @@
-export type TipoVisita =
-  | 'rotina'
-  | 'extra'
+export type StatusVisita =
+  | 'agendada'
+  | 'realizada'
+  | 'cancelada'
+
+
+export type ModalidadeVisita =
+  | 'presencial'
+  | 'remota'
+
+export type TipoVisita = 
+  | 'rotineira'
+  | 'urgente'
+  | 'pontual'
+  | 'estruturada'
+  | 'acompanhamento direcionado'
 
 export type Visita = {
   id: string
-  clienteId: string
+
   contratoId: string
+  projetoId?: string
 
-  data_visita: string // Date from backend
-  duracao_estimada_minutos?: number
+  status: StatusVisita
 
-  tipo: TipoVisita
-  modalidade: string
-  status: string
+  data_hora: string
+
+  duracao_minutos?: number
+
+  tipo_visita: TipoVisita
+  modalidade: ModalidadeVisita
+
 
   descricao: string
-  resultado: string
-
-  criadaEm: string
-  observacoes?: string
-  ultimaVisitaEm?: string
+  resultados?: string
 }

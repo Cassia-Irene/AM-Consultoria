@@ -13,9 +13,7 @@ export interface ProjetoRaw {
   data_fim_prevista: string | null
   data_fim_real: string | null
 
-  valor_total: string  // Decimal vem como string no JSON
-
+  valor_total: string | number
   status: string
-
   observacoes_gerais: string | null
 }

@@ -1,63 +1,80 @@
-/**
- * visitas.service.ts
- *
- * Orquestra o fluxo: UI → validação → conversão → API
- *
- *   1. Recebe NovaVisitaInput da UI (dados brutos)
- *   2. Valida antes de qualquer conversão
- *   3. Chama o adapter para gerar o payload correto
- *   4. Envia para a API e trata erros
- *
- * NÃO contém lógica de negócio nem formatação de dados.
- * NÃO define DTOs — todos definidos em visita.adapter.ts.
- */
-
 import { AppError } from '@/utils/errors'
 import {
   toVisitaPayload,
+  toPendenciasPayload,
   validateNovaVisitaInput,
   type NovaVisitaInput,
   type CriarVisitaResponse,
 } from '@/adapters/visita.adapter'
+import { fetchApi } from './api'
+import { mapVisita } from '@/mappers/visita.mapper'
+import type { Visita } from '@/domain/visita'
+import type { VisitaRaw } from '@/types/visita.raw'
 
 export type { NovaVisitaInput, CriarVisitaResponse } from '@/adapters/visita.adapter'
 
-// ─── Service ─────────────────────────────────────────────────────────────────
-
 export const VisitasService = {
+  async getAll(): Promise<Visita[]> {
+    try {
+      const data = await fetchApi<VisitaRaw[]>('/visitas/')
+      return data.map(mapVisita)
+    } catch (err) {
+      console.error('[SERVICE][ERROR] Falha ao buscar visitas:', err)
+      throw new AppError('Não foi possível carregar as visitas.', 'API_ERROR', err)
+    }
+  },
+
+  async getById(id: string | number): Promise<Visita> {
+    try {
+      const data = await fetchApi<VisitaRaw>(`/visitas/${id}`)
+      return mapVisita(data)
+    } catch (err) {
+      console.error(`[SERVICE][ERROR] Falha ao buscar visita ${id}:`, err)
+      throw new AppError('Falha ao carregar detalhes da visita.', 'API_ERROR', err)
+    }
+  },
+
   async criar(input: NovaVisitaInput): Promise<CriarVisitaResponse> {
-    // 1. Validar antes de chamar a API — falha rápida, mensagem clara
     const { valid, errors } = validateNovaVisitaInput(input)
     if (!valid) {
-      throw new AppError(
-        `Dados inválidos: ${errors.join('; ')}`,
-        'VALIDATION_ERROR',
-        errors
-      )
+      throw new AppError(`Dados inválidos: ${errors.join('; ')}`, 'VALIDATION_ERROR', errors)
     }
 
-    // 2. Converter para o formato da API
-    const payload = toVisitaPayload(input)
+    const payloadVisita = toVisitaPayload(input)
 
-    // 3. Enviar — erros da API são capturados e relançados como VisitaServiceError
     try {
-      // TODO: descomentar quando a API estiver disponível
-      // return await fetchApi<CriarVisitaResponse>('/visitas', {
-      //   method: 'POST',
-      //   body: JSON.stringify(payload),
-      // })
+      const responseVisita = await fetchApi<CriarVisitaResponse>('/visitas/', {
+        method: 'POST',
+        body: JSON.stringify(payloadVisita),
+      })
 
-      console.log('[API POST /visitas] Payload:', payload)
-      await new Promise(resolve => setTimeout(resolve, 800))
-      return { id: 'v-gerado-123', message: 'Visita e pendências criadas com sucesso' }
+      const { id_visita } = responseVisita
+      const pendenciasFalhas: string[] = []
 
+      if (input.pendencias && input.pendencias.length > 0) {
+        const payloadPendencias = toPendenciasPayload(input, id_visita)
+        for (const pendencia of payloadPendencias) {
+          try {
+            await fetchApi('/pendencias/', {
+              method: 'POST',
+              body: JSON.stringify(pendencia),
+            })
+          } catch (pErr) {
+            console.error('[SERVICE][WARN] Falha ao criar pendência:', pErr)
+            pendenciasFalhas.push(pendencia.descricao)
+          }
+        }
+      }
+
+      return { 
+        id_visita, 
+        message: pendenciasFalhas.length > 0 
+          ? `Visita criada, mas ${pendenciasFalhas.length} pendência(s) falharam.` 
+          : 'Visita registrada com sucesso.',
+        pendencias_falhas: pendenciasFalhas.length > 0 ? pendenciasFalhas : undefined
+      }
     } catch (err) {
-      // Nunca repassa o erro bruto da API — UI recebe mensagem de domínio
-      throw new AppError(
-        'Falha ao comunicar com o servidor. Tente novamente.',
-        'API_ERROR',
-        err
-      )
+      throw new AppError('Falha ao registrar visita no servidor.', 'API_ERROR', err)
     }
   }
 }

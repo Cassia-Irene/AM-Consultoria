@@ -306,9 +306,9 @@ function VisitaCard({ v }: { v: Visita }) {
           </svg>
         </div>
         <div>
-          <p className="text-white text-sm font-bold">{new Date(v.data_visita).toLocaleDateString('pt-BR')}</p>
+          <p className="text-white text-sm font-bold">{new Date(v.data_hora).toLocaleDateString('pt-BR')}</p>
           <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest mt-0.5">
-            {v.tipo} · {v.status}
+            {v.tipo_visita} · {v.status}
           </p>
         </div>
       </div>

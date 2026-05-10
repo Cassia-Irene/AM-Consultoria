@@ -1,53 +1,59 @@
-// src/mappers/faturamento.mapper.ts
-//
-// Converte FaturamentoRaw (shape da API) → FaturamentoCliente (domain).
-
-import { Faturamentos as FaturamentosMock } from '@/lib/mocks'
 import type { FaturamentoCliente } from '@/domain/faturamento'
 import type { FaturamentoRaw } from '@/types/faturamento.raw'
-import { validateShape } from '@/utils/schemaGuard'
-
-export function getFaturamentos(): FaturamentoCliente[] {
-  return (FaturamentosMock as unknown as FaturamentoRaw[]).map(mapFaturamento)
-}
+import { validateShape, warnInvalidShape } from '@/utils/schemaGuard'
+import { IntegrationError } from '@/utils/errors'
 
 export function mapFaturamento(raw: FaturamentoRaw): FaturamentoCliente {
-  validateShape<FaturamentoRaw>('FaturamentoRaw', raw, [
+  // Validação Estrita (Back-First)
+  if (!raw.id_faturamento) {
+    warnInvalidShape('Faturamento:ID_MISSING', raw)
+    throw new IntegrationError('Faturamento', 'id_faturamento ausente no contrato real', raw)
+  }
+  if (!raw.id_contrato) {
+    warnInvalidShape('Faturamento:CONTRATO_ID_MISSING', raw)
+    throw new IntegrationError('Faturamento', 'id_contrato ausente no contrato real', raw)
+  }
+  if (!raw.mes_ano) {
+    warnInvalidShape('Faturamento:MES_ANO_MISSING', raw)
+    throw new IntegrationError('Faturamento', 'mes_ano ausente no contrato real', raw)
+  }
+
+  validateShape<FaturamentoRaw>('FaturamentoRead', raw, [
     'id_faturamento',
     'id_contrato',
     'mes_ano',
+    'valor_base',
     'valor_total',
     'pago'
   ])
 
-  if (!raw.id_faturamento) throw new Error('FaturamentoRaw missing required field: id_faturamento')
-  if (!raw.id_contrato) throw new Error(`FaturamentoRaw missing required field: id_contrato`)
-  if (!raw.mes_ano) throw new Error(`FaturamentoRaw (ID: ${raw.id_faturamento}) missing required field: mes_ano`)
+  // Normalização de mes_ano (YYYY-MM-DD -> YYYY-MM) para o Domínio UI
+  const mesAnoUI = raw.mes_ano.slice(0, 7)
 
   return {
     id: String(raw.id_faturamento),
     contratoId: String(raw.id_contrato),
 
-    mes_ano: raw.mes_ano,
+    mes_ano: mesAnoUI,
 
-    visitas_realizadas: raw.visitas_realizadas ?? undefined,
+    visitas_realizadas: raw.visitas_realizadas,
 
-    valor_base: parseDecimal(raw.valor_base, 'valor_base', raw.id_faturamento),
-    valor_extra: parseDecimal(raw.valor_extra, 'valor_extra', raw.id_faturamento),
-    desconto: parseDecimal(raw.desconto, 'desconto', raw.id_faturamento),
-    valor_total: parseDecimal(raw.valor_total, 'valor_total', raw.id_faturamento),
+    valor_base: parseDecimal(raw.valor_base, 'valor_base', String(raw.id_faturamento)),
+    valor_extra: parseDecimal(raw.valor_extra, 'valor_extra', String(raw.id_faturamento)),
+    desconto: parseDecimal(raw.desconto, 'desconto', String(raw.id_faturamento)),
+    valor_total: parseDecimal(raw.valor_total, 'valor_total', String(raw.id_faturamento)),
 
-    pago: raw.pago,
+    pago: !!raw.pago,
     data_pagamento: raw.data_pagamento ?? undefined,
   }
 }
 
-/* ───────── helpers ───────── */
-
-function parseDecimal(value: string | number, field: string, id: string | number): number {
-  const n = typeof value === 'number' ? value : parseFloat(value)
+function parseDecimal(value: string | number | undefined | null, field: string, id: string): number {
+  if (value === undefined || value === null) return 0
+  const n = typeof value === 'number' ? value : parseFloat(String(value || '0'))
   if (isNaN(n)) {
-    throw new Error(`FaturamentoRaw (ID: ${id}) invalid decimal for field "${field}": "${value}"`)
+    console.warn(`[MAPPER][FATURAMENTO] (ID: ${id}) Decimal inválido para "${field}": "${value}". Usando 0.`)
+    return 0
   }
   return n
 }

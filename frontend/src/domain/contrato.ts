@@ -13,7 +13,17 @@ export type Contrato = {
 
   data_inicio: string              // Date ISO 8601: YYYY-MM-DD
   data_fim?: string                // Nullable — null = contrato indeterminado
-  valor_mensal: number
+  
+  /** 
+   * @deprecated Campo híbrido. O Backend real não retorna valor_mensal no objeto Contrato.
+   * Deve ser buscado em Faturamento ou ContratoPagamento.
+   */
+  valor_mensal?: number
+  
+  /** 
+   * @deprecated Campo derivado. O Backend real não tem coluna status.
+   * Derivado da data_fim no mapper.
+   */
   status: 'ativo' | 'inativo' | 'suspenso'
 
   observacoes_gerais?: string      // Text nullable

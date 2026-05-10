@@ -5,7 +5,8 @@ from typing import List
 from src.database import get_db
 from src.models.projeto import Projeto
 from src.models.contrato import Contrato
-from src.schemas.projeto import ProjetoCreate, ProjetoRead
+from src.schemas.projeto import ProjetoCreate, ProjetoRead, ProjetoUpdate
+
 
 router = APIRouter(prefix="/projetos", tags=["Projetos"])
 
@@ -37,6 +38,7 @@ def criar_projeto(projeto: ProjetoCreate, db: Session = Depends(get_db)):
 def listar_projetos(db: Session = Depends(get_db)):
     # Busca todos os projetos cadastrados
     return db.query(Projeto).all()
+<<<<<<< HEAD
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -47,6 +49,18 @@ from src.schemas.projeto import ProjetoRead, ProjetoUpdate # Ajuste o import
 # ... suas rotas POST e GET ...
 
 @router.patch("/{id_projeto}", response_model=ProjetoRead)
+=======
+@router.get("/{id_projeto}", response_model=ProjetoRead)
+def buscar_projeto(id_projeto: int, db: Session = Depends(get_db)):
+    """Busca os detalhes de um projeto específico por ID."""
+    projeto = db.query(Projeto).filter(Projeto.id_projeto == id_projeto).first()
+    if not projeto:
+        raise HTTPException(status_code=404, detail="Projeto não encontrado")
+    return projeto
+
+@router.patch("/{id_projeto}", response_model=ProjetoRead)
+
+>>>>>>> origin/cass
 def atualizar_projeto(
     id_projeto: int, 
     projeto_update: ProjetoUpdate, 

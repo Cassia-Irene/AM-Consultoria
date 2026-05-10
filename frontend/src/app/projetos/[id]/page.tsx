@@ -5,11 +5,10 @@
 
 import { use, useState, useEffect } from 'react'
 import Link from 'next/link'
-import { getProjetos } from '@/mappers/projeto.mapper'
-import { getEntregas } from '@/mappers/entrega.mapper'
-import { getProjetoParcelas } from '@/mappers/projetoParcela.mapper'
-import { getProjetoExtras } from '@/mappers/projetoExtra.mapper'
-import { fetchApi } from '@/services/api'
+import { ProjetosService } from '@/services/projetos.service'
+import { EntregasService } from '@/services/entregas.service'
+import { ParcelasService } from '@/services/parcelas.service'
+import { ExtrasService } from '@/services/extras.service'
 import { formatCurrency } from '@/utils/finance'
 import type { Projeto } from '@/domain/projeto'
 import type { Entrega } from '@/domain/entrega'
@@ -36,25 +35,25 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
 
     async function loadData() {
       try {
-        const [projects, allEntregas, allParcelas, allExtras] = await Promise.all([
-          fetchApi<Projeto[]>('/projetos', undefined, getProjetos()),
-          fetchApi<Entrega[]>('/entregas', undefined, getEntregas()),
-          fetchApi<ProjetoParcela[]>('/projeto-parcelas', undefined, getProjetoParcelas()),
-          fetchApi<ProjetoExtra[]>('/projeto-extras', undefined, getProjetoExtras())
+        setLoading(true)
+        const [foundProjeto, allEntregas, allParcelas, allExtras] = await Promise.all([
+          ProjetosService.getById(id),
+          EntregasService.getByProjetoId(id),
+          ParcelasService.getByProjetoId(id),
+          ExtrasService.getByProjetoId(id)
         ])
 
         if (!isMounted) return
 
-        const found = projects.find(p => p.id === id)
-        if (!found) {
+        if (!foundProjeto) {
           setError('Projeto não encontrado.')
           return
         }
 
-        setProjeto(found)
-        setEntregas(allEntregas.filter(e => e.projetoId === id))
-        setParcelas(allParcelas.filter(p => p.projetoId === id))
-        setExtras(allExtras.filter(ex => ex.projetoId === id))
+        setProjeto(foundProjeto)
+        setEntregas(allEntregas)
+        setParcelas(allParcelas)
+        setExtras(allExtras)
       } catch (err) {
         if (isMounted) {
           console.error('[ERROR][PROJETO_DETAIL]', err)

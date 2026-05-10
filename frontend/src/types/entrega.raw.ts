@@ -2,6 +2,10 @@ export interface EntregaRaw {
   id_entrega: number
   id_projeto: number
 
+  // Aliases para compatibilidade híbrida
+  id?: number | string
+  projetoId?: number | string
+
   descricao: string
   data_entrega_prevista: string
   data_entrega_real: string | null

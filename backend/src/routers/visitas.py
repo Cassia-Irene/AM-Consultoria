@@ -11,18 +11,23 @@ router = APIRouter(prefix="/visitas", tags=["Visitas"])
 
 @router.post("/", response_model=VisitaRead)
 def registrar_visita(visita: VisitaCreate, db: Session = Depends(get_db)):
+<<<<<<< HEAD
     # 1. Valida o CONTRATO (obrigatório no novo modelo)
+=======
+>>>>>>> origin/cass
     contrato = db.query(Contrato).filter(Contrato.id_contrato == visita.id_contrato).first()
     if not contrato:
         raise HTTPException(status_code=404, detail="Contrato não encontrado")
         
+<<<<<<< HEAD
     # 2. Valida o projeto apenas se o ID for enviado
+=======
+>>>>>>> origin/cass
     if visita.id_projeto:
         projeto = db.query(Projeto).filter(Projeto.id_projeto == visita.id_projeto).first()
         if not projeto:
             raise HTTPException(status_code=404, detail="Projeto não encontrado")
 
-    # O model_dump() vai mapear 'id_projeto' e 'data' corretamente agora
     nova_visita = Visita(**visita.model_dump())
     
     try:
@@ -36,9 +41,21 @@ def registrar_visita(visita: VisitaCreate, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=List[VisitaRead])
 def listar_visitas(db: Session = Depends(get_db)):
+<<<<<<< HEAD
     # Busca todas as visitas na tabela "visitas"
     return db.query(Visita).all()
 
+=======
+    return db.query(Visita).all()
+
+@router.get("/{id_visita}", response_model=VisitaRead)
+def buscar_visita(id_visita: int, db: Session = Depends(get_db)):
+    visita = db.query(Visita).filter(Visita.id_visita == id_visita).first()
+    if not visita:
+        raise HTTPException(status_code=404, detail="Visita não encontrada")
+    return visita
+
+>>>>>>> origin/cass
 @router.patch("/{id_visita}", response_model=VisitaRead)
 def atualizar_visita(
     id_visita: int, 
@@ -46,12 +63,18 @@ def atualizar_visita(
     db: Session = Depends(get_db)
 ):
     db_visita = db.query(Visita).filter(Visita.id_visita == id_visita).first()
+<<<<<<< HEAD
     
+=======
+>>>>>>> origin/cass
     if not db_visita:
         raise HTTPException(status_code=404, detail="Visita não encontrada")
 
     update_data = visita_update.model_dump(exclude_unset=True)
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/cass
     for key, value in update_data.items():
         setattr(db_visita, key, value)
 

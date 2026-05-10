@@ -22,3 +22,22 @@ export function validateShape<T>(
     console.warn(`[SCHEMA MISMATCH][${name}] Missing fields:`, missing)
   }
 }
+
+/**
+ * Emite um alerta estruturado no console sobre divergências de schema.
+ * Usado para identificar quando o backend diverge do esperado sem quebrar a UI.
+ */
+export function warnInvalidShape(
+  entity: string,
+  raw: unknown,
+  details?: string
+) {
+  console.warn(
+    `[WARN][MAPPER][${entity}] Shape inválido`,
+    {
+      details,
+      timestamp: new Date().toISOString(),
+      raw,
+    }
+  );
+}

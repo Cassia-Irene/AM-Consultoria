@@ -1,13 +1,17 @@
 export interface PendenciaRaw {
-  id: number | string
-  titulo: string
-  clienteId: string
-  status: string
-  prazo?: string | null
-  criadaEm: string
+  id_pendencia: number
+  id_contrato: number
+  id_visita: number | null
+  
+  // Aliases para compatibilidade híbrida
+  id?: number | string
+  contratoId?: number | string
+  visitaId?: number | string | null
 
-  origemTipo?: string
-  origemDescricao?: string
-  contratoId?: string
-  prioridade?: string
+  descricao: string
+  responsavel: string
+  data_origem: string
+  data_prazo: string | null
+  resolvida: boolean
+  data_resolucao: string | null
 }

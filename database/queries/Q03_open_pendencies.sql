@@ -12,8 +12,11 @@ SELECT
     p.data_prazo,
     CASE 
         WHEN p.data_prazo < CURRENT_DATE THEN 'atrasado'
-        ELSE 'no prazo'
+        WHEN p.data_prazo = CURRENT_DATE THEN 'hoje'
+        WHEN p.data_prazo <= CURRENT_DATE + INTERVAL '3 days' THEN 'breve'
+        ELSE 'planejado'
     END as status_prazo
+
 FROM pendencias p
 JOIN contratos con ON p.id_contrato = con.id_contrato
 JOIN clientes c ON con.id_cliente = c.id_cliente

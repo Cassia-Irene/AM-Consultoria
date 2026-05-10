@@ -86,7 +86,8 @@ export function getTipoOperacionalVisita(
   // 6. Suporte Rápido: Curta sem projeto
   if (isCurta && !visita.projetoId) return 'suporte_rapido'
   
-  return visita.tipo_visita === 'rotina' ? 'rotina' : 'extra'
+  return visita.tipo_visita === 'rotineira' ? 'rotina' : 'extra'
+
 }
 
 /* ─────────────────────────────────────────────

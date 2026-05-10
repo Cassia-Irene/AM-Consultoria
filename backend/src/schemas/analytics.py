@@ -33,6 +33,13 @@ class TimelineEvent(BaseAnalyticsSchema):
     ultima_visita_resultados: Optional[str] = None
     pendencias_lista: Optional[List[dict]] = None
 
+class CaosScore(BaseAnalyticsSchema):
+    cliente: str
+    id_contrato: int
+    visitas_urgentes: int
+    pendencias_atrasadas: int
+    caos_score: int
+
 class OpenPendency(BaseAnalyticsSchema):
     cliente: str
     descricao: str
@@ -45,8 +52,10 @@ class ActiveProject(BaseAnalyticsSchema):
     cliente: str
     projeto: str
     status: str
+    valor_total: Decimal
     entregas_pendentes: int
     parcelas_pendentes: int
+
 
 class FinancialMonth(BaseAnalyticsSchema):
     mes: datetime
@@ -74,7 +83,8 @@ class ExtraVisitSummary(BaseAnalyticsSchema):
     qtd_extras: int
     mes: int
     ano: int
-
+    # Removido dia para focar no mensal analytics
+    
 class TopPriority(BaseAnalyticsSchema):
     id: int
     id_contrato: int
@@ -91,3 +101,29 @@ class PlanningOverview(BaseAnalyticsSchema):
     pendencias_atrasadas: int
     pendencias_atencao: int
     pendencias_normais: int
+
+class ClientHealth(BaseAnalyticsSchema):
+    cliente: str
+    id_contrato: int
+    visitas_urgentes: int
+    pendencias_atrasadas: int
+    total_minutos_invisiveis: int
+    indice_desgaste: int
+    perfil: str
+
+class TodayVisit(BaseAnalyticsSchema):
+    id_visita: int
+    id_contrato: int
+    data_hora: datetime
+    tipo_visita: str
+    modalidade: str
+    status: str
+    cliente: str
+    pendencias_contagem: int
+    status_pagamento: Optional[str] = None
+    ultima_visita_resultados: Optional[str] = None
+    pendencias_lista: Optional[List[dict]] = None
+
+
+
+

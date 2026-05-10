@@ -7,6 +7,7 @@ from src.services.analytics_service import AnalyticsService
 from src.schemas.analytics import (
     DashboardSummary, 
     TimelineEvent, 
+    CaosScore,
     OpenPendency, 
     ActiveProject, 
     FinancialMonth, 
@@ -14,13 +15,17 @@ from src.schemas.analytics import (
     CriticalEvent, 
     ExtraVisitSummary,
     TopPriority,
-    PlanningOverview
+    PlanningOverview,
+    ClientHealth,
+    TodayVisit
 )
 
 router = APIRouter(prefix="/analytics", tags=["Inteligência Operacional"])
 
 @router.get("/summary", response_model=DashboardSummary)
+
 def get_summary(db: Session = Depends(get_db)):
+
     """Resumo de indicadores para o Dashboard Home."""
     return AnalyticsService.get_dashboard_summary(db)
 
@@ -28,6 +33,11 @@ def get_summary(db: Session = Depends(get_db)):
 def get_timeline(db: Session = Depends(get_db)):
     """Timeline consolidada (Visitas, Pendências, Financeiro)."""
     return AnalyticsService.get_operational_timeline(db)
+
+@router.get("/caos-score", response_model=List[CaosScore])
+def get_caos_score(db: Session = Depends(get_db)):
+    """Índice de instabilidade operacional por cliente."""
+    return AnalyticsService.get_caos_score(db)
 
 @router.get("/pendencies", response_model=List[OpenPendency])
 def get_pendencies(db: Session = Depends(get_db)):
@@ -68,3 +78,16 @@ def get_priorities(db: Session = Depends(get_db)):
 def get_planning(db: Session = Depends(get_db)):
     """Visão de planejamento semanal e carga operacional."""
     return AnalyticsService.get_planning_overview(db)
+
+@router.get("/client-health", response_model=List[ClientHealth])
+def get_client_health(db: Session = Depends(get_db)):
+    """Indicadores de saúde, desgaste e horas invisíveis por cliente."""
+    return AnalyticsService.get_client_health(db)
+
+@router.get("/today-agenda", response_model=List[TodayVisit])
+def get_today_agenda(db: Session = Depends(get_db)):
+    """Visitas programadas para o dia de hoje."""
+    return AnalyticsService.get_today_agenda(db)
+
+
+

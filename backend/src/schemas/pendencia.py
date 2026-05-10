@@ -6,11 +6,12 @@ class PendenciaBase(BaseModel):
     id_visita: Optional[int] = None
     id_contrato: int
     descricao: str
-    data_origem: date
+    data_origem: Optional[date] = None
     data_resolucao: Optional[date] = None
     resolvida: bool = False
     responsavel: Optional[str] = None
-    data_prazo: date
+    data_prazo: Optional[date] = None
+
 
 class PendenciaUpdate(BaseModel):
     descricao: Optional[str] = None

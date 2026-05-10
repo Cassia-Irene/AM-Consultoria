@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from src.database import get_db
-from src.models.visita import Visita, MotivoAcionamento
+from src.models.visita import Visita
 from src.models.contrato import Contrato
 from src.models.projeto import Projeto 
-from src.schemas.visita import VisitaCreate, VisitaRead, VisitaUpdate, MotivoAcionamentoRead
+from src.schemas.visita import VisitaCreate, VisitaRead, VisitaUpdate
 
 router = APIRouter(prefix="/visitas", tags=["Visitas"])
 
@@ -34,11 +34,6 @@ def registrar_visita(visita: VisitaCreate, db: Session = Depends(get_db)):
 @router.get("/", response_model=List[VisitaRead])
 def listar_visitas(db: Session = Depends(get_db)):
     return db.query(Visita).all()
-
-# ✅ NOVO: Motivos de acionamento (Deve vir ANTES de /{id_visita})
-@router.get("/motivos-acionamento", response_model=List[MotivoAcionamentoRead])
-def listar_motivos(db: Session = Depends(get_db)):
-    return db.query(MotivoAcionamento).all()
 
 @router.get("/{id_visita}", response_model=VisitaRead)
 def buscar_visita(id_visita: int, db: Session = Depends(get_db)):

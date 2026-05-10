@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react'
 import { 
   AnalyticsService, 
   type DashboardSummary, 
-  type FinancialMonth 
+  type FinancialMonth,
+  type ActiveProject
 } from '@/services/analytics.service'
-import { DashboardTabs } from '@/components/DashboardTabs'
+
+
 
 function formatCurrency(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 })
@@ -41,17 +43,20 @@ function FinanceCard({ label, value, description, color, isCurrency = true }: { 
 export default function FinanceiroPage() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const [finance, setFinance] = useState<FinancialMonth[]>([])
+  const [projects, setProjects] = useState<ActiveProject[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       try {
-        const [s, f] = await Promise.all([
+        const [s, f, p] = await Promise.all([
           AnalyticsService.getSummary(),
-          AnalyticsService.getFinance()
+          AnalyticsService.getFinance(),
+          AnalyticsService.getProjects()
         ])
         setSummary(s)
         setFinance(f)
+        setProjects(p)
       } catch (err) {
         console.error('Erro no financeiro:', err)
       } finally {
@@ -72,14 +77,14 @@ export default function FinanceiroPage() {
 
   return (
     <main className="min-h-screen bg-[#07090D] pb-32">
-      <DashboardTabs />
+
 
       <header className="px-5 pt-8 pb-8">
         <h1 className="text-white text-3xl font-black tracking-tight">Financeiro</h1>
         <p className="text-zinc-500 text-sm mt-1">Visão estratégica e saúde financeira</p>
       </header>
 
-      <div className="px-5 space-y-10">
+      <div className="px-5 space-y-12">
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <FinanceCard 
             label="Receita Mensal (MRR)" 
@@ -102,7 +107,32 @@ export default function FinanceiroPage() {
           />
         </section>
 
+        {/* Seção de Projetos Ativos */}
+        {projects.length > 0 && (
+          <section>
+            <SectionHeader label="Projetos em Andamento" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {projects.map((proj, i) => (
+                <div key={i} className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-5 hover:border-sky-900/40 transition-colors">
+                  <div className="flex justify-between items-start mb-3">
+                    <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">{proj.cliente}</p>
+                    <span className="px-2 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-500 text-[9px] font-black uppercase tracking-tighter">
+                      {proj.status}
+                    </span>
+                  </div>
+                  <h3 className="text-white font-bold text-sm mb-4 leading-tight">{proj.projeto}</h3>
+                  <div className="flex items-center justify-between mt-auto pt-4 border-t border-zinc-800/50">
+                    <span className="text-zinc-500 text-[10px] font-medium uppercase">Valor Total</span>
+                    <span className="text-white font-black text-sm tabular-nums">{formatCurrency(Number(proj.valorTotal))}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         <section>
+
           <SectionHeader label="Histórico Mensal" />
           <div className="space-y-3">
             {finance.map((f, i) => (

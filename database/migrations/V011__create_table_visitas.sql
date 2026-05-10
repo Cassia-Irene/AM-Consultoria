@@ -5,8 +5,17 @@ CREATE TABLE visitas (
     status VARCHAR(15) NOT NULL,
     data_hora TIMESTAMP NOT NULL,
     duracao_minutos INT,
-    tipo_visita VARCHAR(30) NOT NULL,
+    tipo_visita VARCHAR(50) NOT NULL CHECK (
+        tipo_visita IN (
+            'rotineira',
+            'urgente',
+            'pontual',
+            'estruturada',
+            'acompanhamento direcionado'
+        )
+    ),
     modalidade VARCHAR(20) NOT NULL CHECK (modalidade IN ('presencial', 'remota')),
+
     descricao TEXT,
     resultados TEXT
 );

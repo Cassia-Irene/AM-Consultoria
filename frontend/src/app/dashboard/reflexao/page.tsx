@@ -1,9 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { AnalyticsService, type OperationalInsight } from '@/services/analytics.service'
+import { AnalyticsService, type OperationalInsight, type ClientHealth } from '@/services/analytics.service'
 import { OperationalTimeline } from '@/components/OperationalTimeline'
-import type { ClientOperationalHealth } from '@/utils/operational-kpis'
 import { DashboardTabs } from '@/components/DashboardTabs'
 
 /* ─────────────────────────────────────────────
@@ -36,11 +35,11 @@ function InsightCard({
   )
 }
 
-function ClientHealthRow({ health, clienteNome }: { health: ClientOperationalHealth, clienteNome: string }) {
+function ClientHealthRow({ health }: { health: ClientHealth }) {
   return (
     <div className="bg-[#0d1117] border border-[#23272F] rounded-2xl px-5 py-4 flex items-center justify-between shadow-sm">
       <div className="min-w-0 flex-1">
-        <p className="text-white font-bold text-sm truncate">{clienteNome}</p>
+        <p className="text-white font-bold text-sm truncate">{health.cliente}</p>
         <div className="flex items-center gap-3 mt-1.5">
           <div className="flex-1 h-1.5 bg-[#23272F] rounded-full overflow-hidden max-w-[120px]">
             <div 
@@ -61,6 +60,7 @@ function ClientHealthRow({ health, clienteNome }: { health: ClientOperationalHea
     </div>
   )
 }
+
 
 export default function ModoReflexaoPage() {
   const [data, setData] = useState<OperationalInsight | null>(null)
@@ -106,12 +106,12 @@ export default function ModoReflexaoPage() {
           <div className="space-y-3">
             {data.topDrainingClients.map(health => (
               <ClientHealthRow 
-                key={health.clientId} 
+                key={health.idContrato} 
                 health={health} 
-                clienteNome={data.clientes.find(c => c.id === health.clientId)?.nome_instituicao || 'Cliente'} 
               />
             ))}
           </div>
+
         </section>
 
         {/* SEÇÃO 3: TIMELINE VIVA */}

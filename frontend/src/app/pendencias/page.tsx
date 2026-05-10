@@ -1,7 +1,7 @@
 'use client'
 // app/pendencias/page.tsx
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { PendenciasService } from '@/services/pendencias.service'
 import { ClientesService } from '@/services/clientes.service'
@@ -31,48 +31,99 @@ export default function PendenciasPage() {
   const [pendencias, setPendencias] = useState<PendenciaView[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState<Partial<Pendencia>>({})
 
-  useEffect(() => {
-    let isMounted = true
+  const loadData = useCallback(async () => {
+    try {
+      const [allPend, allCli, allCont] = await Promise.all([
+        PendenciasService.getAll(),
+        ClientesService.getAll(),
+        ContratoService.getAll()
+      ])
 
-    async function loadData() {
-      try {
-        const [allPend, allCli, allCont] = await Promise.all([
-          PendenciasService.getAll(),
-          ClientesService.getAll(),
-          ContratoService.getAll()
-        ])
+      const cliMap = new Map(allCli.map(c => [c.id, c.nome_instituicao]))
+      const contToCli = new Map(allCont.map(c => [c.id, c.clienteId]))
 
-        if (!isMounted) return
+      const views: PendenciaView[] = allPend.map(p => {
+        const cliId = contToCli.get(p.contratoId)
+        const cliNome = cliId ? (cliMap.get(cliId) || `Cliente ${cliId}`) : 'Desconhecido'
+        
+        return {
+          p,
+          clienteNome: cliNome,
+          status: getPendenciaStatus(p),
+          severidade: getPendenciaSeveridade(p)
+        }
+      })
 
-        const cliMap = new Map(allCli.map(c => [c.id, c.nome_instituicao]))
-        const contToCli = new Map(allCont.map(c => [c.id, c.clienteId]))
-
-        const views: PendenciaView[] = allPend.map(p => {
-          const cliId = contToCli.get(p.contratoId)
-          const cliNome = cliId ? (cliMap.get(cliId) || `Cliente ${cliId}`) : 'Desconhecido'
-          
-          return {
-            p,
-            clienteNome: cliNome,
-            status: getPendenciaStatus(p),
-            severidade: getPendenciaSeveridade(p)
-          }
-        })
-
-        setPendencias(views)
-      } catch {
-        if (isMounted) setError('Erro ao carregar pendências.')
-      } finally {
-        if (isMounted) setLoading(false)
-      }
+      setPendencias(views)
+    } catch {
+      setError('Erro ao carregar pendências.')
+    } finally {
+      setLoading(false)
     }
-
-    loadData()
-    return () => { isMounted = false }
   }, [])
 
-  if (loading) return <LoadingSkeleton />
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadData()
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [loadData])
+
+
+  async function handleResolve(id: string) {
+    try {
+      await PendenciasService.atualizar(id, { resolvida: true })
+      loadData()
+    } catch {
+      alert('Erro ao resolver pendência')
+    }
+  }
+
+  async function handleUnresolve(id: string) {
+    try {
+      await PendenciasService.atualizar(id, { resolvida: false })
+      loadData()
+    } catch {
+      alert('Erro ao reabrir pendência')
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Tem certeza que deseja excluir permanentemente esta pendência?')) return
+    try {
+      await PendenciasService.excluir(id)
+      loadData()
+    } catch {
+      alert('Erro ao excluir pendência')
+    }
+  }
+
+
+
+  function startEdit(p: Pendencia) {
+    setEditingId(p.id)
+    setEditForm(p)
+  }
+
+  async function handleSaveEdit() {
+    if (!editingId) return
+    try {
+      await PendenciasService.atualizar(editingId, {
+        descricao: editForm.descricao,
+        responsavel: editForm.responsavel,
+        data_prazo: editForm.data_prazo
+      })
+      setEditingId(null)
+      loadData()
+    } catch {
+      alert('Erro ao salvar alterações')
+    }
+  }
+
+  if (loading && pendencias.length === 0) return <LoadingSkeleton />
   if (error) return <ErrorBanner message={error} />
 
   // KPIs
@@ -110,35 +161,152 @@ export default function PendenciasPage() {
   }
   const badgeSeveridadeLabel = { urgente: 'Urgente', atencao: 'Atenção', normal: 'Normal' }
 
-  const renderCard = (view: PendenciaView) => (
-    <div key={view.p.id} className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
-      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <p className="text-white text-base font-medium mb-1 wrap-break-word">{view.p.descricao}</p>
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <span className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">{view.clienteNome}</span>
-            <span className="text-zinc-600">•</span>
-            <span className="text-zinc-400 text-xs">Resp: {view.p.responsavel}</span>
-            {view.p.data_prazo && (
-              <>
-                <span className="text-zinc-600">•</span>
-                <span className="text-zinc-400 text-xs">Prazo: {displayDate(view.p.data_prazo)}</span>
-              </>
-            )}
+
+  const renderCard = (view: PendenciaView) => {
+    const isEditing = editingId === view.p.id
+
+    if (isEditing) {
+      return (
+        <div key={view.p.id} className="rounded-2xl border border-blue-500 bg-zinc-900 p-4 space-y-4">
+          <div>
+            <label className="text-[10px] font-bold uppercase tracking-widest text-blue-400 block mb-1">Descrição</label>
+            <textarea
+              className="w-full bg-zinc-800 text-white text-sm rounded-xl px-4 py-3 border border-zinc-700 focus:outline-none focus:border-blue-500"
+              value={editForm.descricao}
+              onChange={e => setEditForm({ ...editForm, descricao: e.target.value })}
+              rows={2}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 block mb-1">Responsável</label>
+              <input
+                className="w-full bg-zinc-800 text-white text-sm rounded-xl px-4 py-2.5 border border-zinc-700 focus:outline-none focus:border-blue-500"
+                value={editForm.responsavel}
+                onChange={e => setEditForm({ ...editForm, responsavel: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 block mb-1">Prazo</label>
+              <input
+                type="date"
+                className="w-full bg-zinc-800 text-white text-sm rounded-xl px-4 py-2.5 border border-zinc-700 focus:outline-none focus:border-blue-500"
+                value={editForm.data_prazo ? editForm.data_prazo.split('T')[0] : ''}
+
+                onChange={e => setEditForm({ ...editForm, data_prazo: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <button
+              onClick={() => setEditingId(null)}
+              className="flex-1 py-2.5 rounded-xl text-xs font-bold text-zinc-400 bg-zinc-800 hover:bg-zinc-700 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSaveEdit}
+              className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 transition-colors"
+            >
+              Salvar Alterações
+            </button>
           </div>
         </div>
-        
-        <div className="flex items-center gap-2 shrink-0">
-          <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest ${badgeSeveridade[view.severidade]}`}>
-            {badgeSeveridadeLabel[view.severidade]}
-          </span>
-          <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest ${badgeStatus[view.status]}`}>
-            {badgeStatusLabel[view.status]}
-          </span>
+      )
+    }
+
+    return (
+      <div key={view.p.id} className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 hover:border-zinc-700 transition-all group">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-base font-medium mb-1 wrap-break-word">{view.p.descricao}</p>
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              <span className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">{view.clienteNome}</span>
+              <span className="text-zinc-600">•</span>
+              <span className="text-zinc-400 text-xs">Resp: {view.p.responsavel}</span>
+              {view.p.data_prazo && (
+                <>
+                  <span className="text-zinc-600">•</span>
+                  <span className="text-zinc-400 text-xs">Prazo: {displayDate(view.p.data_prazo)}</span>
+                </>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="flex flex-col items-end gap-2">
+              <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest ${badgeSeveridade[view.severidade]}`}>
+                {badgeSeveridadeLabel[view.severidade]}
+              </span>
+              <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest ${badgeStatus[view.status]}`}>
+                {badgeStatusLabel[view.status]}
+              </span>
+            </div>
+
+            {view.status !== 'concluida' ? (
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => startEdit(view.p)}
+                  className="p-2 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-all"
+                  title="Editar"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => handleResolve(view.p.id)}
+                  className="p-2 rounded-xl bg-emerald-900/30 text-emerald-400 hover:bg-emerald-800 transition-all"
+                  title="Marcar como resolvida"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => handleDelete(view.p.id)}
+                  className="p-2 rounded-xl bg-red-900/20 text-red-400 hover:bg-red-800 transition-all"
+                  title="Excluir permanentemente"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M3 6h18m-2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => handleUnresolve(view.p.id)}
+                  className="p-2 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-all"
+                  title="Reabrir pendência"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M1 4v6h6" />
+                    <path d="M3.51 15a9 9 0 102.13-9.36L1 10" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => handleDelete(view.p.id)}
+                  className="p-2 rounded-xl bg-red-900/20 text-red-400 hover:bg-red-800 transition-all"
+                  title="Excluir permanentemente"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M3 6h18m-2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                  </svg>
+                </button>
+              </div>
+            )}
+
+
+          </div>
         </div>
       </div>
-    </div>
-  )
+    )
+  }
+
 
   const renderGrupo = (titulo: string, items: PendenciaView[], emptyText?: string) => {
     if (items.length === 0) {

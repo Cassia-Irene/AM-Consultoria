@@ -8,6 +8,7 @@ import {
   mockPlanningOverview
 } from '@/mocks/analytics'
 
+
 export interface DashboardSummary {
   contratosAtivos: number
   pendenciasAbertas: number
@@ -38,15 +39,67 @@ export interface OpenPendency {
   responsavel: string
   dataOrigem: string
   dataPrazo?: string
-  statusPrazo: 'atrasado' | 'no prazo'
+  statusPrazo: 'atrasado' | 'hoje' | 'breve' | 'planejado'
+}
+
+export interface CaosScore {
+  cliente: string
+  idContrato: number
+  visitasUrgentes: number
+  pendenciasAtrasadas: number
+  caosScore: number
 }
 
 export interface FinancialMonth {
+
   mes: string
   receitaRecorrente: number
   receitaProjetos: number
   receitaTotal: number
 }
+
+export interface ClientHealth {
+  cliente: string
+  idContrato: number
+  visitasUrgentes: number
+  pendenciasAtrasadas: number
+  totalMinutosInvisiveis: number
+  indiceDesgaste: number
+  perfil: 'drenante' | 'urgente' | 'equilibrado'
+}
+
+export interface OperationalInsight {
+  totalHorasInvisiveis: number
+  urgenciasNoMes: number
+  topDrainingClients: ClientHealth[]
+  clientes: { id: string; nome_instituicao: string }[]
+  timeline: TimelineEvent[]
+}
+
+export interface TodayVisit {
+  idVisita: number
+  idContrato: number
+  dataHora: string
+  tipoVisita: string
+  modalidade: string
+  status: string
+  cliente: string
+  pendenciasContagem: number
+  statusPagamento?: string
+  ultimaVisitaResultados?: string
+  pendenciasLista?: { id: number; descricao: string; dataPrazo?: string }[]
+}
+
+export interface ActiveProject {
+  cliente: string
+  projeto: string
+  status: string
+  valorTotal: number
+  entregasPendentes: number
+  parcelasPendentes: number
+}
+
+
 
 export const AnalyticsService = {
   async getSummary(): Promise<DashboardSummary> {
@@ -57,9 +110,22 @@ export const AnalyticsService = {
     return fetchApi<TimelineEvent[]>('/analytics/timeline', {}, mockTimeline)
   },
 
+  async getTodayAgenda(): Promise<TodayVisit[]> {
+    return fetchApi<TodayVisit[]>('/analytics/today-agenda', {}, [])
+  },
+
+
+
+
+  async getProjects(): Promise<ActiveProject[]> {
+    return fetchApi<ActiveProject[]>('/analytics/projects', {}, [])
+  },
+
   async getPendencies(): Promise<OpenPendency[]> {
+
     return fetchApi<OpenPendency[]>('/analytics/pendencies', {}, mockOpenPendencies)
   },
+
 
   async getFinance(): Promise<FinancialMonth[]> {
     return fetchApi<FinancialMonth[]>('/analytics/finance', {}, mockFinanceData)
@@ -71,8 +137,60 @@ export const AnalyticsService = {
 
   async getPlanning(): Promise<PlanningOverview[]> {
     return fetchApi<PlanningOverview[]>('/analytics/planning', {}, mockPlanningOverview)
+  },
+
+  async getCaosScore(): Promise<CaosScore[]> {
+    try {
+      return await fetchApi<CaosScore[]>('/analytics/caos-score', {}, [])
+    } catch (err) {
+      console.warn('[FRONTEND] Endpoint /analytics/caos-score não encontrado. Usando lista vazia.', err)
+      return []
+    }
+  },
+
+  async getClientHealth(): Promise<ClientHealth[]> {
+    return fetchApi<ClientHealth[]>('/analytics/client-health', {}, [])
+  },
+
+  /**
+   * Agregador para o Modo Reflexão.
+   * Constrói o snapshot a partir de múltiplos endpoints existentes.
+   * A inteligência agora é 100% SQL (via /client-health).
+   */
+  async getOperationalSnapshot(): Promise<OperationalInsight> {
+    const [timeline, healthData] = await Promise.all([
+      this.getTimeline(),
+      this.getClientHealth()
+    ])
+
+    // Filtro de urgências do mês (ainda necessário para o KPI de topo, mas a inteligência de horas foi pro SQL)
+    const urgenciasNoMes = healthData.reduce((acc, curr) => acc + curr.visitasUrgentes, 0)
+    const totalMinutosInvisiveis = healthData.reduce((acc, curr) => acc + curr.totalMinutosInvisiveis, 0)
+
+    return {
+      totalHorasInvisiveis: totalMinutosInvisiveis,
+      urgenciasNoMes,
+      topDrainingClients: healthData.sort((a, b) => b.indiceDesgaste - a.indiceDesgaste),
+      clientes: healthData.map(c => ({ id: String(c.idContrato), nome_instituicao: c.cliente })),
+      timeline
+    }
+  },
+
+  /**
+   * Helper para filtrar e formatar a timeline no formato esperado pelo componente OperationalTimeline.
+   */
+  getOperationalTimeline(data: OperationalInsight): { date: string; type: string; title: string; subtitle: string; critical: boolean }[] {
+    return (data.timeline || []).map(event => ({
+      date: event.data,
+      type: event.tipo,
+      title: event.titulo,
+      subtitle: event.cliente,
+      critical: event.criticidade === 'critica' || event.criticidade === 'alta'
+    }))
   }
 }
+
+
 
 export interface PlanningOverview {
   cliente: string

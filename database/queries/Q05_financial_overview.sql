@@ -23,7 +23,8 @@ FROM (
     SELECT 
         DATE_TRUNC('month', data_pagamento_prevista) AS mes,
         0 AS receita_recorrente,
-        valor AS receita_projetos
+        valor_parcela AS receita_projetos
+
     FROM projeto_parcelas
 ) fontes
 GROUP BY mes

@@ -1,6 +1,15 @@
+export function parseISODateSafe(iso: string): Date {
+  // Se for YYYY-MM-DD puro (sem T), evitamos o 'new Date(iso)' que assume UTC
+  if (iso.includes('-') && !iso.includes('T')) {
+    const [year, month, day] = iso.split('-').map(Number)
+    return new Date(year, month - 1, day)
+  }
+  return new Date(iso)
+}
+
 export function displayDate(iso: string | null | undefined): string {
   if (!iso) return '—'
-  const date = new Date(iso)
+  const date = parseISODateSafe(iso)
   if (isNaN(date.getTime())) return '—'
   return date.toLocaleDateString('pt-BR')
 }
@@ -10,14 +19,13 @@ export function toAPIDate(display: string): string | null {
   const parts = display.split('/')
   if (parts.length === 3) {
     const [dia, mes, ano] = parts
-    return new Date(`${ano}-${mes}-${dia}T00:00:00Z`).toISOString()
+    return `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`
   }
-  const date = new Date(display)
-  if (!isNaN(date.getTime())) return date.toISOString()
-  return null
+  return display.split('T')[0]
 }
 
 export function parseDate(value: string): Date {
+  if (value.includes('-')) return parseISODateSafe(value)
   const parts = value.split('/')
   if (parts.length === 3) {
     const [dia, mes, ano] = parts.map(Number)
@@ -25,6 +33,7 @@ export function parseDate(value: string): Date {
   }
   return new Date(value)
 }
+
 
 /**
  * Converte dd/mm/yyyy → YYYY-MM-DD sem aplicar conversão de timezone.
@@ -56,7 +65,7 @@ export function getDiffDias(prazo: string): number {
 
 export function isToday(dateStr: string): boolean {
   if (!dateStr) return false
-  const date = new Date(dateStr)
+  const date = parseISODateSafe(dateStr)
   const hoje = new Date()
   return (
     date.getDate() === hoje.getDate() &&
@@ -67,9 +76,10 @@ export function isToday(dateStr: string): boolean {
 
 export function isPast(dateStr: string): boolean {
   if (!dateStr) return false
-  const date = new Date(dateStr)
+  const date = parseISODateSafe(dateStr)
   const hoje = new Date()
   hoje.setHours(0, 0, 0, 0)
   date.setHours(0, 0, 0, 0)
   return date.getTime() < hoje.getTime()
 }
+

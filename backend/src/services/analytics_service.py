@@ -35,6 +35,10 @@ class AnalyticsService:
         return cls.execute_query(db, "Q02_operational_timeline.sql")
 
     @classmethod
+    def get_caos_score(cls, db: Session):
+        return cls.execute_query(db, "Q03_caos_score.sql")
+
+    @classmethod
     def get_open_pendencies(cls, db: Session):
         return cls.execute_query(db, "Q03_open_pendencies.sql")
 
@@ -65,3 +69,13 @@ class AnalyticsService:
     @classmethod
     def get_planning_overview(cls, db: Session):
         return cls.execute_query(db, "Q10_planning_overview.sql")
+
+    @classmethod
+    def get_client_health(cls, db: Session):
+        return cls.execute_query(db, "Q11_client_health.sql")
+
+    @classmethod
+    def get_today_agenda(cls, db: Session):
+        return cls.execute_query(db, "Q12_today_agenda.sql")
+
+

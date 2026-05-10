@@ -65,6 +65,26 @@ export const mockTopPriorities: TopPriority[] = [
     dataPrazo: new Date(Date.now() - 86400000).toISOString().split('T')[0],
     statusPrazo: 'atrasado',
     scorePrioridade: 90
+  },
+  {
+    id: 52,
+    idContrato: 2,
+    tipo: 'pendencia',
+    titulo: 'Relatório ANVISA semestral',
+    cliente: 'CAPS II Renascer',
+    dataPrazo: new Date(Date.now() + 1209600000).toISOString().split('T')[0], // 14 dias
+    statusPrazo: 'em 14d',
+    scorePrioridade: 50
+  },
+  {
+    id: 53,
+    idContrato: 3,
+    tipo: 'pendencia',
+    titulo: 'Plano de ação — vigilância',
+    cliente: 'CuidaBem Home Care',
+    dataPrazo: new Date(Date.now() + 1728000000).toISOString().split('T')[0], // 20 dias
+    statusPrazo: 'em 20d',
+    scorePrioridade: 40
   }
 ]
 

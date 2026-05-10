@@ -3,15 +3,17 @@ export type StatusVisita =
   | 'realizada'
   | 'cancelada'
 
-export type TipoVisita =
-  | 'rotina'
-  | 'extra'
-  | 'projeto'
 
 export type ModalidadeVisita =
   | 'presencial'
-  | 'online'
-  | 'hibrida'
+  | 'remota'
+
+export type TipoVisita = 
+  | 'rotineira'
+  | 'urgente'
+  | 'pontual'
+  | 'estruturada'
+  | 'acompanhamento direcionado'
 
 export type Visita = {
   id: string
@@ -27,6 +29,7 @@ export type Visita = {
 
   tipo_visita: TipoVisita
   modalidade: ModalidadeVisita
+
 
   descricao: string
   resultados?: string

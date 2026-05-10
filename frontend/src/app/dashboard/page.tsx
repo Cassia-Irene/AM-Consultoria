@@ -5,10 +5,12 @@ import Link from 'next/link'
 import { 
   AnalyticsService, 
   type DashboardSummary, 
-  type TimelineEvent, 
-  type TopPriority 
+  type TopPriority,
+  type TodayVisit
 } from '@/services/analytics.service'
+
 import { DashboardTabs } from '@/components/DashboardTabs'
+import { VisitaRotinaCard } from '@/components/VisitaRotinaCard'
 
 // --- Componentes Locais ---
 
@@ -76,86 +78,6 @@ function AcaoCard({ item }: { item: TopPriority }) {
   )
 }
 
-function VisitaRotinaCard({ event }: { event: TimelineEvent }) {
-  const statusPagamento = event.statusPagamento
-  const pendenciasCount = event.pendenciasContagem || 0
-  const ultimaVisita = event.ultimaVisitaResultados
-
-  return (
-    <div className="bg-[#001845] border border-[#002855] rounded-2xl overflow-hidden shadow-lg">
-      <div className="p-4 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5 mb-1">
-            <span className="size-1.5 rounded-full bg-sky-400 shadow-[0_0_5px_rgba(56,189,248,0.5)]" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-sky-400">Hoje</span>
-          </div>
-          <h3 className="text-white font-black text-[17px] leading-tight tracking-tight truncate">{event.cliente}</h3>
-          <p className="text-[#7D8597] text-[11px] font-bold mt-1">
-            {new Date(event.data).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
-          </p>
-        </div>
-        
-        <div className="flex flex-col items-end gap-1.5 shrink-0">
-          {statusPagamento && (
-            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
-              statusPagamento === 'pago' ? 'bg-[#064e3b] text-[#10b981]' : 'bg-[#78350f] text-[#f59e0b]'
-            }`}>
-              {statusPagamento === 'pago' ? '✓ Pago' : '$ Pendente'}
-            </span>
-          )}
-          {pendenciasCount > 0 && (
-            <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-[#450a0a] text-[#ef4444] border border-red-900/30">
-              {pendenciasCount} em aberto
-            </span>
-          )}
-        </div>
-      </div>
-
-      {ultimaVisita && (
-        <div className="mx-4 mb-4 p-3.5 bg-black/30 rounded-xl border border-white/5">
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <span className="text-[9px] font-black uppercase tracking-[0.15em] text-sky-400/70">Última Visita</span>
-          </div>
-          <p className="text-zinc-300 text-[11px] leading-relaxed italic line-clamp-3">
-            &quot;{ultimaVisita}&quot;
-          </p>
-        </div>
-      )}
-
-      {/* Lista de Pendências em Aberto */}
-      {event.pendenciasLista && event.pendenciasLista.length > 0 && (
-        <div className="mx-4 mb-5">
-          <p className="text-[9px] font-black uppercase tracking-[0.15em] text-[#7D8597] mb-3">
-            Em Aberto ({event.pendenciasLista.length})
-          </p>
-          <div className="space-y-2.5">
-            {event.pendenciasLista.map((p) => (
-              <div key={p.id} className="flex items-center justify-between gap-3 group">
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="size-1 rounded-full bg-zinc-600 group-hover:bg-sky-500 transition-colors" />
-                  <p className="text-zinc-400 text-[12px] font-medium truncate">{p.descricao}</p>
-                </div>
-                {p.dataPrazo && (
-                  <span className="text-[10px] font-bold text-zinc-500 shrink-0 tabular-nums">
-                    {labelPrazo(p.dataPrazo)}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="px-4 pb-4">
-        <Link href={`/visitas/nova?contratoId=${event.idContrato}`} className="block">
-          <div className="bg-[#0466C8] hover:bg-[#0353A4] active:scale-[0.98] transition-all text-white text-[13px] font-black text-center rounded-xl py-3.5 shadow-lg shadow-blue-900/30 uppercase tracking-widest">
-            Registrar visita
-          </div>
-        </Link>
-      </div>
-    </div>
-  )
-}
 
 function GrupoCliente({ clienteNome, items }: { clienteNome: string; items: TopPriority[] }) {
   return (
@@ -186,20 +108,21 @@ function labelPrazo(dateStr: string) {
 
 export default function DashboardPage() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
-  const [timeline, setTimeline] = useState<TimelineEvent[]>([])
+  const [visitsToday, setVisitsToday] = useState<TodayVisit[]>([])
   const [priorities, setPriorities] = useState<TopPriority[]>([])
+
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [s, t, p] = await Promise.all([
+        const [s, today, p] = await Promise.all([
           AnalyticsService.getSummary(),
-          AnalyticsService.getTimeline(),
+          AnalyticsService.getTodayAgenda(),
           AnalyticsService.getPriorities()
         ])
         setSummary(s)
-        setTimeline(t)
+        setVisitsToday(today)
         setPriorities(p)
       } catch (err) {
         console.error('Erro ao carregar dashboard:', err)
@@ -230,12 +153,6 @@ export default function DashboardPage() {
     return acc
   }, new Map<string, TopPriority[]>())
 
-  const visitsToday = timeline.filter(e => {
-    if (e.tipo !== 'visita') return false
-    const d = new Date(e.data)
-    const today = new Date()
-    return d.toDateString() === today.toDateString()
-  })
 
   return (
     <main className="min-h-screen bg-[#07090D] pb-32">

@@ -13,6 +13,6 @@ FROM visitas_extra ve
 JOIN visitas v ON ve.id_visita = v.id_visita
 JOIN contratos con ON v.id_contrato = con.id_contrato
 JOIN clientes c ON con.id_cliente = c.id_cliente
-WHERE ve.faturado = FALSE
+WHERE v.data_hora IS NOT NULL -- Filtro genérico para garantir validade dos dados de visita
 GROUP BY c.nome, mes, ano
 ORDER BY ano DESC, mes DESC;

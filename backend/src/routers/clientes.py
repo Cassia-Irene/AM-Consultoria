@@ -29,8 +29,6 @@ def listar_clientes(db: Session = Depends(get_db)):
     # O SQLAlchemy vai buscar na tabela "clientes" (plural) porque já arrumamos o Model
     return db.query(Cliente).all()
 
-<<<<<<< HEAD
-=======
 @router.get("/{id_cliente}", response_model=ClienteRead)
 def buscar_cliente(id_cliente: int, db: Session = Depends(get_db)):
     cliente = db.query(Cliente).filter(Cliente.id_cliente == id_cliente).first()
@@ -38,7 +36,6 @@ def buscar_cliente(id_cliente: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
     return cliente
 
->>>>>>> origin/cass
 @router.patch("/{id_cliente}", response_model=ClienteRead)
 def atualizar_cliente(
     id_cliente: int, 

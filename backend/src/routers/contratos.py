@@ -7,6 +7,8 @@ from src.database import get_db
 from src.models.contrato import Contrato
 from src.models.cliente import Cliente
 from src.schemas.contrato import ContratoCreate, ContratoRead, ContratoReplaceRequest, ContratoUpdateRestrito
+from src.schemas.historico_contrato import HistoricoContratoRead
+from src.models.historico_contrato import HistoricoContrato
 from src.services.contrato_service import encerrar_e_criar_novo_contrato
 
 # ✅ Tag corrigida para "Contratos"
@@ -33,13 +35,10 @@ def criar_contrato(contrato: ContratoCreate, db: Session = Depends(get_db)):
 def listar_contratos(db: Session = Depends(get_db)):
     return db.query(Contrato).all()
 
-@router.get("/historico", response_model=List[dict])
+@router.get("/historico", response_model=List[HistoricoContratoRead])
 def listar_historico_contratos(db: Session = Depends(get_db)):
-    """Lista todas as auditorias e substituições de contratos."""
-    # Como o histórico é puramente analítico, podemos usar SQL direto ou o model se existir
-    from sqlalchemy import text
-    result = db.execute(text("SELECT * FROM historico_contratos ORDER BY data_alteracao DESC"))
-    return [dict(row._mapping) for row in result]
+    """Lista todas as auditorias e substituições de contratos (camada semântica)."""
+    return db.query(HistoricoContrato).order_by(HistoricoContrato.data_alteracao.desc()).all()
 
 @router.get("/{id_contrato}", response_model=ContratoRead)
 

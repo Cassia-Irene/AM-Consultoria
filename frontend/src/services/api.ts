@@ -15,6 +15,7 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit, mockF
     ...(options?.headers || {}),
   }
 
+  console.info(`[API][FETCHING] ${url}`)
   try {
     const response = await fetch(url, {
       ...options,

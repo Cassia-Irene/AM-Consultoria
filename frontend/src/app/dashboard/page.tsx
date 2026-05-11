@@ -6,7 +6,8 @@ import {
   AnalyticsService, 
   type DashboardSummary, 
   type TopPriority,
-  type TodayVisit
+  type TodayVisit,
+  type CaosScore
 } from '@/services/analytics.service'
 
 import { DashboardTabs } from '@/components/DashboardTabs'
@@ -90,6 +91,23 @@ function GrupoCliente({ clienteNome, items }: { clienteNome: string; items: TopP
   )
 }
 
+function ClienteCriticoCard({ score }: { score: CaosScore }) {
+  return (
+    <div className="bg-[#0d1117] border border-red-900/40 rounded-2xl p-4 flex items-center justify-between">
+      <div className="min-w-0">
+        <p className="text-white text-sm font-bold truncate">{score.cliente}</p>
+        <p className="text-red-400 text-[10px] font-bold uppercase tracking-widest mt-1">
+          {score.visitasUrgentes} urgências · {score.pendenciasAtrasadas} atrasos
+        </p>
+      </div>
+      <div className="text-right ml-4">
+        <div className="text-red-500 text-xl font-black">{score.caosScore}</div>
+        <p className="text-[8px] text-red-900 font-bold uppercase tracking-tighter">Score</p>
+      </div>
+    </div>
+  )
+}
+
 // --- Helper Functions ---
 
 function labelPrazo(dateStr: string) {
@@ -110,20 +128,23 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
   const [visitsToday, setVisitsToday] = useState<TodayVisit[]>([])
   const [priorities, setPriorities] = useState<TopPriority[]>([])
+  const [caosScores, setCaosScores] = useState<CaosScore[]>([])
 
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [s, today, p] = await Promise.all([
+        const [s, today, p, cs] = await Promise.all([
           AnalyticsService.getSummary(),
           AnalyticsService.getTodayAgenda(),
-          AnalyticsService.getPriorities()
+          AnalyticsService.getPriorities(),
+          AnalyticsService.getCaosScore()
         ])
         setSummary(s)
         setVisitsToday(today)
         setPriorities(p)
+        setCaosScores(cs.filter(c => c.caosScore > 60)) // Apenas os críticos
       } catch (err) {
         console.error('Erro ao carregar dashboard:', err)
       } finally {
@@ -161,6 +182,15 @@ export default function DashboardPage() {
       <div className="px-4 pt-5 space-y-6">
         {top1 && <DecisaoCard item={top1} />}
 
+        {caosScores.length > 0 && (
+          <section>
+            <SectionHeader label="Instabilidade Operacional" count={caosScores.length} cor="red" />
+            <div className="space-y-3">
+              {caosScores.map(cs => <ClienteCriticoCard key={cs.idContrato} score={cs} />)}
+            </div>
+          </section>
+        )}
+
         {otherPriorities.length > 0 && (
           <section>
             <SectionHeader label="Ações Imediatas" count={otherPriorities.length} cor="red" />
@@ -172,14 +202,18 @@ export default function DashboardPage() {
           </section>
         )}
 
-        {visitsToday.length > 0 && (
-          <section>
-            <SectionHeader label="Visitas Hoje" count={visitsToday.length} cor="sky" />
-            <div className="space-y-3">
-              {visitsToday.map((v, i) => <VisitaRotinaCard key={i} event={v} />)}
-            </div>
-          </section>
-        )}
+        <section>
+          <SectionHeader label="Visitas Hoje" count={visitsToday.length} cor="sky" />
+          <div className="space-y-3">
+            {visitsToday.length > 0 ? (
+              visitsToday.map((v, i) => <VisitaRotinaCard key={i} event={v} />)
+            ) : (
+              <div className="py-10 text-center bg-[#0d1117] rounded-3xl border border-dashed border-[#23272F]">
+                <p className="text-[#4A5568] text-[11px] font-bold uppercase tracking-widest">Nenhuma visita agendada para hoje</p>
+              </div>
+            )}
+          </div>
+        </section>
 
         {!top1 && otherPriorities.length === 0 && visitsToday.length === 0 && (
           <div className="py-20 text-center">

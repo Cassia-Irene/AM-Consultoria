@@ -8,6 +8,7 @@
 //   3. Confirmação
 
 import { useState, useEffect, FormEvent } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ClientesService } from '@/services/clientes.service'
 import { ContratoService } from '@/services/contrato.service'
@@ -734,8 +735,27 @@ export default function NovaVisitaPage() {
           </div>
         </div>
         <EtapaIndicador atual={etapa} />
+        
       </div>
 
+      {/* Toggle de Modo: Detalhado vs Rápido */}
+      <div className="px-4 mt-6 mb-6">
+        <div className="bg-[#0d1117] border border-[#23272F] p-1 rounded-2xl flex gap-1">
+          <button 
+            disabled
+            className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#0466C8] text-white shadow-lg"
+          >
+            Visita Detalhada
+          </button>
+          <Link 
+            href="/visitas/rapida"
+            className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#7D8597] hover:text-white text-center flex items-center justify-center gap-2"
+          >
+            <span>⚡</span> Relato Rápido
+          </Link>
+        </div>
+      </div>
+      
       {errorSubmit && (
         <div className="mx-4 mt-4 bg-red-950/40 border border-red-700/50 rounded-xl px-4 py-3 text-red-400 text-sm">
           <p className="font-bold uppercase tracking-widest text-[10px] mb-1">Erro</p>

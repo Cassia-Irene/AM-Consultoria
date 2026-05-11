@@ -38,7 +38,7 @@ export const PendenciasService = {
       responsavel: input.responsavel,
       data_prazo: input.data_prazo || null,
       resolvida: !!input.resolvida,
-      data_resolucao: input.resolvida ? new Date().toISOString() : null
+      data_resolucao: input.resolvida ? new Date().toISOString().split('T')[0] : null
     }
 
     if (USE_MOCKS) {
@@ -59,7 +59,7 @@ export const PendenciasService = {
     if (input.data_prazo !== undefined) payload.data_prazo = input.data_prazo
     if (input.resolvida !== undefined) {
       payload.resolvida = input.resolvida
-      if (input.resolvida) payload.data_resolucao = new Date().toISOString()
+      if (input.resolvida) payload.data_resolucao = new Date().toISOString().split('T')[0]
       else payload.data_resolucao = null
     }
 

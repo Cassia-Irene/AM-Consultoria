@@ -37,5 +37,5 @@ def root():
 
 if __name__ == "__main__":
     import uvicorn
-    print("[BACKEND] Iniciando servidor na porta 8002...")
-    uvicorn.run(app, host="127.0.0.1", port=8002)
+    print("[BACKEND] Iniciando servidor na porta 8000 (todas as interfaces)...")
+    uvicorn.run(app, host="0.0.0.0", port=8000)

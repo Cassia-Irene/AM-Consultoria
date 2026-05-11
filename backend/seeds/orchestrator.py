@@ -2,7 +2,8 @@ from sqlalchemy.orm import Session
 from src.models import (
     Cliente, Contato, Contrato, Projeto, Visita, Pendencia, 
     FaturamentoCliente, EventoCritico, ContratoPagamento, 
-    ProjetoParcela, ProjetoExtra, Entrega, VisitaExtra
+    ProjetoParcela, ProjetoExtra, Entrega, VisitaExtra,
+    HistoricoContrato, TipoPagamento
 )
 from seeds.scenarios import (
     HomeCareScenario,
@@ -29,9 +30,11 @@ def clear_all(db: Session):
     db.query(Projeto).delete()
     db.query(FaturamentoCliente).delete()
     db.query(ContratoPagamento).delete()
+    db.query(HistoricoContrato).delete()
     db.query(Contrato).delete()
     db.query(Contato).delete()
     db.query(Cliente).delete()
+    db.query(TipoPagamento).delete()
     db.commit()
     print("[SEED] Banco limpo com sucesso.")
 

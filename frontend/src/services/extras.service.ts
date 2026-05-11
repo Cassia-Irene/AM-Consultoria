@@ -8,7 +8,8 @@ export const ExtrasService = {
   async getAll(): Promise<ProjetoExtra[]> {
     if (USE_MOCKS) return getProjetoExtras()
     try {
-      const data = await fetchApi<ProjetoExtraRaw[]>('/projeto-extras/')
+      const data = await fetchApi<ProjetoExtraRaw[]>('/projetos-extra/')
+
       return data.map(mapExtra)
     } catch (error) {
       console.error('[SERVICE][ERROR] Falha ao buscar extras:', error)

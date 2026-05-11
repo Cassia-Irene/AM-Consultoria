@@ -1,65 +1,77 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import type { Pendencia } from '@/domain/pendencia'
-import type { Visita } from '@/domain/visita'
-import { getFaturamentoMaisRecente, getStatusFaturamento } from '@/domain/faturamento'
-import { getTopPrioridade } from '@/lib/prioritizer'
-import type { InsightPrioridade } from '@/domain/insight'
-import { AnalyticsService, type OperationalInsight } from '@/services/analytics.service'
-import { getPendenciaSeveridade } from '@/utils/pendencia'
-import { getDiffDias, isToday } from '@/utils/date'
-import { DashboardTabs } from '@/components/DashboardTabs'
+import Link from 'next/link'
+import { 
+  AnalyticsService, 
+  type DashboardSummary, 
+  type TopPriority,
+  type TodayVisit,
+  type CaosScore
+} from '@/services/analytics.service'
 
-function labelPrazo(prazo: string): string {
-  const diff = getDiffDias(prazo)
-  if (diff < 0) return diff === -1 ? 'ontem' : `${Math.abs(diff)}d atrás`
-  if (diff === 0) return 'hoje'
-  if (diff === 1) return 'amanhã'
-  return `em ${diff}d`
+import { DashboardTabs } from '@/components/DashboardTabs'
+import { VisitaRotinaCard } from '@/components/VisitaRotinaCard'
+
+// --- Componentes Locais ---
+
+function SectionHeader({ label, count, cor }: { label: string; count?: number; cor: 'red' | 'sky' }) {
+  const dotColor = cor === 'red' ? 'bg-red-500' : 'bg-sky-500'
+  return (
+    <div className="flex items-center justify-between mb-4 px-1">
+      <div className="flex items-center gap-2">
+        <span className={`size-2 rounded-full ${dotColor} shadow-[0_0_8px_rgba(0,0,0,0.5)]`} />
+        <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#7D8597]">{label}</h2>
+        {count !== undefined && <span className="text-[11px] text-[#4A5568] font-bold">({count})</span>}
+      </div>
+    </div>
+  )
 }
 
-/* ─────────────────────────────────────────────
-   COMPONENTES MODO CAOS
-───────────────────────────────────────────── */
-
-function DecisaoCard({ insight }: { insight: InsightPrioridade }) {
+function DecisaoCard({ item }: { item: TopPriority }) {
   return (
     <div className="relative rounded-2xl overflow-hidden bg-linear-to-br from-red-950 to-[#1a0000] border border-red-900/60 shadow-xl shadow-red-950/40">
       <div className="absolute top-4 right-4 flex items-center gap-1.5">
         <span className="size-2 rounded-full bg-red-500 animate-pulse" />
         <span className="text-[10px] font-bold uppercase tracking-widest text-red-400">
-          {insight.atraso ? 'Atrasado' : 'Urgente'} · {insight.prazoLabel}
+          {item.statusPrazo} · {item.dataPrazo ? labelPrazo(item.dataPrazo) : ''}
         </span>
       </div>
 
-      <div className="px-5 pt-5 pb-4">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500 mb-3">▶ Agir agora</p>
-        <h2 className="text-white text-xl font-black leading-tight mb-1">{insight.titulo}</h2>
-        <p className="text-[#7D8597] text-sm">{insight.clienteNome}</p>
-      </div>
-
-      <Link href={insight.href} className="block mx-4 mb-5 active:scale-[0.98] transition-transform">
-        <div className="bg-red-600 active:bg-red-700 text-white text-sm font-bold text-center rounded-xl py-3.5 flex items-center justify-center gap-2">
-          Resolver agora
+      <div className="p-6">
+        <p className="text-red-500 text-[10px] font-black uppercase tracking-[0.15em] mb-2">Decisão Crítica</p>
+        <h3 className="text-white text-xl font-black leading-tight tracking-tight mb-4 pr-12">
+          {item.titulo}
+        </h3>
+        
+        <div className="flex items-center gap-2 mb-6">
+          <div className="size-6 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+            <span className="text-red-500 text-[10px] font-bold">!</span>
+          </div>
+          <span className="text-zinc-400 text-xs font-medium">{item.cliente}</span>
         </div>
-      </Link>
+
+        <Link href={`/pendencias/${item.id}`} className="block">
+          <div className="bg-red-600 hover:bg-red-500 text-white text-sm font-bold text-center rounded-xl py-3.5 transition-colors shadow-lg shadow-red-900/20">
+            Agir agora
+          </div>
+        </Link>
+      </div>
     </div>
   )
 }
 
-function AcaoCard({ p, clienteNome }: { p: Pendencia; clienteNome: string }) {
+function AcaoCard({ item }: { item: TopPriority }) {
   return (
-    <Link href={`/pendencias/${p.id}`} className="block active:scale-[0.98] transition-transform">
-      <div className="flex items-center gap-3 bg-[#0d1117] border-l-4 border-red-500 rounded-r-2xl px-3 py-3 sm:px-4 sm:py-3.5 min-h-[60px] sm:min-h-[64px]">
+    <Link href={`/pendencias/${item.id}`} className="block active:scale-[0.98] transition-transform">
+      <div className="flex items-center gap-3 bg-[#0d1117] border-l-4 border-red-500 rounded-r-2xl px-4 py-3 min-h-[64px]">
         <div className="flex-1 min-w-0">
-          <p className="text-white font-semibold text-[13px] sm:text-[14px] leading-tight truncate">{p.descricao}</p>
-          <p className="text-[#7D8597] text-[10px] sm:text-xs mt-0.5 truncate">{clienteNome}</p>
+          <p className="text-white font-semibold text-[14px] leading-tight truncate">{item.titulo}</p>
+          <p className="text-[#7D8597] text-[10px] mt-0.5 truncate">{item.cliente}</p>
         </div>
-        <div className="shrink-0 text-right flex items-center gap-2">
-          <span className="text-red-400 text-[10px] sm:text-xs font-bold tabular-nums">
-            {p.data_prazo ? labelPrazo(p.data_prazo) : '—'}
+        <div className="shrink-0 text-right">
+          <span className="text-red-400 text-xs font-bold tabular-nums">
+            {item.dataPrazo ? labelPrazo(item.dataPrazo) : '—'}
           </span>
         </div>
       </div>
@@ -67,203 +79,167 @@ function AcaoCard({ p, clienteNome }: { p: Pendencia; clienteNome: string }) {
   )
 }
 
-function GrupoCliente({ clienteNome, pendencias }: { clienteNome: string; pendencias: Pendencia[] }) {
+
+function GrupoCliente({ clienteNome, items }: { clienteNome: string; items: TopPriority[] }) {
   return (
-    <div>
-      <p className="text-[10px] font-bold uppercase tracking-widest text-[#7D8597] px-1 mb-1.5">{clienteNome}</p>
-      <div className="space-y-1.5">
-        {pendencias.map(p => <AcaoCard key={p.id} p={p} clienteNome={clienteNome} />)}
+    <div className="space-y-2">
+      <p className="text-[10px] font-bold text-[#4A5568] uppercase tracking-widest ml-1">{clienteNome}</p>
+      <div className="space-y-2">
+        {items.map(item => <AcaoCard key={item.id} item={item} />)}
       </div>
     </div>
   )
 }
 
-function AlertaCard({ p, clienteNome }: { p: Pendencia; clienteNome: string }) {
+function ClienteCriticoCard({ score }: { score: CaosScore }) {
   return (
-    <Link href={`/pendencias/${p.id}`} className="block active:scale-[0.98] transition-transform">
-      <div className="flex items-center gap-3 bg-[#0d1117] border-l-4 border-amber-400 rounded-r-2xl px-4 py-3 min-h-[56px]">
-        <div className="flex-1 min-w-0">
-          <p className="text-white text-[14px] font-semibold leading-tight truncate">{p.descricao}</p>
-          <p className="text-[#7D8597] text-xs mt-0.5 truncate">{clienteNome}</p>
-        </div>
-        <span className="shrink-0 text-amber-400 text-xs font-bold tabular-nums">
-          {p.data_prazo ? labelPrazo(p.data_prazo) : '—'}
-        </span>
+    <div className="bg-[#0d1117] border border-red-900/40 rounded-2xl p-4 flex items-center justify-between">
+      <div className="min-w-0">
+        <p className="text-white text-sm font-bold truncate">{score.cliente}</p>
+        <p className="text-red-400 text-[10px] font-bold uppercase tracking-widest mt-1">
+          {score.visitasUrgentes} urgências · {score.pendenciasAtrasadas} atrasos
+        </p>
       </div>
-    </Link>
-  )
-}
-
-function VisitaRotinaCard({
-  v,
-  clienteNome,
-  pendenciasAbertas,
-  statusPagamento,
-}: {
-  v: Visita
-  clienteNome: string
-  pendenciasAbertas: Pendencia[]
-  statusPagamento?: 'pago' | 'pendente' | 'atrasado'
-}) {
-  const temPendencias = pendenciasAbertas.length > 0
-  const temUrgente    = pendenciasAbertas.some(p => getPendenciaSeveridade(p) === 'urgente')
-
-  return (
-    <div className="bg-[#001845] border border-[#002855] rounded-2xl overflow-hidden">
-      <div className="px-4 pt-4 pb-3 flex items-start gap-3 justify-between">
-        <div className="min-w-0">
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-sky-400 mb-0.5">
-            <span className="size-1.5 rounded-full bg-sky-400" /> Hoje
-          </span>
-          <p className="text-white font-semibold text-[15px] leading-tight truncate">{clienteNome}</p>
-          {v.data_hora && <p className="text-[#7D8597] text-xs mt-0.5">{new Date(v.data_hora).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</p>}
-        </div>
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          {statusPagamento && (
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${
-              statusPagamento === 'pago' ? 'bg-emerald-900/50 text-emerald-400' : 'bg-amber-900/50 text-amber-400'
-            }`}>
-              {statusPagamento === 'pago' ? '✓ Pago' : '$ Pendente'}
-            </span>
-          )}
-          {temPendencias && (
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${
-              temUrgente ? 'bg-red-900/50 text-red-400' : 'bg-amber-900/50 text-amber-400'
-            }`}>
-              {pendenciasAbertas.length}p. aberta{pendenciasAbertas.length > 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
+      <div className="text-right ml-4">
+        <div className="text-red-500 text-xl font-black">{score.caosScore}</div>
+        <p className="text-[8px] text-red-900 font-bold uppercase tracking-tighter">Score</p>
       </div>
-      <Link href={`/visitas/nova?contratoId=${v.contratoId}`} className="block mx-4 mb-4">
-        <div className="bg-[#0466C8] text-white text-sm font-semibold text-center rounded-xl py-3">
-          Registrar visita
-        </div>
-      </Link>
     </div>
   )
 }
 
-function SectionHeader({ label, count, cor }: { label: string; count?: number; cor?: 'red' | 'amber' | 'sky' }) {
-  const colors = { red: 'text-red-500', amber: 'text-amber-400', sky: 'text-sky-400' }
-  const c = colors[cor ?? 'sky']
-  return (
-    <div className="flex items-center justify-between px-1 mb-2">
-      <p className={`text-[11px] font-black uppercase tracking-widest ${c}`}>{label}</p>
-      {count !== undefined && <span className={`text-[11px] font-bold tabular-nums ${c}`}>{count}</span>}
-    </div>
-  )
+// --- Helper Functions ---
+
+function labelPrazo(dateStr: string) {
+  const d = new Date(dateStr)
+  const today = new Date()
+  const diff = d.getTime() - today.getTime()
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
+  
+  if (days < 0) return `atrasado ${Math.abs(days)}d`
+  if (days === 0) return 'hoje'
+  if (days === 1) return 'amanhã'
+  return `em ${days}d`
 }
+
+// --- Page Component ---
 
 export default function DashboardPage() {
-  const [data, setData] = useState<OperationalInsight | null>(null)
+  const [summary, setSummary] = useState<DashboardSummary | null>(null)
+  const [visitsToday, setVisitsToday] = useState<TodayVisit[]>([])
+  const [priorities, setPriorities] = useState<TopPriority[]>([])
+  const [caosScores, setCaosScores] = useState<CaosScore[]>([])
+
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let isMounted = true
-    AnalyticsService.getOperationalSnapshot().then(res => {
-      if (isMounted) {
-        setData(res)
+    async function loadData() {
+      try {
+        const [s, today, p, cs] = await Promise.all([
+          AnalyticsService.getSummary(),
+          AnalyticsService.getTodayAgenda(),
+          AnalyticsService.getPriorities(),
+          AnalyticsService.getCaosScore()
+        ])
+        setSummary(s)
+        setVisitsToday(today)
+        setPriorities(p)
+        setCaosScores(cs.filter(c => c.caosScore > 60)) // Apenas os críticos
+      } catch (err) {
+        console.error('Erro ao carregar dashboard:', err)
+      } finally {
         setLoading(false)
       }
-    })
-    return () => { isMounted = false }
+    }
+    loadData()
   }, [])
 
-  if (loading || !data) return null
+  if (loading || !summary) {
+    return (
+      <div className="min-h-screen bg-[#07090D] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="size-10 border-4 border-red-500/20 border-t-red-500 rounded-full animate-spin" />
+          <span className="text-red-500 font-black tracking-widest text-xs uppercase animate-pulse">Entrando em Modo Caos...</span>
+        </div>
+      </div>
+    )
+  }
 
-  const { pendencias, visitas, contratos, faturamentos, clientes } = data
-  const abertas = pendencias.filter(p => !p.resolvida)
-  const clienteNomePorId = new Map<string, string>()
-  clientes.forEach(c => clienteNomePorId.set(c.id, c.nome_instituicao))
-  const getClienteId = (p: Pendencia) => contratos.find(c => c.id === p.contratoId)?.clienteId ?? ''
+  const top1 = priorities[0]
+  const otherPriorities = priorities.slice(1)
   
-  const pendenciasPorCliente = new Map<string, Pendencia[]>()
-  abertas.forEach(p => {
-    const cid = getClienteId(p)
-    if (cid) {
-      const lista = pendenciasPorCliente.get(cid) ?? []
-      lista.push(p)
-      pendenciasPorCliente.set(cid, lista)
-    }
-  })
+  const prioritiesByClient = otherPriorities.reduce((acc, curr) => {
+    if (!acc.has(curr.cliente)) acc.set(curr.cliente, [])
+    acc.get(curr.cliente)!.push(curr)
+    return acc
+  }, new Map<string, TopPriority[]>())
 
-  const pagamentoPorCliente = new Map<string, 'pago' | 'pendente' | 'atrasado'>()
-  contratos.forEach(c => {
-    const fat = getFaturamentoMaisRecente(faturamentos, c.id)
-    if (fat) pagamentoPorCliente.set(c.clienteId, getStatusFaturamento(fat))
-  })
-
-  const top1 = getTopPrioridade(abertas, p => clienteNomePorId.get(getClienteId(p)) ?? 'Cliente')
-  const urgentesRest = abertas.filter(p => getPendenciaSeveridade(p) === 'urgente' && p.id !== top1?.entidadeId)
-  const atencao = abertas.filter(p => getPendenciaSeveridade(p) === 'atencao')
-  const visitasHoje = visitas.filter(v => isToday(v.data_hora))
-
-  const urgentesGrupo = new Map<string, Pendencia[]>()
-  urgentesRest.forEach(p => {
-    const cid = getClienteId(p)
-    if (cid) {
-      const lista = urgentesGrupo.get(cid) ?? []
-      lista.push(p)
-      urgentesGrupo.set(cid, lista)
-    }
-  })
 
   return (
-    <main className="min-h-screen bg-[#07090D] pb-36">
+    <main className="min-h-screen bg-[#07090D] pb-32">
       <DashboardTabs />
 
       <div className="px-4 pt-5 space-y-6">
-        {top1 && <DecisaoCard insight={top1} />}
+        {top1 && <DecisaoCard item={top1} />}
 
-        {urgentesRest.length > 0 && (
+        {caosScores.length > 0 && (
           <section>
-            <SectionHeader label="Ação Imediata" count={urgentesRest.length} cor="red" />
+            <SectionHeader label="Instabilidade Operacional" count={caosScores.length} cor="red" />
+            <div className="space-y-3">
+              {caosScores.map(cs => <ClienteCriticoCard key={cs.idContrato} score={cs} />)}
+            </div>
+          </section>
+        )}
+
+        {otherPriorities.length > 0 && (
+          <section>
+            <SectionHeader label="Ações Imediatas" count={otherPriorities.length} cor="red" />
             <div className="space-y-4">
-              {Array.from(urgentesGrupo.entries()).map(([cid, items]) => (
-                <GrupoCliente key={cid} clienteNome={clienteNomePorId.get(cid) || cid} pendencias={items} />
+              {Array.from(prioritiesByClient.entries()).map(([cliente, items]) => (
+                <GrupoCliente key={cliente} clienteNome={cliente} items={items} />
               ))}
             </div>
           </section>
         )}
 
-        {atencao.length > 0 && (
-          <section>
-            <SectionHeader label="Vencem em Breve" count={atencao.length} cor="amber" />
-            <div className="space-y-1.5">
-              {atencao.map(p => <AlertaCard key={p.id} p={p} clienteNome={clienteNomePorId.get(getClienteId(p)) || 'Cliente'} />)}
-            </div>
-          </section>
-        )}
+        <section>
+          <SectionHeader label="Visitas Hoje" count={visitsToday.length} cor="sky" />
+          <div className="space-y-3">
+            {visitsToday.length > 0 ? (
+              visitsToday.map((v, i) => <VisitaRotinaCard key={i} event={v} />)
+            ) : (
+              <div className="py-10 text-center bg-[#0d1117] rounded-3xl border border-dashed border-[#23272F]">
+                <p className="text-[#4A5568] text-[11px] font-bold uppercase tracking-widest">Nenhuma visita agendada para hoje</p>
+              </div>
+            )}
+          </div>
+        </section>
 
-        {visitasHoje.length > 0 && (
-          <section>
-            <SectionHeader label="Visitas Hoje" count={visitasHoje.length} cor="sky" />
-            <div className="space-y-3">
-              {visitasHoje.map(v => {
-                const cid = contratos.find(c => c.id === v.contratoId)?.clienteId || ''
-                return (
-                  <VisitaRotinaCard
-                    key={v.id}
-                    v={v}
-                    clienteNome={clienteNomePorId.get(cid) || 'Cliente'}
-                    pendenciasAbertas={pendenciasPorCliente.get(cid) ?? []}
-                    statusPagamento={pagamentoPorCliente.get(cid)}
-                  />
-                )
-              })}
-            </div>
-          </section>
+        {!top1 && otherPriorities.length === 0 && visitsToday.length === 0 && (
+          <div className="py-20 text-center">
+            <p className="text-zinc-600 text-sm font-medium">Nenhuma urgência detectada.</p>
+            <p className="text-zinc-800 text-[10px] font-black uppercase mt-1">Ambiente sob controle</p>
+          </div>
         )}
       </div>
 
-      <div className="fixed bottom-6 inset-x-4 flex justify-between gap-3 pointer-events-none">
-        <Link href="/pendencias/nova" className="pointer-events-auto flex-1">
-          <div className="bg-[#23272F] text-white text-sm font-bold text-center py-4 rounded-2xl shadow-xl">Pendência</div>
-        </Link>
-        <Link href="/visitas/nova" className="pointer-events-auto flex-1">
-          <div className="bg-[#0466C8] text-white text-sm font-bold text-center py-4 rounded-2xl shadow-xl">Visita</div>
-        </Link>
+      {/* Floating Action Bar */}
+      <div className="fixed bottom-6 left-0 right-0 px-4 z-50">
+        <div className="max-w-md mx-auto flex gap-6">
+          <Link href="/pendencias/nova" className="flex-1">
+            <div className="bg-[#0d1117] hover:bg-zinc-900 border border-zinc-800 text-white rounded-2xl py-4 flex items-center justify-center gap-2 shadow-2xl transition-all active:scale-[0.98]">
+              <div className="size-5 rounded-md border-2 border-white/60 flex items-center justify-center font-bold text-xs">+</div>
+              <span className="text-[13px] font-black uppercase tracking-widest">Pendência</span>
+            </div>
+          </Link>
+          
+          <Link href="/visitas/nova" className="flex-1">
+            <div className="bg-[#0466C8] hover:bg-[#0353A4] text-white rounded-2xl py-4 flex items-center justify-center gap-2 shadow-2xl shadow-blue-900/40 transition-all active:scale-[0.98]">
+              <div className="size-5 rounded-md border-2 border-white/60 flex items-center justify-center font-bold text-xs">+</div>
+              <span className="text-[13px] font-black uppercase tracking-widest">Visita</span>
+            </div>
+          </Link>
+        </div>
       </div>
     </main>
   )

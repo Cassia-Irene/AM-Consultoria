@@ -1,233 +1,196 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import type { Pendencia } from '@/domain/pendencia'
-import { getFaturamentoMaisRecente, getStatusFaturamento } from '@/domain/faturamento'
-import { DashboardService, type DashboardResponse } from '@/services/dashboard.service'
-import { getPendenciaSeveridade } from '@/utils/pendencia'
-import { getDiffDias } from '@/utils/date'
+import { 
+  AnalyticsService, 
+  type DashboardSummary, 
+  type OpenPendency,
+  type TodayVisit
+} from '@/services/analytics.service'
 import { DashboardTabs } from '@/components/DashboardTabs'
+import { VisitaRotinaCard } from '@/components/VisitaRotinaCard'
 
-/* ─────────────────────────────────────────────
-   HELPERS
-───────────────────────────────────────────── */
-function labelPrazo(prazo: string): string {
-  const diff = getDiffDias(prazo)
-  if (diff < 0) return diff === -1 ? 'ontem' : `${Math.abs(diff)}d atrás`
-  if (diff === 0) return 'hoje'
-  if (diff === 1) return 'amanhã'
-  return `em ${diff}d`
-}
 
-function formatValor(v: number) {
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 })
-}
-
-/* ─────────────────────────────────────────────
-   COMPONENTES PLANEJAMENTO (ORGANIZAÇÃO)
-───────────────────────────────────────────── */
+// --- Componentes de UI ---
 
 function SectionHeader({ label, sub, count }: { label: string; sub?: string; count?: number }) {
   return (
-    <div className="flex items-baseline justify-between px-1 mb-2">
+    <div className="flex items-baseline justify-between px-1 mb-4">
       <div className="flex items-center gap-2">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-[#7D8597]">{label}</p>
-        {count !== undefined && <span className="text-[10px] text-[#4F5B73] font-bold tabular-nums">({count})</span>}
+        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#7D8597]">{label}</p>
+        {count !== undefined && <span className="text-[11px] text-[#4A5568] font-bold">({count})</span>}
       </div>
-      {sub && <p className="text-[10px] text-[#7D8597]">{sub}</p>}
+      {sub && <p className="text-[10px] text-[#7D8597] font-bold">{sub}</p>}
     </div>
   )
 }
 
-function MetricCard({
-  label,
-  value,
-  sub,
-  accent,
-}: {
-  label: string
-  value: string | number
-  sub?: string
-  accent?: 'red' | 'amber' | 'green' | 'blue'
-}) {
+function MetricCard({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent?: 'red' | 'amber' | 'yellow' | 'blue' }) {
   const color = {
-    red:   'text-red-400',
+    red:    'text-red-500',
+    amber:  'text-amber-400',
+    yellow: 'text-[#FFD700]',
+    blue:   'text-sky-400',
+  }[accent ?? 'blue']
+
+  return (
+    <div className="bg-[#0d1117] border border-[#23272F] rounded-2xl p-4 lg:p-6 shadow-xl transition-all hover:border-[#0466C8]/30">
+      <p className="text-[9px] lg:text-[10px] font-black uppercase tracking-widest text-[#7D8597] mb-1.5">{label}</p>
+      <p className={`text-2xl lg:text-3xl font-black tabular-nums leading-none ${color}`}>{value}</p>
+      {sub && <p className="text-[9px] lg:text-[10px] text-[#4A5568] mt-2 font-bold">{sub}</p>}
+    </div>
+  )
+}
+
+function PendenciaItem({ item, cor }: { item: OpenPendency; cor: 'red' | 'amber' | 'zinc' }) {
+  const border = {
+    red: 'border-red-500',
+    amber: 'border-amber-400',
+    zinc: 'border-zinc-700'
+  }[cor]
+
+  const text = {
+    red: 'text-red-400',
     amber: 'text-amber-400',
-    green: 'text-emerald-400',
-    blue:  'text-sky-400',
-  }[accent ?? 'blue'] ?? 'text-white'
+    zinc: 'text-zinc-500'
+  }[cor]
 
   return (
-    <div className="bg-[#0d1117] border border-[#23272F] rounded-2xl px-3 py-3 sm:px-4 sm:py-4 shadow-lg shadow-black/20">
-      <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-[#7D8597]">{label}</p>
-      <p className={`text-xl sm:text-2xl font-black tabular-nums leading-none mt-1 ${color}`}>{value}</p>
-      {sub && <p className="text-[9px] sm:text-[10px] text-[#7D8597] mt-1.5 leading-tight">{sub}</p>}
-    </div>
-  )
-}
-
-function CapacityCard({ label, value, sub, progress }: { label: string; value: string; sub: string; progress: number }) {
-  return (
-    <div className="bg-[#0d1117] border border-[#23272F] rounded-3xl p-5 shadow-xl">
-      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#7D8597] mb-1">{label}</p>
-      <div className="flex items-baseline justify-between mb-3">
-        <p className="text-2xl font-black text-white">{value}</p>
-        <p className="text-[10px] text-[#7D8597] font-bold uppercase">{sub}</p>
+    <div className={`flex items-center gap-4 bg-[#0d1117] border-l-4 ${border} rounded-r-xl px-4 py-3.5 hover:bg-[#161b22] transition-colors`}>
+      <div className="flex-1 min-w-0">
+        <p className="text-white font-bold text-sm leading-tight truncate">{item.descricao}</p>
+        <p className="text-[#4A5568] text-[10px] mt-1 font-bold truncate">{item.cliente} · {item.responsavel}</p>
       </div>
-      <div className="h-1.5 bg-[#23272F] rounded-full overflow-hidden">
-        <div className="h-full bg-sky-500 rounded-full shadow-[0_0_8px_rgba(56,189,248,0.4)]" style={{ width: `${progress}%` }} />
+      <div className="shrink-0 text-right">
+        <span className={`${text} text-[10px] font-black uppercase tracking-tighter tabular-nums`}>
+          {item.dataPrazo ? labelPrazo(item.dataPrazo) : '—'}
+        </span>
       </div>
     </div>
   )
 }
 
-function PriorityCard({ p, clienteNome, cor }: { p: Pendencia; clienteNome: string; cor: 'red' | 'amber' | 'default' }) {
-  const borderColor = cor === 'red' ? 'border-red-500' : cor === 'amber' ? 'border-amber-400' : 'border-[#23272F]'
-  const prazoColor  = cor === 'red' ? 'text-red-400' : cor === 'amber' ? 'text-amber-400' : 'text-[#7D8597]'
-
-  return (
-    <Link href={`/pendencias/${p.id}`} className="block active:scale-[0.98] transition-transform">
-      <div className={`flex items-center gap-3 bg-[#0d1117] border-l-4 ${borderColor} rounded-r-2xl px-4 py-3 min-h-[60px]`}>
-        <div className="flex-1 min-w-0">
-          <p className="text-white font-semibold text-[14px] leading-tight truncate">{p.descricao}</p>
-          <p className="text-[#7D8597] text-xs mt-0.5 truncate">{clienteNome}</p>
-        </div>
-        <p className={`shrink-0 text-xs font-bold tabular-nums ${prazoColor}`}>
-          {p.data_prazo ? labelPrazo(p.data_prazo) : '—'}
-        </p>
-      </div>
-    </Link>
-  )
+function labelPrazo(dateStr: string) {
+  const d = new Date(dateStr)
+  const today = new Date()
+  today.setHours(0,0,0,0)
+  d.setHours(0,0,0,0)
+  
+  const diff = d.getTime() - today.getTime()
+  const days = Math.round(diff / (1000 * 60 * 60 * 24))
+  
+  if (days < 0) return days === -1 ? 'ontem' : `${Math.abs(days)}d atrás`
+  if (days === 0) return 'hoje'
+  if (days === 1) return 'amanhã'
+  return `em ${days}d`
 }
 
-/* ─────────────────────────────────────────────
-   PÁGINA DASHBOARD — MODO PLANEJAMENTO
-───────────────────────────────────────────── */
+export default function PlanningPage() {
+  const [summary, setSummary] = useState<DashboardSummary | null>(null)
+  const [visitsToday, setVisitsToday] = useState<TodayVisit[]>([])
+  const [pendencies, setPendencies] = useState<OpenPendency[]>([])
 
-export default function DashboardPlanejamentoPage() {
-  const [data, setData] = useState<DashboardResponse | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    DashboardService.getDashboardData().then(res => {
-      setData(res)
-      setLoading(false)
-    })
+    async function loadData() {
+      try {
+        const [s, today, p] = await Promise.all([
+          AnalyticsService.getSummary(),
+          AnalyticsService.getTodayAgenda(),
+          AnalyticsService.getPendencies()
+        ])
+        setSummary(s)
+        setVisitsToday(today)
+        setPendencies(p)
+      } catch (err) {
+        console.error('Erro no planejamento:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
   }, [])
 
-  if (loading || !data) return null
+  if (loading || !summary) {
+    return (
+      <div className="min-h-screen bg-[#07090D] flex items-center justify-center">
+        <span className="text-sky-500 animate-pulse font-black tracking-widest text-xs uppercase text-center">Organizando Estratégia...</span>
+      </div>
+    )
+  }
 
-  const { pendencias, visitas, contratos, faturamentos, clientes } = data
-  const abertas = pendencias.filter(p => !p.resolvida)
-  const urgentes = abertas.filter(p => getPendenciaSeveridade(p) === 'urgente')
-  const atencao = abertas.filter(p => getPendenciaSeveridade(p) === 'atencao')
-  const normais = abertas.filter(p => getPendenciaSeveridade(p) === 'normal')
-  
-  const clienteNomePorId = new Map<string, string>()
-  clientes.forEach(c => clienteNomePorId.set(c.id, c.nome_instituicao))
 
-  const getClienteId = (p: Pendencia) => contratos.find(c => c.id === p.contratoId)?.clienteId ?? ''
+  const atrasados = pendencies.filter(p => p.statusPrazo === 'atrasado')
+  const emBreve = pendencies.filter(p => p.statusPrazo === 'hoje' || p.statusPrazo === 'breve')
+  const demais = pendencies.filter(p => p.statusPrazo === 'planejado')
 
-  const totalPendente = contratos.reduce((acc, c) => {
-    const fat = getFaturamentoMaisRecente(faturamentos, c.id)
-    return fat && getStatusFaturamento(fat) !== 'pago' ? acc + fat.valor_total : acc
-  }, 0)
-  
-  const totalMes = contratos.reduce((acc, c) => {
-    const fat = getFaturamentoMaisRecente(faturamentos, c.id)
-    return fat ? acc + fat.valor_total : acc
-  }, 0)
-
-  const capacidadeProgress = Math.min(100, (visitas.length / 15) * 100)
 
   return (
-    <main className="min-h-screen bg-[#07090D] pb-36">
+    <main className="min-h-screen bg-[#07090D] pb-32">
       <DashboardTabs />
 
-      <div className="px-5 pt-6 space-y-10">
+      <div className="px-4 pt-5 space-y-8">
         
-        {/* 1. VISÃO GERAL (4 CARDS) */}
+        {/* VISÃO GERAL */}
         <section>
           <SectionHeader label="Visão Geral" />
-          <div className="grid grid-cols-2 gap-3">
-            <MetricCard label="Atrasados" value={urgentes.length} accent="red" />
-            <MetricCard label="Atenção" value={atencao.length} accent="amber" />
-            <MetricCard label="A Receber" value={formatValor(totalPendente)} sub={`de ${formatValor(totalMes)} no mês`} accent="amber" />
-            <MetricCard label="Clientes Ativos" value={clientes.length} accent="blue" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <MetricCard label="Atrasados" value={atrasados.length} accent="red" />
+            <MetricCard label="Atenção" value={emBreve.length} accent="amber" />
+            <MetricCard label="A Receber" value={`R$ ${(summary.faturamentoMes).toLocaleString('pt-BR')}`} accent="yellow" />
+            <MetricCard label="Clientes Ativos" value={summary.contratosAtivos} accent="blue" />
           </div>
         </section>
 
-        {/* 2. CARGA DA SEMANA */}
+        {/* AGENDA DE HOJE */}
         <section>
-          <SectionHeader label="Carga Operacional" />
-          <CapacityCard 
-            label="Ocupação da Semana" 
-            value={`${visitas.length} / 15`} 
-            sub="Visitas agendadas" 
-            progress={capacidadeProgress} 
-          />
-        </section>
-
-        {/* 3. FOCO SEMANAL (DISTRIBUIÇÃO POR CLIENTE) */}
-        <section>
-          <SectionHeader label="Foco por Cliente" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3">
-            {clientes.slice(0, 4).map(c => (
-              <div key={c.id} className="flex items-center justify-between bg-[#0d1117] rounded-2xl px-5 py-4 border border-[#23272F]">
-                <div className="min-w-0 flex-1">
-                  <p className="text-white text-sm font-bold truncate">{c.nome_instituicao}</p>
-                  <p className="text-[#7D8597] text-[10px] uppercase mt-0.5">Prioridade Semanal</p>
-                </div>
-                <div className="size-2 rounded-full bg-sky-500 shadow-[0_0_8px_rgba(56,189,248,0.6)] shrink-0 ml-3" />
+          <SectionHeader label="Agenda de Hoje" count={visitsToday.length} sub={visitsToday.length + " visitas"} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {visitsToday.length > 0 ? (
+              visitsToday.map((v, i) => <VisitaRotinaCard key={i} event={v} />)
+            ) : (
+              <div className="py-12 text-center bg-[#0d1117] rounded-3xl border border-dashed border-[#23272F]">
+                <p className="text-[#4A5568] text-sm font-bold">Nenhuma visita agendada para hoje.</p>
               </div>
-            ))}
+            )}
           </div>
         </section>
 
-        {/* 4. PENDÊNCIAS POR PRIORIDADE */}
-        <div className="space-y-6 pt-2">
-          {urgentes.length > 0 && (
+        {/* LISTAS DE PENDÊNCIAS */}
+        <div className="space-y-8">
+          
+          {/* ATRASADOS */}
+          {atrasados.length > 0 && (
             <section>
-              <SectionHeader label="Atrasados" count={urgentes.length} />
+              <SectionHeader label="Atrasados" count={atrasados.length} />
               <div className="space-y-2">
-                {urgentes.map(p => <PriorityCard key={p.id} p={p} clienteNome={clienteNomePorId.get(getClienteId(p)) || 'Cliente'} cor="red" />)}
+                {atrasados.map((p, i) => <PendenciaItem key={i} item={p} cor="red" />)}
               </div>
             </section>
           )}
 
-          {atencao.length > 0 && (
+          {/* VENCEM EM BREVE */}
+          {emBreve.length > 0 && (
             <section>
-              <SectionHeader label="Vencem em Breve" count={atencao.length} />
+              <SectionHeader label="Vencem em breve" count={emBreve.length} />
               <div className="space-y-2">
-                {atencao.map(p => <PriorityCard key={p.id} p={p} clienteNome={clienteNomePorId.get(getClienteId(p)) || 'Cliente'} cor="amber" />)}
+                {emBreve.map((p, i) => <PendenciaItem key={i} item={p} cor="amber" />)}
               </div>
             </section>
           )}
 
-          {normais.length > 0 && (
+          {/* DEMAIS PENDÊNCIAS */}
+          {demais.length > 0 && (
             <section>
-              <SectionHeader label="Demais Pendências" count={normais.length} />
+              <SectionHeader label="Demais Pendências" count={demais.length} />
               <div className="space-y-2">
-                {normais.map(p => <PriorityCard key={p.id} p={p} clienteNome={clienteNomePorId.get(getClienteId(p)) || 'Cliente'} cor="default" />)}
+                {demais.map((p, i) => <PendenciaItem key={i} item={p} cor="zinc" />)}
               </div>
             </section>
           )}
+
         </div>
-
-      </div>
-
-      <div className="fixed bottom-8 inset-x-6 flex justify-between gap-4 pointer-events-none">
-        <Link href="/pendencias/nova" className="pointer-events-auto flex-1">
-          <div className="bg-[#23272F] text-white text-xs font-black uppercase tracking-widest text-center py-4 rounded-2xl shadow-xl">
-            + Pendência
-          </div>
-        </Link>
-        <Link href="/visitas/nova" className="pointer-events-auto flex-1">
-          <div className="bg-[#0466C8] text-white text-xs font-black uppercase tracking-widest text-center py-4 rounded-2xl shadow-xl">
-            + Visita
-          </div>
-        </Link>
       </div>
     </main>
   )

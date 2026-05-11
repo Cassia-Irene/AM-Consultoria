@@ -1,8 +1,9 @@
 import { StatusBadge, StatusVariant } from './StatusBadge'
 import type { Pendencia } from '@/domain/pendencia'
 import { getPendenciaSeveridade, getPendenciaStatus, SeveridadePendencia } from '@/utils/pendencia'
-import { getDiffDias } from '@/utils/date'
+import { getDiffDias, displayDate } from '@/utils/date'
 import { truncateText } from '@/utils/text'
+
 
 interface Props {
   pendencia: Pendencia
@@ -31,7 +32,8 @@ function prazoLabel(prazo?: string): { text: string; color: string } {
     return { text: `${Math.abs(diff)}d em atraso`, color: 'text-red-600 font-medium' }
   if (diff === 0) return { text: 'vence hoje', color: 'text-amber-600 font-medium' }
   if (diff === 1) return { text: 'vence amanhã', color: 'text-amber-500' }
-  return { text: `prazo: ${new Date(prazo).toLocaleDateString('pt-BR')}`, color: 'text-gray-400' }
+  return { text: `prazo: ${displayDate(prazo)}`, color: 'text-gray-400' }
+
 }
 
 export function PendenciaCard({ pendencia, clienteNome, onResolve, onClick }: Props) {

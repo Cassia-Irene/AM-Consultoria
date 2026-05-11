@@ -13,18 +13,27 @@ router = APIRouter(prefix="/pendencias", tags=["Pendências"])
 
 @router.post("/", response_model=PendenciaRead)
 def criar_pendencia(pendencia: PendenciaCreate, db: Session = Depends(get_db)):
-    # 1. Valida se a visita existe
-    visita = db.query(Visita).filter(Visita.id_visita == pendencia.id_visita).first()
-    if not visita:
-        raise HTTPException(status_code=404, detail="Visita não encontrada.")
+    # 1. Valida se a visita existe (APENAS se o ID for informado)
+    if pendencia.id_visita:
+        visita = db.query(Visita).filter(Visita.id_visita == pendencia.id_visita).first()
+        if not visita:
+            raise HTTPException(status_code=404, detail="Visita não encontrada.")
 
-    # 2. AJUSTE: Valida o contrato se ele for informado (conforme Migration V015)
+    # 2. Valida o contrato se ele for informado
     if pendencia.id_contrato:
         contrato = db.query(Contrato).filter(Contrato.id_contrato == pendencia.id_contrato).first()
         if not contrato:
             raise HTTPException(status_code=404, detail="Contrato não encontrado.")
 
-    nova_pendencia = Pendencia(**pendencia.model_dump())
+    # 3. Lógica Back-First: Auto-preenchimento de datas se ausentes
+    dados = pendencia.model_dump()
+    if not dados.get("data_origem"):
+        dados["data_origem"] = date.today()
+    if not dados.get("data_prazo"):
+        # Se não houver prazo, assume hoje para forçar atenção imediata no Modo Caos
+        dados["data_prazo"] = date.today()
+
+    nova_pendencia = Pendencia(**dados)
     
     try:
         db.add(nova_pendencia)
@@ -34,6 +43,7 @@ def criar_pendencia(pendencia: PendenciaCreate, db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erro ao salvar pendência: {str(e)}")
+
 
 @router.get("/", response_model=List[PendenciaRead])
 def listar_pendencias(db: Session = Depends(get_db)):
@@ -66,3 +76,13 @@ def atualizar_pendencia(id_pendencia: int, pendencia_update: PendenciaUpdate, db
     db.commit()
     db.refresh(db_pendencia)
     return db_pendencia
+
+@router.delete("/{id_pendencia}")
+def excluir_pendencia(id_pendencia: int, db: Session = Depends(get_db)):
+    db_pendencia = db.query(Pendencia).filter(Pendencia.id_pendencia == id_pendencia).first()
+    if not db_pendencia:
+        raise HTTPException(status_code=404, detail="Pendência não encontrada")
+    
+    db.delete(db_pendencia)
+    db.commit()
+    return {"message": "Pendência excluída com sucesso"}

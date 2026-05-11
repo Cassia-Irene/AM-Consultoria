@@ -51,7 +51,8 @@ export const ContratoService = {
         fetchApi<FaturamentoRaw[]>('/faturamento-cliente/').then(data => data.map(mapFaturamento)),
         fetchApi<VisitaRaw[]>('/visitas/').then(data => data.map(mapVisita)),
         fetchApi<ClienteRaw[]>('/clientes/').then(data => data.map(mapCliente)),
-        fetchApi<HistoricoContratoRaw[]>('/contratos/historico/').then(data => data.map(mapHistorico))
+        fetchApi<HistoricoContratoRaw[]>('/contratos/historico').then(data => data.map(mapHistorico))
+
       ])
 
       const contrato = contratos.find(c => c.id === id)

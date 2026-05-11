@@ -7,14 +7,13 @@ class Visita(Base):
 
     id_visita = Column(Integer, primary_key=True, index=True)
     id_contrato = Column(Integer, ForeignKey("contratos.id_contrato"), nullable=False)
-    
-    # ✅ CORRIGIDO: Era "projects", agora é "projetos" para bater com o seu SQL
     id_projeto = Column(Integer, ForeignKey("projetos.id_projeto")) 
     
     status = Column(String(15), nullable=False)
     data_hora = Column(DateTime, nullable=False)
     duracao_minutos = Column(Integer)
-    tipo_visita = Column(String(30), nullable=False)
+    tipo_visita = Column(String(50), nullable=False)
+
     modalidade = Column(String(20), nullable=False)
     descricao = Column(Text)
     resultados = Column(Text)

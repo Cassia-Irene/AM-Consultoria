@@ -1,109 +1,212 @@
-import { DashboardService, type DashboardResponse } from './dashboard.service'
+import { fetchApi } from './api'
 import { 
-  calculateClientHealth, 
-  getTipoOperacionalVisita,
-  type ClientOperationalHealth,
-  type TipoOperacionalVisita
-} from '@/utils/operational-kpis'
+  mockDashboardSummary, 
+  mockTimeline, 
+  mockTopPriorities, 
+  mockOpenPendencies, 
+  mockFinanceData,
+  mockPlanningOverview
+} from '@/mocks/analytics'
 
-export interface OperationalInsight extends DashboardResponse {
-  healthByClient: Map<string, ClientOperationalHealth>
-  topDrainingClients: ClientOperationalHealth[]
-  totalHorasInvisiveis: number
-  urgenciasNoMes: number
+
+export interface DashboardSummary {
+  contratosAtivos: number
+  pendenciasAbertas: number
+  eventosCriticos: number
+  faturamentoMes: number
+  inadimplenciaCount: number
+  entregasAtraso: number
 }
 
+export interface TimelineEvent {
+  tipo: 'visita' | 'pendencia' | 'financeiro' | 'alerta' | 'projeto'
+  idReferencia: number
+  idContrato: number
+  data: string
+  titulo: string
+  cliente: string
+  categoria: string
+  criticidade: 'normal' | 'alta' | 'critica'
+  statusPagamento?: 'pago' | 'pendente' | 'atrasado'
+  pendenciasContagem?: number
+  ultimaVisitaResultados?: string
+  pendenciasLista?: { id: number; descricao: string; dataPrazo?: string }[]
+}
+
+export interface OpenPendency {
+  cliente: string
+  descricao: string
+  responsavel: string
+  dataOrigem: string
+  dataPrazo?: string
+  statusPrazo: 'atrasado' | 'hoje' | 'breve' | 'planejado'
+}
+
+export interface CaosScore {
+  cliente: string
+  idContrato: number
+  visitasUrgentes: number
+  pendenciasAtrasadas: number
+  caosScore: number
+}
+
+export interface FinancialMonth {
+
+  mes: string
+  receitaRecorrente: number
+  receitaProjetos: number
+  receitaTotal: number
+}
+
+export interface ClientHealth {
+  cliente: string
+  idContrato: number
+  visitasUrgentes: number
+  pendenciasAtrasadas: number
+  totalMinutosInvisiveis: number
+  indiceDesgaste: number
+  perfil: 'drenante' | 'urgente' | 'equilibrado'
+}
+
+export interface OperationalInsight {
+  totalHorasInvisiveis: number
+  urgenciasNoMes: number
+  topDrainingClients: ClientHealth[]
+  clientes: { id: string; nome_instituicao: string }[]
+  timeline: TimelineEvent[]
+}
+
+export interface TodayVisit {
+  idVisita: number
+  idContrato: number
+  dataHora: string
+  tipoVisita: string
+  modalidade: string
+  status: string
+  cliente: string
+  pendenciasContagem: number
+  statusPagamento?: string
+  ultimaVisitaResultados?: string
+  pendenciasLista?: { id: number; descricao: string; dataPrazo?: string }[]
+}
+
+export interface ActiveProject {
+  cliente: string
+  projeto: string
+  status: string
+  valorTotal: number
+  entregasPendentes: number
+  parcelasPendentes: number
+}
+
+
+
 export const AnalyticsService = {
+  async getSummary(): Promise<DashboardSummary> {
+    return fetchApi<DashboardSummary>('/analytics/summary', {}, mockDashboardSummary)
+  },
+
+  async getTimeline(): Promise<TimelineEvent[]> {
+    return fetchApi<TimelineEvent[]>('/analytics/timeline', {}, mockTimeline)
+  },
+
+  async getTodayAgenda(): Promise<TodayVisit[]> {
+    return fetchApi<TodayVisit[]>('/analytics/today-agenda', {}, [])
+  },
+
+
+
+
+  async getProjects(): Promise<ActiveProject[]> {
+    return fetchApi<ActiveProject[]>('/analytics/projects', {}, [])
+  },
+
+  async getPendencies(): Promise<OpenPendency[]> {
+
+    return fetchApi<OpenPendency[]>('/analytics/pendencies', {}, mockOpenPendencies)
+  },
+
+
+  async getFinance(): Promise<FinancialMonth[]> {
+    return fetchApi<FinancialMonth[]>('/analytics/finance', {}, mockFinanceData)
+  },
+
+  async getPriorities(): Promise<TopPriority[]> {
+    return fetchApi<TopPriority[]>('/analytics/priorities', {}, mockTopPriorities)
+  },
+
+  async getPlanning(): Promise<PlanningOverview[]> {
+    return fetchApi<PlanningOverview[]>('/analytics/planning', {}, mockPlanningOverview)
+  },
+
+  async getCaosScore(): Promise<CaosScore[]> {
+    try {
+      return await fetchApi<CaosScore[]>('/analytics/caos-score', {}, [])
+    } catch (err) {
+      console.warn('[FRONTEND] Endpoint /analytics/caos-score não encontrado. Usando lista vazia.', err)
+      return []
+    }
+  },
+
+  async getClientHealth(): Promise<ClientHealth[]> {
+    return fetchApi<ClientHealth[]>('/analytics/client-health', {}, [])
+  },
+
+  /**
+   * Agregador para o Modo Reflexão.
+   * Constrói o snapshot a partir de múltiplos endpoints existentes.
+   * A inteligência agora é 100% SQL (via /client-health).
+   */
   async getOperationalSnapshot(): Promise<OperationalInsight> {
-    const data = await DashboardService.getDashboardData()
-    const { visitas, pendencias, contratos, faturamentos, clientes } = data
-    
-    const healthByClient = new Map<string, ClientOperationalHealth>()
-    let totalHorasInvisiveis = 0
-    let urgenciasNoMes = 0
-    
-    clientes.forEach(cliente => {
-      const contrato = contratos.find(c => c.clienteId === cliente.id)
-      const health = calculateClientHealth(
-        cliente.id,
-        visitas,
-        pendencias,
-        contrato,
-        faturamentos.filter(f => f.contratoId === contrato?.id)
-      )
-      healthByClient.set(cliente.id, health)
-      totalHorasInvisiveis += health.horasInvisiveisEstimadas
-    })
-    
-    // Contagem de urgencias reais (inferidas)
-    visitas.forEach(v => {
-      if (getTipoOperacionalVisita(v) === 'emergencial') {
-        urgenciasNoMes++
-      }
-    })
-    
-    const topDrainingClients = Array.from(healthByClient.values())
-      .sort((a, b) => b.indiceDesgaste - a.indiceDesgaste)
-      .slice(0, 3)
-      
+    const [timeline, healthData] = await Promise.all([
+      this.getTimeline(),
+      this.getClientHealth()
+    ])
+
+    // Filtro de urgências do mês (ainda necessário para o KPI de topo, mas a inteligência de horas foi pro SQL)
+    const urgenciasNoMes = healthData.reduce((acc, curr) => acc + curr.visitasUrgentes, 0)
+    const totalMinutosInvisiveis = healthData.reduce((acc, curr) => acc + curr.totalMinutosInvisiveis, 0)
+
     return {
-      ...data,
-      healthByClient,
-      topDrainingClients,
-      totalHorasInvisiveis,
-      urgenciasNoMes
+      totalHorasInvisiveis: totalMinutosInvisiveis,
+      urgenciasNoMes,
+      topDrainingClients: healthData.sort((a, b) => b.indiceDesgaste - a.indiceDesgaste),
+      clientes: healthData.map(c => ({ id: String(c.idContrato), nome_instituicao: c.cliente })),
+      timeline
     }
   },
 
   /**
-   * Traduz a massa de dados em uma timeline de eventos operacionais significativos
+   * Helper para filtrar e formatar a timeline no formato esperado pelo componente OperationalTimeline.
    */
-  getOperationalTimeline(data: DashboardResponse) {
-    const events: { 
-      date: string; 
-      type: TipoOperacionalVisita | 'pendencia' | 'financeiro'; 
-      title: string; 
-      subtitle: string;
-      critical: boolean;
-    }[] = []
-    
-    data.visitas.forEach(v => {
-      const tipo = getTipoOperacionalVisita(v)
-      events.push({
-        date: v.data_hora,
-        type: tipo,
-        title: v.descricao,
-        subtitle: tipo.toUpperCase(),
-        critical: tipo === 'emergencial'
-      })
-    })
-    
-    data.pendencias.filter(p => !p.resolvida).forEach(p => {
-      events.push({
-        date: p.data_prazo || p.data_origem,
-        type: 'pendencia',
-        title: p.descricao,
-        subtitle: 'PENDÊNCIA EM ABERTO',
-        critical: true // Pendencias abertas sao criticas na timeline
-      })
-    })
-    
-    return events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-  },
-
-  async getClientInsight(clientId: string): Promise<ClientOperationalHealth | null> {
-    const data = await DashboardService.getDashboardData()
-    const { visitas, pendencias, contratos, faturamentos } = data
-    
-    const contrato = contratos.find(c => c.clienteId === clientId)
-    if (!contrato) return null
-
-    return calculateClientHealth(
-      clientId,
-      visitas,
-      pendencias,
-      contrato,
-      faturamentos.filter(f => f.contratoId === contrato.id)
-    )
+  getOperationalTimeline(data: OperationalInsight): { date: string; type: string; title: string; subtitle: string; critical: boolean }[] {
+    return (data.timeline || []).map(event => ({
+      date: event.data,
+      type: event.tipo,
+      title: event.titulo,
+      subtitle: event.cliente,
+      critical: event.criticidade === 'critica' || event.criticidade === 'alta'
+    }))
   }
+}
+
+
+
+export interface PlanningOverview {
+  cliente: string
+  visitasSemanais: number
+  pendenciasAtrasadas: number
+  pendenciasAtencao: number
+  pendenciasNormais: number
+}
+
+export interface TopPriority {
+  id: number
+  idContrato: number
+  tipo: string
+  titulo: string
+  cliente: string
+  dataPrazo?: string
+  statusPrazo: string
+  scorePrioridade: number
 }

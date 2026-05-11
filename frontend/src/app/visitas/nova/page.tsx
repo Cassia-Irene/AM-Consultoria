@@ -8,27 +8,20 @@
 //   3. Confirmação
 
 import { useState, useEffect, FormEvent } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ClientesService } from '@/services/clientes.service'
 import { ContratoService } from '@/services/contrato.service'
 import { VisitasService } from '@/services/visitas.service'
-import { ContatosService } from '@/services/contatos.service'
 import type { Cliente } from '@/domain/cliente'
 import type { Contrato } from '@/domain/contrato'
-import type { Contato } from '@/domain/contato'
-import type { StatusVisita, ModalidadeVisita } from '@/domain/visita'
+import type { StatusVisita, ModalidadeVisita, TipoVisita } from '@/domain/visita'
+
 
 /* ─────────────────────────────────────────────
    TYPES
 ───────────────────────────────────────────── */
 
-import type { 
-  TipoVisitaUI, 
-  ContextoAgendamentoUI,
-  OrigemSolicitacaoUI,
-  SeveridadeUI,
-  MotivoAcionamentoRead
-} from '@/adapters/visita.adapter'
 
 interface PendenciaGerada {
   id: string
@@ -44,32 +37,6 @@ interface PendenciaSugerida extends PendenciaGerada {
   scoreBase: number  // 0–1: confiança da sugestão; >= 0.7 → pré-aceita
 }
 
-interface FormState {
-  clienteId: string
-  contratoId: string
-  status: StatusVisita
-  
-  // 🧠 Dimensões Operacionais
-  tipo_visita: TipoVisitaUI
-  contexto_agendamento: ContextoAgendamentoUI
-  
-  // 🚦 Contexto de Extra/Caos
-  origem_solicitacao: OrigemSolicitacaoUI
-  id_contato_solicitante: string
-  motivo_acionamento_id: string
-  descricao_trigger: string
-  
-  // 🔥 Métricas
-  severidade_operacional: SeveridadeUI
-  impacto_operacional: string
-  
-  modalidade: ModalidadeVisita
-  duracao_minutos: number
-  data_hora: string
-  descricao: string
-  resultados: string
-  pendencias: PendenciaGerada[]
-}
 
 type Etapa = 1 | 2 | 3
 
@@ -210,6 +177,16 @@ function prazoEmDiasISO(dias: number): string {
   return d.toISOString().split('T')[0]
 }
 
+/** 
+ * Corrige o problema de timezone ao exibir datas YYYY-MM-DD.
+ * new Date("2024-05-15") vira 14/05 no Brasil (UTC-3).
+ */
+function formatarDataBR(isoDate: string): string {
+  if (!isoDate) return ''
+  const [ano, mes, dia] = isoDate.split('-')
+  return `${dia}/${mes}/${ano}`
+}
+
 /**
  * Verifica se existe um boost de urgencia PROXIMO ao gatilho no texto.
  * Evita elevar toda a lista quando a palavra "urgente" aparece em outro contexto.
@@ -285,7 +262,8 @@ function uid() {
 
 function AdicionarPendenciaInline({ onAdd, variant = 'dashed' }: { onAdd: (p: PendenciaGerada) => void, variant?: 'dashed' | 'primary' }) {
   const [descricao, setDescricao] = useState('')
-  const [diasAFrente, setDiasAFrente] = useState(5)
+  const [dataPrazo, setDataPrazo] = useState(prazoEmDiasISO(5))
+  const [responsavel, setResponsavel] = useState('Equipe Técnica')
   const [aberto, setAberto] = useState(false)
 
   function submeter() {
@@ -293,11 +271,12 @@ function AdicionarPendenciaInline({ onAdd, variant = 'dashed' }: { onAdd: (p: Pe
     onAdd({
       id: Math.random().toString(36).slice(2, 9),
       descricao: descricao.trim(),
-      data_prazo: prazoEmDiasISO(diasAFrente),
-      responsavel: 'Equipe Técnica',
+      data_prazo: dataPrazo,
+      responsavel: responsavel.trim(),
     })
     setDescricao('')
-    setDiasAFrente(5)
+    setDataPrazo(prazoEmDiasISO(5))
+    setResponsavel('Equipe Técnica')
     setAberto(false)
   }
 
@@ -339,14 +318,25 @@ function AdicionarPendenciaInline({ onAdd, variant = 'dashed' }: { onAdd: (p: Pe
         className="w-full bg-transparent text-white text-sm placeholder-[#7D8597] border-b border-[#23272F] pb-2 focus:outline-none focus:border-[#0466C8] transition-colors"
       />
 
-      <div className="flex gap-2 items-center">
-        <span className="text-[10px] text-[#7D8597] shrink-0">Dias p/ prazo:</span>
+      {/* Prazo */}
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] text-[#7D8597] shrink-0">Prazo:</span>
         <input
-          type="number"
-          value={diasAFrente}
-          onChange={e => setDiasAFrente(Number(e.target.value))}
-          min={0}
-          className="w-20 bg-[#23272F] text-white text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#0466C8]"
+          type="date"
+          value={dataPrazo}
+          onChange={e => setDataPrazo(e.target.value)}
+          className="flex-1 bg-[#23272F] text-white text-xs rounded-lg px-3 py-1.5 placeholder-[#7D8597] focus:outline-none focus:ring-1 focus:ring-[#0466C8]"
+        />
+      </div>
+
+      {/* Responsável */}
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] text-[#7D8597] shrink-0">Resp:</span>
+        <input
+          type="text"
+          value={responsavel}
+          onChange={e => setResponsavel(e.target.value)}
+          className="flex-1 bg-[#23272F] text-white text-xs rounded-lg px-3 py-1.5 placeholder-[#7D8597] focus:outline-none focus:ring-1 focus:ring-[#0466C8]"
         />
       </div>
 
@@ -389,7 +379,7 @@ function PendenciaEditavel({
       >
         <div className="flex-1 min-w-0">
           <p className="text-white text-sm font-semibold truncate">{p.descricao || '(sem descrição)'}</p>
-          <p className={`text-[10px] font-bold ${dColor}`}>Prazo: {new Date(p.data_prazo).toLocaleDateString('pt-BR')} · Resp: {p.responsavel}</p>
+          <p className={`text-[10px] font-bold ${dColor}`}>Prazo: {formatarDataBR(p.data_prazo)} · Resp: {p.responsavel}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-[#7D8597] text-[10px]">editar</span>
@@ -503,6 +493,21 @@ function EtapaIndicador({ atual }: { atual: Etapa }) {
    PAGE
 ───────────────────────────────────────────── */
 
+interface FormState {
+  clienteId: string
+  contratoId: string
+  projetoId: string
+  status: StatusVisita
+  
+  tipo_visita: TipoVisita
+  modalidade: ModalidadeVisita
+  duracao_minutos: number
+  data_hora: string
+  descricao: string
+  resultados: string
+  pendencias: PendenciaGerada[]
+}
+
 export default function NovaVisitaPage() {
   const router = useRouter()
 
@@ -522,22 +527,10 @@ export default function NovaVisitaPage() {
   const [form, setForm] = useState<FormState>({
     clienteId: '',
     contratoId: '',
+    projetoId: '',
     status: 'realizada',
     
-    // 🧠 Dimensões
     tipo_visita: 'rotineira',
-    contexto_agendamento: 'planejado',
-    
-    // 🚦 Caos
-    origem_solicitacao: 'whatsapp',
-    id_contato_solicitante: '',
-    motivo_acionamento_id: '',
-    descricao_trigger: '',
-    
-    // 🔥 Métricas
-    severidade_operacional: 'baixa',
-    impacto_operacional: '',
-
     modalidade: 'presencial',
     duracao_minutos: 60,
     data_hora: new Date().toISOString().slice(0, 16),
@@ -546,27 +539,22 @@ export default function NovaVisitaPage() {
     pendencias: [],
   })
 
+
   const [allClientes, setAllClientes] = useState<Cliente[]>([])
   const [allContratos, setAllContratos] = useState<Contrato[]>([])
-  const [allContatos, setAllContatos] = useState<Contato[]>([])
-  const [motivosAcionamento, setMotivosAcionamento] = useState<MotivoAcionamentoRead[]>([])
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
 
   useEffect(() => {
     let isMounted = true
     async function loadData() {
       try {
-        const [cli, cont, motivos, contatos] = await Promise.all([
+        const [cli, cont] = await Promise.all([
           ClientesService.getAll(),
-          ContratoService.getAll(),
-          VisitasService.getMotivosAcionamento(),
-          ContatosService.getAll()
+          ContratoService.getAll()
         ])
         if (isMounted) {
           setAllClientes(cli.filter(c => c.status === 'ativo'))
           setAllContratos(cont)
-          setMotivosAcionamento(motivos)
-          setAllContatos(contatos)
         }
       } catch (err) {
         console.error('Erro ao carregar dados:', err)
@@ -651,16 +639,6 @@ export default function NovaVisitaPage() {
         contratoId: form.contratoId,
         status: form.status,
         tipo_visita: form.tipo_visita,
-        contexto_agendamento: form.contexto_agendamento,
-        
-        origem_solicitacao: form.contexto_agendamento !== 'planejado' ? form.origem_solicitacao : undefined,
-        id_contato_solicitante: form.contexto_agendamento !== 'planejado' && form.id_contato_solicitante ? Number(form.id_contato_solicitante) : undefined,
-        motivo_acionamento_id: form.contexto_agendamento !== 'planejado' && form.motivo_acionamento_id ? Number(form.motivo_acionamento_id) : undefined,
-        descricao_trigger: form.contexto_agendamento !== 'planejado' ? form.descricao_trigger : undefined,
-        
-        severidade_operacional: form.contexto_agendamento !== 'planejado' ? form.severidade_operacional : undefined,
-        impacto_operacional: form.contexto_agendamento !== 'planejado' ? form.impacto_operacional : undefined,
-
         modalidade: form.modalidade,
         duracao_minutos: form.duracao_minutos,
         data_hora: form.data_hora,
@@ -757,8 +735,27 @@ export default function NovaVisitaPage() {
           </div>
         </div>
         <EtapaIndicador atual={etapa} />
+        
       </div>
 
+      {/* Toggle de Modo: Detalhado vs Rápido */}
+      <div className="px-4 mt-6 mb-6">
+        <div className="bg-[#0d1117] border border-[#23272F] p-1 rounded-2xl flex gap-1">
+          <button 
+            disabled
+            className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#0466C8] text-white shadow-lg"
+          >
+            Visita Detalhada
+          </button>
+          <Link 
+            href="/visitas/rapida"
+            className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#7D8597] hover:text-white text-center flex items-center justify-center gap-2"
+          >
+            <span>⚡</span> Relato Rápido
+          </Link>
+        </div>
+      </div>
+      
       {errorSubmit && (
         <div className="mx-4 mt-4 bg-red-950/40 border border-red-700/50 rounded-xl px-4 py-3 text-red-400 text-sm">
           <p className="font-bold uppercase tracking-widest text-[10px] mb-1">Erro</p>
@@ -830,171 +827,36 @@ export default function NovaVisitaPage() {
                 <button
                   type="button"
                   key={status}
-                  onClick={() => setForm(f => ({ ...f, status: status }))}
+                  onClick={() => setForm(f => ({ ...f, status }))}
                   className={`flex-1 py-3 rounded-xl text-sm font-semibold border transition-colors capitalize ${
                     form.status === status
                       ? 'bg-[#001845] text-white border-[#0466C8]'
                       : 'bg-[#0d1117] text-[#7D8597] border-[#23272F]'
                   }`}
                 >
-                  {status}
+                  {status === 'realizada' ? 'Concluída' : status}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Natureza Operacional */}
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
-              Natureza da Visita *
+              Tipo de Visita *
             </label>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { id: 'rotineira', label: 'Rotineira' },
-                { id: 'estruturada', label: 'Estruturada' },
-                { id: 'urgente', label: 'Urgente' },
-                { id: 'pontual', label: 'Pontual' },
-                { id: 'acompanhamento_direcionado', label: 'Acompanhamento' },
-              ].map(natureza => (
-                <button
-                  type="button"
-                  key={natureza.id}
-                  onClick={() => setForm(f => ({ ...f, tipo_visita: natureza.id as TipoVisitaUI }))}
-                  className={`py-3 rounded-xl text-xs font-semibold border transition-colors ${
-                    form.tipo_visita === natureza.id
-                      ? 'bg-[#001845] text-white border-[#0466C8]'
-                      : 'bg-[#0d1117] text-[#7D8597] border-[#23272F]'
-                  }`}
-                >
-                  {natureza.label}
-                </button>
-              ))}
-            </div>
+            <select
+              value={form.tipo_visita}
+              onChange={e => setForm(f => ({ ...f, tipo_visita: e.target.value as TipoVisita }))}
+              className="w-full rounded-xl border border-[#23272F] px-4 py-3.5 text-base text-white bg-[#0d1117] focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40"
+            >
+              <option value="rotineira">Rotineira</option>
+              <option value="urgente">Urgente</option>
+              <option value="pontual">Pontual</option>
+              <option value="estruturada">Estruturada</option>
+              <option value="acompanhamento direcionado">Acompanhamento Direcionado</option>
+            </select>
           </div>
 
-          {/* Contexto da Agenda (A grande mudança semântica) */}
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
-              Contexto da Agenda (Goodwill/Caos) *
-            </label>
-            <div className="flex gap-2">
-              {[
-                { id: 'planejado', label: 'Planejado' },
-                { id: 'extra_proativo', label: 'Extra (Proativo)' },
-                { id: 'extra_reativo', label: 'Extra (Reativo)' },
-              ].map(contexto => (
-                <button
-                  type="button"
-                  key={contexto.id}
-                  onClick={() => setForm(f => ({ ...f, contexto_agendamento: contexto.id as ContextoAgendamentoUI }))}
-                  className={`flex-1 py-3 rounded-xl text-[10px] font-bold border transition-colors uppercase tracking-tight ${
-                    form.contexto_agendamento === contexto.id
-                      ? 'bg-emerald-950/30 text-emerald-400 border-emerald-500'
-                      : 'bg-[#0d1117] text-[#7D8597] border-[#23272F]'
-                  }`}
-                >
-                  {contexto.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* CAMPOS DE CAOS (Condicionais) */}
-          {form.contexto_agendamento !== 'planejado' && (
-            <div className="bg-[#0d1117] border border-[#0466C8]/30 rounded-2xl p-5 space-y-5">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0466C8]">Sensores de Demanda Extra</p>
-              
-              <div className="grid grid-cols-2 gap-4">
-                {/* Origem */}
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">Origem</label>
-                  <select
-                    value={form.origem_solicitacao}
-                    onChange={e => setForm(f => ({ ...f, origem_solicitacao: e.target.value as OrigemSolicitacaoUI }))}
-                    className="w-full bg-[#161b22] border border-[#23272F] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#0466C8]"
-                  >
-                    <option value="whatsapp">WhatsApp</option>
-                    <option value="telefone">Telefone</option>
-                    <option value="email">E-mail</option>
-                    <option value="presencial">Presencial</option>
-                  </select>
-                </div>
-
-                {/* Solicitante */}
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">Quem chamou?</label>
-                  <select
-                    value={form.id_contato_solicitante}
-                    onChange={e => setForm(f => ({ ...f, id_contato_solicitante: e.target.value }))}
-                    className="w-full bg-[#161b22] border border-[#23272F] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#0466C8]"
-                  >
-                    <option value="">Selecione o contato...</option>
-                    {allContatos.filter(c => c.clienteId === form.clienteId).map(c => (
-                      <option key={c.id} value={c.id}>{c.nome}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Motivo do Acionamento */}
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">Motivo do Acionamento</label>
-                <select
-                  value={form.motivo_acionamento_id}
-                  onChange={e => setForm(f => ({ ...f, motivo_acionamento_id: e.target.value }))}
-                  className="w-full bg-[#161b22] border border-[#23272F] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#0466C8]"
-                >
-                  <option value="">Selecione a categoria...</option>
-                  {motivosAcionamento.map(m => (
-                    <option key={m.id_motivo} value={m.id_motivo}>{m.nome}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Severidade e Impacto */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">Severidade</label>
-                  <select
-                    value={form.severidade_operacional}
-                    onChange={e => setForm(f => ({ ...f, severidade_operacional: e.target.value as SeveridadeUI }))}
-                    className="w-full bg-[#161b22] border border-[#23272F] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#0466C8]"
-                  >
-                    <option value="baixa">Baixa</option>
-                    <option value="moderada">Moderada</option>
-                    <option value="alta">Alta</option>
-                    <option value="critica">Crítica</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">Impacto Principal</label>
-                  <select
-                    value={form.impacto_operacional}
-                    onChange={e => setForm(f => ({ ...f, impacto_operacional: e.target.value }))}
-                    className="w-full bg-[#161b22] border border-[#23272F] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#0466C8]"
-                  >
-                    <option value="">Selecione...</option>
-                    <option value="equipe">Equipe</option>
-                    <option value="financeiro">Financeiro</option>
-                    <option value="pacientes">Pacientes</option>
-                    <option value="contrato">Contrato</option>
-                    <option value="reputação">Reputação</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Descrição do Trigger */}
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">Relato do Gatilho (O que disparou o caos?)</label>
-                <textarea
-                  value={form.descricao_trigger}
-                  onChange={e => setForm(f => ({ ...f, descricao_trigger: e.target.value }))}
-                  placeholder="Ex: Ligação desesperada da coordenação informando falta de pessoal..."
-                  className="w-full bg-[#161b22] border border-[#23272F] rounded-xl px-4 py-3 text-sm text-white placeholder-[#7D8597] focus:outline-none focus:border-[#0466C8] min-h-[80px]"
-                />
-              </div>
-            </div>
-          )}
 
           {/* Resumo — curto e objetivo */}
           <div>
@@ -1073,7 +935,7 @@ export default function NovaVisitaPage() {
               Modalidade
             </label>
             <div className="flex gap-2">
-              {(['presencial', 'online', 'hibrida'] as ModalidadeVisita[]).map(mod => (
+              {(['presencial', 'remota'] as ModalidadeVisita[]).map(mod => (
                 <button
                   type="button"
                   key={mod}
@@ -1084,7 +946,7 @@ export default function NovaVisitaPage() {
                       : 'bg-[#0d1117] text-[#7D8597] border-[#23272F]'
                   }`}
                 >
-                  {mod}
+                  {mod === 'remota' ? 'Remota' : 'Presencial'}
                 </button>
               ))}
             </div>
@@ -1134,7 +996,7 @@ export default function NovaVisitaPage() {
                     <div key={s.id} className="flex items-center gap-3 bg-[#0d1117] border border-[#23272F] rounded-xl px-4 py-3">
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-sm font-semibold truncate">{s.descricao}</p>
-                        <p className={`text-[10px] font-bold ${dColor}`}>{dest} · {new Date(s.data_prazo).toLocaleDateString('pt-BR')}</p>
+                        <p className={`text-[10px] font-bold ${dColor}`}>{dest} · {formatarDataBR(s.data_prazo)}</p>
                       </div>
                       <div className="flex gap-2 shrink-0">
                         <button type="button" onClick={() => aceitarSugestao(s.id)}
@@ -1227,7 +1089,7 @@ export default function NovaVisitaPage() {
                         <p className="text-white text-sm flex-1">{p.descricao || '(sem descrição)'}</p>
                         <span className={`text-[10px] font-bold shrink-0 ${labelColor}`}>{label}</span>
                       </div>
-                      {p.data_prazo && <p className="text-[#7D8597] text-xs mt-0.5">Prazo: {new Date(p.data_prazo).toLocaleDateString('pt-BR')}</p>}
+                      {p.data_prazo && <p className="text-[#7D8597] text-xs mt-0.5">Prazo: {formatarDataBR(p.data_prazo)}</p>}
                     </div>
                   )
                 })}

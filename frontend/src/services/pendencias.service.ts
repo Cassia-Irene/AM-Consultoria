@@ -38,7 +38,7 @@ export const PendenciasService = {
       responsavel: input.responsavel,
       data_prazo: input.data_prazo || null,
       resolvida: !!input.resolvida,
-      data_resolucao: input.resolvida ? new Date().toISOString() : null
+      data_resolucao: input.resolvida ? new Date().toISOString().split('T')[0] : null
     }
 
     if (USE_MOCKS) {
@@ -50,5 +50,40 @@ export const PendenciasService = {
       method: 'POST',
       body: JSON.stringify(payload)
     })
+  },
+
+  async atualizar(id: string | number, input: Partial<NovaPendenciaInput>): Promise<void> {
+    const payload: Record<string, string | number | boolean | null | undefined> = {}
+    if (input.descricao !== undefined) payload.descricao = input.descricao
+    if (input.responsavel !== undefined) payload.responsavel = input.responsavel
+    if (input.data_prazo !== undefined) payload.data_prazo = input.data_prazo
+    if (input.resolvida !== undefined) {
+      payload.resolvida = input.resolvida
+      if (input.resolvida) payload.data_resolucao = new Date().toISOString().split('T')[0]
+      else payload.data_resolucao = null
+    }
+
+    if (USE_MOCKS) {
+      console.log(`[MOCK][PENDENCIA] Atualizando ${id}:`, payload)
+      return
+    }
+
+    await fetchApi(`/pendencias/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload)
+    })
+  },
+
+  async excluir(id: string | number): Promise<void> {
+    if (USE_MOCKS) {
+      console.log(`[MOCK][PENDENCIA] Excluindo ${id}`)
+      return
+    }
+
+    await fetchApi(`/pendencias/${id}`, {
+      method: 'DELETE'
+    })
   }
 }
+
+

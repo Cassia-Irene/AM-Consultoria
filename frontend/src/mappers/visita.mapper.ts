@@ -32,7 +32,7 @@ export function mapVisita(raw: VisitaRaw): Visita {
     data_hora: raw.data_hora || new Date().toISOString(),
     duracao_minutos: raw.duracao_minutos ?? undefined,
 
-    tipo_visita: normalizeTipo(raw.tipo_visita || 'rotina'),
+    tipo_visita: (raw.tipo_visita || 'rotineira') as TipoVisita,
     modalidade: normalizeModalidade(raw.modalidade || 'presencial'),
 
     descricao: raw.descricao || 'Sem descrição',
@@ -48,18 +48,8 @@ function normalizeStatus(value: string): StatusVisita {
   return 'agendada'
 }
 
-function normalizeTipo(value: string): TipoVisita {
-  const v = String(value || '').toLowerCase()
-  if (v === 'rotina' || v === 'rotineira') return 'rotina'
-  if (v === 'extra' || v === 'urgente' || v === 'pontual') return 'extra'
-  if (v === 'projeto') return 'projeto'
-  return 'rotina'
-}
-
 function normalizeModalidade(value: string): ModalidadeVisita {
   const v = String(value || '').toLowerCase()
-  if (v === 'presencial') return 'presencial'
-  if (v === 'online' || v === 'remota' || v === 'remoto') return 'online'
-  if (v === 'hibrida') return 'hibrida'
+  if (v === 'remota' || v === 'remoto' || v === 'online') return 'remota'
   return 'presencial'
 }

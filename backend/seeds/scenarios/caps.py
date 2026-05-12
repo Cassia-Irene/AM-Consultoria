@@ -17,22 +17,24 @@ class CAPSScenario(Scenario):
     def generate_structure(self):
         cliente = self.get_or_create_cliente(
             nome="CAPS II Renascer",
-            tipo_instituicao="Pública",
-            cidade="São Luís",
+            tipo_instituicao="Saúde Mental Pública",
+            cidade="São Luís/MA",
             status="ativo",
-            nivel_complexidade="alta"
+            nivel_complexidade="alta",
+            observacoes_gerais="Ambiente muito sensível emocionalmente. A equipe trabalha sobrecarregada. Demandas urgentes surgem sem previsibilidade. Muitas decisões acontecem informalmente."
         )
 
         # 1. Contatos
-        contato_dir = self.add_contato(cliente, "Dr. Ricardo Alencar", "Diretor Geral", "Administrativo")
-        self.add_contato(cliente, "Enf. Lúcia Mendes", "Coord. Enfermagem", "Ponto Focal")
+        self.add_contato(cliente, "Dr. Augusto Leal", "Coordenador", "Decisor")
+        self.add_contato(cliente, "Márcia Costa", "Assistente Social", "Operacional")
+        self.add_contato(cliente, "Joana Nunes", "Administrativo da Secretaria", "Operacional")
 
         # 2. Contrato
         contrato = self.db.query(Contrato).filter(Contrato.id_cliente == cliente.id_cliente).first()
         if not contrato:
             contrato = Contrato(
                 id_cliente=cliente.id_cliente,
-                servicos_contratados="Adequação Regulatória e Gestão SUS",
+                servicos_contratados="Apoio organizacional e fluxo operacional",
                 visitas_previstas_mes=4,
                 inclui_relatorio=True,
                 data_inicio=date(2024, 8, 1)
@@ -41,7 +43,7 @@ class CAPSScenario(Scenario):
             self.db.flush()
         
         # 3. Pagamento
-        self.add_contrato_pagamento(contrato, "Mensal", 3200.00)
+        self.add_contrato_pagamento(contrato, "Mensal", 6200.00)
 
         return cliente, contrato
 
@@ -50,15 +52,16 @@ class CAPSScenario(Scenario):
         mes_passado = subtrair_meses(hoje_date, 1)
         dois_meses_atras = subtrair_meses(hoje_date, 2)
 
-        # 1. Projetos: Prontuário Eletrônico
-        projeto = self.add_projeto(contrato, "Implantação Prontuário Digital", valor_total=4000.00)
+        # 1. Projeto: Fluxo RAAS
+        p_raas = self.add_projeto(contrato, "Revisão do fluxo RAAS", valor_total=1200.00)
         self._add_and_commit([
-            Entrega(id_projeto=projeto.id_projeto, descricao="Migração de Dados Papel", data_entrega_prevista=dois_meses_atras, entregue=True),
-            Entrega(id_projeto=projeto.id_projeto, descricao="Customização de Telas RAAS", data_entrega_prevista=mes_passado, entregue=False)
+            Entrega(id_projeto=p_raas.id_projeto, descricao="Mapeamento de gargalos", data_entrega_prevista=dois_meses_atras, entregue=True),
         ])
+        
+        # 2. Projeto: Usuários Intensivos
+        p_intensivo = self.add_projeto(contrato, "Acompanhamento de usuários intensivos", valor_total=1500.00)
         self._add_and_commit([
-            ProjetoParcela(id_projeto=projeto.id_projeto, numero_parcela=1, valor_parcela=2000.00, data_pagamento_prevista=dois_meses_atras, pago=True, data_pagamento=dois_meses_atras),
-            ProjetoParcela(id_projeto=projeto.id_projeto, numero_parcela=2, valor_parcela=2000.00, data_pagamento_prevista=mes_passado, pago=False)
+            Entrega(id_projeto=p_intensivo.id_projeto, descricao="Desenho de novos protocolos", data_entrega_prevista=mes_passado, entregue=True),
         ])
 
         visitas = []

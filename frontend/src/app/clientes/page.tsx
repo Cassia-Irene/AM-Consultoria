@@ -8,37 +8,37 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ClientesService } from '@/services/clientes.service'
 import type { Cliente } from '@/domain/cliente'
+import { OperationalDrawer } from '@/components/OperationalDrawer'
+import { ClientManager } from '@/components/ClientManager'
 
 export default function ClientesPage() {
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [loading, setLoading] = useState(true)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [selectedClientId, setSelectedClientId] = useState<string | undefined>()
+
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      const data = await ClientesService.getAll()
+      setClientes(data)
+    } catch (err) {
+      console.error('[ERROR][UI] Erro ao carregar clientes:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    let isMounted = true
-
-    async function loadData() {
-      try {
-        // Simula latência de rede para evitar cascading render síncrono
-        await new Promise(resolve => setTimeout(resolve, 10))
-        const data = await ClientesService.getAll()
-        
-        if (isMounted) {
-          setClientes(data)
-          setLoading(false)
-        }
-      } catch (err) {
-        console.error('[ERROR][UI] Erro ao carregar clientes:', err)
-        if (isMounted) setLoading(false)
-      }
-    }
-
-    loadData()
-    return () => { isMounted = false }
+    const timeout = setTimeout(() => {
+      loadData()
+    }, 0)
+    return () => clearTimeout(timeout)
   }, [])
 
   const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })
 
-  if (loading) {
+  if (loading && clientes.length === 0) {
     return (
       <main className="min-h-screen bg-[#07090D] flex items-center justify-center">
         <p className="text-zinc-500 animate-pulse text-[10px] font-black uppercase tracking-[0.2em]">Carregando Clientes</p>
@@ -50,13 +50,24 @@ export default function ClientesPage() {
     <main className="min-h-screen bg-[#07090D] pb-32">
       {/* ── HEADER ── */}
       <header className="sticky top-0 z-10 bg-[#07090D]/95 backdrop-blur-sm px-5 pt-10 pb-4 border-b border-zinc-800/50">
-        <div className="flex items-center gap-4 mb-1">
-          <Link href="/dashboard" className="text-zinc-500 hover:text-white transition-colors">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </Link>
-          <h1 className="text-white text-xl font-black tracking-tight">Clientes</h1>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard" className="text-zinc-500 hover:text-white transition-colors">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </Link>
+            <h1 className="text-white text-xl font-black tracking-tight">Clientes</h1>
+          </div>
+          <button 
+            onClick={() => {
+              setSelectedClientId(undefined)
+              setIsDrawerOpen(true)
+            }}
+            className="bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all active:scale-[0.98]"
+          >
+            + Novo Cliente
+          </button>
         </div>
         <div className="flex items-center justify-between ml-10">
           <p className="text-zinc-500 text-xs font-medium">Gestão de instituições e parceiros</p>
@@ -65,8 +76,14 @@ export default function ClientesPage() {
       </header>
 
       <div className="px-5 pt-6 space-y-4">
-        {clientes.length > 0 ? (
-          clientes.map((cliente) => (
+        {(() => {
+          const filtered = clientes.filter(c => c.status === 'ativo')
+          if (filtered.length === 0) return (
+            <div className="py-20 text-center">
+              <p className="text-zinc-600 text-sm font-medium italic">Nenhum cliente ativo encontrado</p>
+            </div>
+          )
+          return filtered.map((cliente) => (
             <Link key={cliente.id} href={`/clientes/${cliente.id}`} className="block">
               <div className="bg-zinc-900/60 border border-zinc-800 p-5 rounded-2xl hover:border-zinc-700 transition-all group active:scale-[0.99]">
                 <div className="flex justify-between items-start mb-2 gap-3">
@@ -78,12 +95,8 @@ export default function ClientesPage() {
                       {cliente.tipo_instituicao}
                     </p>
                   </div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border shrink-0 ${
-                    cliente.status === 'ativo' 
-                      ? 'bg-emerald-900/40 text-emerald-400 border-emerald-800/30' 
-                      : 'bg-zinc-800/50 text-zinc-500 border-zinc-700/30'
-                  }`}>
-                    {cliente.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg border shrink-0 bg-emerald-900/40 text-emerald-400 border-emerald-800/30">
+                    Ativo
                   </span>
                 </div>
                 
@@ -120,12 +133,20 @@ export default function ClientesPage() {
               </div>
             </Link>
           ))
-        ) : (
-          <div className="py-20 text-center">
-            <p className="text-zinc-600 text-sm font-medium italic">Nenhum cliente cadastrado</p>
-          </div>
-        )}
+        })()}
       </div>
+
+      <OperationalDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        title={selectedClientId ? 'Editar Cliente' : 'Novo Cliente'}
+      >
+        <ClientManager 
+          id={selectedClientId} 
+          onClose={() => setIsDrawerOpen(false)} 
+          onSuccess={loadData}
+        />
+      </OperationalDrawer>
     </main>
   )
 }

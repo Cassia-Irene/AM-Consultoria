@@ -34,3 +34,9 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover,
 input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
 }
+/* -- GLOBAL INTERACTION STYLES -- */
+button, [role='button'], select, label[for], input[type='button'], input[type='submit'], input[type='checkbox'], input[type='radio'], a { cursor: pointer; }
+
+button:disabled, input:disabled, [role='button'][aria-disabled='true'] { cursor: not-allowed !important; }
+
+a, button { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }

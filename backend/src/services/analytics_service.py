@@ -78,4 +78,8 @@ class AnalyticsService:
     def get_today_agenda(cls, db: Session):
         return cls.execute_query(db, "Q12_today_agenda.sql")
 
+    @classmethod
+    def get_weekly_agenda(cls, db: Session):
+        return cls.execute_query(db, "Q13_weekly_agenda.sql")
+
 

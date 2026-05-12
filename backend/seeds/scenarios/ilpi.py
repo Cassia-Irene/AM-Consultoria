@@ -16,31 +16,34 @@ class ILPIScenario(Scenario):
 
     def generate_structure(self):
         cliente = self.get_or_create_cliente(
-            nome="Lar São Francisco",
-            tipo_instituicao="ILPI",
-            cidade="São Luís",
+            nome="Lar São Francisco de Cuidados para Idosos",
+            tipo_instituicao="ILPI Privada",
+            cidade="São Luís/MA",
             status="ativo",
-            nivel_complexidade="média"
+            nivel_complexidade="alta",
+            observacoes_gerais="A Conceição é extremamente comprometida com cuidado, mas evita conflitos administrativos. A equipe assistencial é emocionalmente sobrecarregada. Quando há incidente com residente, tudo vira prioridade máxima."
         )
 
         # 1. Contatos
-        self.add_contato(cliente, "Irmã Tereza", "Superiora", "Institucional")
-        self.add_contato(cliente, "Dr. Paulo", "Médico Responsável", "Técnico")
+        self.add_contato(cliente, "Conceição Ribeiro", "Diretora / Operacional", "Institucional")
+        self.add_contato(cliente, "Patrícia Ribeiro", "Administrativo Financeiro / Decisora parcial", "Financeiro")
+        self.add_contato(cliente, "Dr. Álvaro Mendes", "Médico parceiro recorrente", "Técnico")
 
         # 2. Contrato
         contrato = self.db.query(Contrato).filter(Contrato.id_cliente == cliente.id_cliente).first()
         if not contrato:
             contrato = Contrato(
                 id_cliente=cliente.id_cliente,
-                servicos_contratados="Suporte Técnico e Gestão de Incidentes",
-                visitas_previstas_mes=2,
-                data_inicio=date(2024, 10, 1)
+                servicos_contratados="Diagnóstico organizacional, revisão de processos assistenciais, acompanhamento mensal",
+                visitas_previstas_mes=6,
+                inclui_relatorio=True,
+                data_inicio=date(2025, 2, 1)
             )
             self.db.add(contrato)
             self.db.flush()
         
         # 3. Pagamento
-        self.add_contrato_pagamento(contrato, "Mensal", 2500.00)
+        self.add_contrato_pagamento(contrato, "Mensal", 8500.00)
 
         return cliente, contrato
 
@@ -49,15 +52,16 @@ class ILPIScenario(Scenario):
         mes_passado = subtrair_meses(hoje_date, 1)
         dois_meses_atras = subtrair_meses(hoje_date, 2)
 
-        # 1. Projeto: Nutrição Automatizada
-        projeto = self.add_projeto(contrato, "Automação Nutricional", valor_total=1600.00)
+        # 1. Projeto: Fluxo de Medicação
+        p_med = self.add_projeto(contrato, "Revisão do fluxo de medicação", valor_total=2500.00)
         self._add_and_commit([
-            Entrega(id_projeto=projeto.id_projeto, descricao="Mapeamento de Dietas", data_entrega_prevista=dois_meses_atras, entregue=True),
-            Entrega(id_projeto=projeto.id_projeto, descricao="Interface de Pesagem", data_entrega_prevista=mes_passado, entregue=True)
+            Entrega(id_projeto=p_med.id_projeto, descricao="Mapeamento de riscos", data_entrega_prevista=mes_passado, entregue=True),
         ])
+        
+        # 2. Projeto: Documentação VISA
+        p_visa = self.add_projeto(contrato, "Organização documental para VISA", valor_total=3000.00)
         self._add_and_commit([
-            ProjetoParcela(id_projeto=projeto.id_projeto, numero_parcela=1, valor_parcela=800.00, data_pagamento_prevista=dois_meses_atras, pago=True, data_pagamento=dois_meses_atras),
-            ProjetoParcela(id_projeto=projeto.id_projeto, numero_parcela=2, valor_parcela=800.00, data_pagamento_prevista=mes_passado, pago=True, data_pagamento=mes_passado)
+            Entrega(id_projeto=p_visa.id_projeto, descricao="Auditoria documental", data_entrega_prevista=hoje_date, entregue=False),
         ])
 
         visitas = []

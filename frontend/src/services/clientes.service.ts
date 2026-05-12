@@ -21,7 +21,23 @@ export const ClientesService = {
       return mapCliente(data)
     } catch (error) {
       console.error(`[SERVICE][ERROR] Falha ao buscar cliente ${id}:`, error)
-      throw error // Não cai mais para mock silencioso
+      throw error
     }
+  },
+
+  async create(data: Partial<Cliente>): Promise<Cliente> {
+    const raw = await fetchApi<ClienteRaw>('/clientes/', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    })
+    return mapCliente(raw)
+  },
+
+  async update(id: string, data: Partial<Cliente>): Promise<Cliente> {
+    const raw = await fetchApi<ClienteRaw>(`/clientes/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    })
+    return mapCliente(raw)
   }
 }

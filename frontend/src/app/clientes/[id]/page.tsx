@@ -4,7 +4,7 @@
 // Página de detalhes do cliente. Atua como um mini-CRM.
 // Consolida contratos, contatos, faturamentos e projetos.
 
-import { use, useState, useEffect } from 'react'
+import { use, useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { ClientesService } from '@/services/clientes.service'
 import { ContratoService } from '@/services/contrato.service'
@@ -13,6 +13,9 @@ import { FaturamentosService } from '@/services/faturamento.service'
 import { ProjetosService } from '@/services/projetos.service'
 import { formatCurrency } from '@/utils/finance'
 import { getStatusFaturamento } from '@/domain/faturamento'
+import { OperationalDrawer } from '@/components/OperationalDrawer'
+import { ClientManager } from '@/components/ClientManager'
+import { ContactManager } from '@/components/ContactManager'
 
 import type { Cliente } from '@/domain/cliente'
 import type { Contrato } from '@/domain/contrato'
@@ -36,64 +39,68 @@ export default function ClienteDetalhePage({ params }: PageProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let isMounted = true
+  const [isClientDrawerOpen, setIsClientDrawerOpen] = useState(false)
+  const [isContactDrawerOpen, setIsContactDrawerOpen] = useState(false)
+  const [selectedContactId, setSelectedContactId] = useState<string | undefined>()
 
-    async function loadData() {
-      try {
-        setLoading(true)
-        
-        // 1. Busca o cliente primeiro para garantir existência
-        const foundCliente = await ClientesService.getById(id)
-        if (!isMounted) return
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true)
+      
+      // 1. Busca o cliente primeiro para garantir existência
+      const foundCliente = await ClientesService.getById(id)
 
-        if (!foundCliente) {
-          setError('Cliente não encontrado')
-          setLoading(false)
-          return
-        }
-
-        setCliente(foundCliente)
-
-        // 2. Busca dados relacionados em paralelo usando os Services (que já mapeiam)
-        const [allContratos, allContatos, allFaturamentos, allProjetos] = await Promise.all([
-          ContratoService.getByClienteId(id),
-          ContatosService.getByClienteId(id),
-          FaturamentosService.getAll(), // Faturamento precisa ser filtrado por contrato
-          ProjetosService.getAll()      // Projetos também por contrato
-        ])
-
-        if (!isMounted) return
-
-        setContratos(allContratos)
-        setContatos(allContatos)
-
-        // Filtro por contrato (lógica de negócio do domínio)
-        const contratoIds = allContratos.map(c => c.id)
-        
-        setFaturamentos(allFaturamentos.filter(f => contratoIds.includes(f.contratoId)))
-        setProjetos(allProjetos.filter(p => contratoIds.includes(p.contratoId)))
-
-      } catch (err) {
-        if (isMounted) {
-          console.error('[ERROR][CLIENTE_DETAIL]', err)
-          setError('Erro ao carregar os dados do cliente.')
-        }
-      } finally {
-        if (isMounted) setLoading(false)
+      if (!foundCliente) {
+        setError('Cliente não encontrado')
+        setLoading(false)
+        return
       }
-    }
 
-    loadData()
-    return () => { isMounted = false }
+      setCliente(foundCliente)
+
+      // 2. Busca dados relacionados em paralelo usando os Services
+      const [allContratos, allContatos, allFaturamentos, allProjetos] = await Promise.all([
+        ContratoService.getByClienteId(id),
+        ContatosService.getByClienteId(id),
+        FaturamentosService.getAll(),
+        ProjetosService.getAll()
+      ])
+
+      setContratos(allContratos)
+      setContatos(allContatos.filter(c => c.status !== 'arquivado')) // Default: Esconder arquivados
+
+      const contratoIds = allContratos.map(c => c.id)
+      setFaturamentos(allFaturamentos.filter(f => contratoIds.includes(f.contratoId)))
+      setProjetos(allProjetos.filter(p => contratoIds.includes(p.contratoId)))
+
+    } catch (err) {
+      console.error('[ERROR][CLIENTE_DETAIL]', err)
+      setError('Erro ao carregar os dados do cliente.')
+    } finally {
+      setLoading(false)
+    }
   }, [id])
+
+  useEffect(() => {
+    let active = true
+    
+    // Defer para evitar aviso de "setState síncrono" em cascata
+    const timeout = setTimeout(() => {
+      if (active) loadData()
+    }, 0)
+
+    return () => { 
+      active = false
+      clearTimeout(timeout)
+    }
+  }, [loadData])
 
   if (loading) return <LoadingSkeleton />
   if (error || !cliente) return <ErrorState message={error || 'Cliente não encontrado'} />
 
   // Cálculos para KPIs
   const contratosAtivos = contratos.filter(c => c.status === 'ativo')
-  const receitaMensal = contratosAtivos.reduce((acc, c) => acc + c.valor_mensal, 0)
+  const receitaMensal = contratosAtivos.reduce((acc, c) => acc + (c.valor_mensal || 0), 0)
   const projetosAtivos = projetos.filter(p => p.status === 'em_andamento')
 
   return (
@@ -109,35 +116,76 @@ export default function ClienteDetalhePage({ params }: PageProps) {
       </div>
 
       <div className="px-5 space-y-6">
-        {/* ── HEADER PRINCIPAL (DADOS INSTITUCIONAIS) ── */}
-        <div className="rounded-2xl bg-zinc-900/60 border border-zinc-800 p-6 shadow-xl shadow-black/20 relative overflow-hidden">
-          {/* Decoração sutil de fundo */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/5 blur-[100px] rounded-full pointer-events-none" />
+        {/* ── HEADER PRINCIPAL (FOCO OPERACIONAL) ── */}
+        <div className="rounded-3xl bg-zinc-900/40 border border-zinc-800/50 p-8 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-sky-500/5 blur-[120px] rounded-full pointer-events-none" />
           
-          <div className="relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-6">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-white text-3xl font-black tracking-tight">{cliente.nome_instituicao}</h1>
+          <div className="relative z-10 flex flex-col lg:flex-row justify-between gap-10">
+            <div className="max-w-2xl">
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <h1 className="text-white text-4xl font-black tracking-tighter">{cliente.nome_instituicao}</h1>
                 <ClienteStatusBadge status={cliente.status} />
               </div>
-              <p className="text-zinc-400 text-sm">{cliente.tipo_instituicao} · {cliente.cidade}</p>
               
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-zinc-500 text-sm font-medium mb-8">
+                <span className="flex items-center gap-2">
+                   <span className="size-1.5 rounded-full bg-zinc-700" />
+                   {cliente.tipo_instituicao}
+                </span>
+                <span className="flex items-center gap-2">
+                   <span className="size-1.5 rounded-full bg-zinc-700" />
+                   {cliente.cidade}
+                </span>
+                {cliente.nivel_complexidade && (
+                  <span className="flex items-center gap-2">
+                    <span className="size-1.5 rounded-full bg-sky-500/50" />
+                    Complexidade {cliente.nivel_complexidade}
+                  </span>
+                )}
+              </div>
+
               {cliente.observacoes_gerais && (
-                <div className="mt-4 bg-zinc-900/40 rounded-lg p-3 border border-zinc-800/50">
-                  <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">Observações Gerais</p>
-                  <p className="text-zinc-300 text-sm italic">{cliente.observacoes_gerais}</p>
+                <div className="bg-black/20 rounded-2xl p-5 border border-white/5 backdrop-blur-sm">
+                  <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Dinâmica Operacional</p>
+                  <p className="text-zinc-300 text-sm leading-relaxed italic">
+                    &quot;{cliente.observacoes_gerais}&quot;
+                  </p>
                 </div>
               )}
             </div>
             
-            {cliente.nivel_complexidade && (
-              <div className="shrink-0 text-right">
-                <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">Complexidade</p>
-                <span className="inline-block px-3 py-1 bg-zinc-800 text-zinc-300 text-xs font-bold rounded-lg border border-zinc-700/50">
-                  {cliente.nivel_complexidade}
-                </span>
-              </div>
-            )}
+            <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0">
+              <button 
+                onClick={() => setIsClientDrawerOpen(true)}
+                className="bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-xl border border-white/10 transition-all active:scale-[0.98]"
+              >
+                Editar Dados
+              </button>
+              <button 
+                onClick={() => {
+                  setSelectedContactId(undefined)
+                  setIsContactDrawerOpen(true)
+                }}
+                className="bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all shadow-lg shadow-sky-900/20 active:scale-[0.98]"
+              >
+                + Adicionar Contato
+              </button>
+              <button 
+                onClick={async () => {
+                  if (confirm('Deseja realmente arquivar esta instituição?')) {
+                    try {
+                      await ClientesService.update(id, { ...cliente, status: 'inativo' })
+                      window.location.href = '/clientes'
+                    } catch {
+                      alert('Erro ao arquivar cliente.')
+                    }
+                  }
+                }}
+                className="bg-red-500/10 hover:bg-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-xl border border-red-500/20 transition-all active:scale-[0.98]"
+              >
+                Arquivar Instituição
+              </button>
+            </div>
           </div>
         </div>
 
@@ -168,7 +216,7 @@ export default function ClienteDetalhePage({ params }: PageProps) {
                       <div className="flex justify-between items-end mt-4">
                         <div>
                           <p className="text-[10px] text-zinc-500 uppercase font-black tracking-widest mb-0.5">Valor Mensal</p>
-                          <p className="text-zinc-200 font-bold">{formatCurrency(c.valor_mensal)}</p>
+                          <p className="text-zinc-200 font-bold">{formatCurrency(c.valor_mensal || 0)}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-[10px] text-zinc-500 uppercase font-black tracking-widest mb-0.5">Visitas/mês</p>
@@ -187,32 +235,78 @@ export default function ClienteDetalhePage({ params }: PageProps) {
           {/* COLUNA 2: Contatos & Projetos */}
           <div className="space-y-6">
             <div>
-              <SectionHeader label="Contatos" />
+              <SectionHeader label="Stakeholders & Contatos" />
               <div className="space-y-3 mt-4">
                 {contatos.length > 0 ? (
-                  contatos.map(contato => (
-                    <div key={contato.id} className="border border-zinc-800 bg-zinc-900/30 rounded-xl p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <p className="text-white font-bold">{contato.nome}</p>
-                          {contato.cargo && <p className="text-zinc-500 text-xs">{contato.cargo}</p>}
+                  contatos.sort((a, b) => (b.isPrincipal ? 1 : 0) - (a.isPrincipal ? 1 : 0)).map(contato => {
+                    // Extrai tags das observações para exibição
+                    const match = (contato.observacoes_gerais || '').match(/^\[(.*?)\]/)
+                    const tags = match ? match[1].split(',').map(t => t.trim()) : []
+                    const cleanObs = (contato.observacoes_gerais || '').replace(/^\[.*?\]\s*/, '')
+
+                    return (
+                      <div 
+                        key={contato.id} 
+                        onClick={() => {
+                           setSelectedContactId(contato.id)
+                           setIsContactDrawerOpen(true)
+                        }}
+                        className={`group border rounded-xl p-4 transition-all cursor-pointer ${
+                          contato.isPrincipal 
+                            ? 'bg-sky-500/5 border-sky-500/30 hover:border-sky-500/50' 
+                            : 'bg-zinc-900/30 border-zinc-800 hover:border-zinc-700'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-center gap-2">
+                            {contato.isPrincipal && (
+                              <span className="text-sky-500" title="Contato Principal">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                </svg>
+                              </span>
+                            )}
+                            <div>
+                              <p className="text-white font-bold text-sm">{contato.nome}</p>
+                              {contato.cargo && <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">{contato.cargo}</p>}
+                            </div>
+                          </div>
+                          <PapelBadge papel={contato.papel} />
                         </div>
-                        <PapelBadge papel={contato.papel} />
-                      </div>
-                      <div className="mt-3 space-y-1">
-                        {contato.telefone_whatsapp && (
-                          <p className="text-zinc-400 text-xs flex items-center gap-2">
-                            <span className="text-emerald-500">WA:</span> {contato.telefone_whatsapp}
+
+                        {tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-3">
+                            {tags.map(tag => (
+                              <span key={tag} className="px-1.5 py-0.5 rounded-md bg-white/5 border border-white/10 text-[9px] font-bold text-zinc-400 uppercase tracking-tighter">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="mt-4 flex flex-wrap gap-4">
+                          {contato.telefone_whatsapp && (
+                            <p className="text-zinc-400 text-xs flex items-center gap-1.5">
+                              <span className="text-emerald-500 text-[10px] font-black uppercase">WA:</span> 
+                              <span className="font-medium">{contato.telefone_whatsapp}</span>
+                            </p>
+                          )}
+                          {contato.email && (
+                            <p className="text-zinc-400 text-xs flex items-center gap-1.5">
+                              <span className="text-sky-500 text-[10px] font-black uppercase">@</span> 
+                              <span className="font-medium truncate max-w-[150px]">{contato.email}</span>
+                            </p>
+                          )}
+                        </div>
+
+                        {cleanObs && (
+                          <p className="mt-3 text-[11px] text-zinc-500 italic leading-relaxed border-t border-white/5 pt-3 line-clamp-1 group-hover:line-clamp-none transition-all">
+                            &quot;{cleanObs}&quot;
                           </p>
                         )}
-                        {contato.email && (
-                          <p className="text-zinc-400 text-xs flex items-center gap-2">
-                            <span className="text-sky-500">@</span> {contato.email}
-                          </p>
-                        )}
                       </div>
-                    </div>
-                  ))
+                    )
+                  })
                 ) : (
                   <EmptyCard message="Nenhum contato vinculado" />
                 )}
@@ -271,6 +365,32 @@ export default function ClienteDetalhePage({ params }: PageProps) {
 
         </div>
       </div>
+
+      {/* ── DRAWERS DE GESTÃO ── */}
+      <OperationalDrawer
+        isOpen={isClientDrawerOpen}
+        onClose={() => setIsClientDrawerOpen(false)}
+        title="Editar Instituição"
+      >
+        <ClientManager 
+          id={id} 
+          onClose={() => setIsClientDrawerOpen(false)} 
+          onSuccess={loadData} 
+        />
+      </OperationalDrawer>
+
+      <OperationalDrawer
+        isOpen={isContactDrawerOpen}
+        onClose={() => setIsContactDrawerOpen(false)}
+        title={selectedContactId ? 'Editar Contato' : 'Novo Contato'}
+      >
+        <ContactManager 
+          id={selectedContactId}
+          clienteId={id}
+          onClose={() => setIsContactDrawerOpen(false)}
+          onSuccess={loadData}
+        />
+      </OperationalDrawer>
     </main>
   )
 }

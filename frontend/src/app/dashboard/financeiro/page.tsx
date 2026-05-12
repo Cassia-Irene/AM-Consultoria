@@ -23,21 +23,49 @@ function SectionHeader({ label }: { label: string }) {
   )
 }
 
-function FinanceCard({ label, value, description, color, isCurrency = true }: { label: string; value: number; description: string; color: 'sky' | 'amber' | 'emerald'; isCurrency?: boolean }) {
+import Link from 'next/link'
+
+function FinanceCard({ 
+  label, 
+  value, 
+  description, 
+  color, 
+  isCurrency = true,
+  href
+}: { 
+  label: string; 
+  value: number; 
+  description: string; 
+  color: 'sky' | 'amber' | 'emerald'; 
+  isCurrency?: boolean;
+  href?: string
+}) {
   const colors = {
-    sky: 'text-sky-400 border-sky-900/20 bg-sky-950/10',
-    amber: 'text-amber-400 border-amber-900/20 bg-amber-950/10',
-    emerald: 'text-emerald-400 border-emerald-900/20 bg-emerald-950/10',
+    sky: 'text-sky-400 border-sky-900/20 bg-sky-950/10 hover:border-sky-500/40',
+    amber: 'text-amber-400 border-amber-900/20 bg-amber-950/10 hover:border-amber-500/40',
+    emerald: 'text-emerald-400 border-emerald-900/20 bg-emerald-950/10 hover:border-emerald-500/40',
   }
-  return (
-    <div className={`rounded-3xl border p-6 ${colors[color]}`}>
-      <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">{label}</p>
+
+  const content = (
+    <div className={`rounded-3xl border p-6 h-full transition-all duration-300 ${colors[color]} ${href ? 'cursor-pointer active:scale-[0.98]' : ''}`}>
+      <div className="flex justify-between items-start mb-1">
+        <p className="text-[10px] font-black uppercase tracking-widest opacity-60">{label}</p>
+        {href && (
+          <span className="text-[10px] font-black uppercase tracking-tighter bg-amber-500/10 px-2 py-0.5 rounded-lg">Agir</span>
+        )}
+      </div>
       <p className="text-3xl font-black tabular-nums tracking-tighter mb-2">
         {isCurrency ? formatCurrency(value) : value}
       </p>
       <p className="text-[10px] text-zinc-500 font-medium leading-relaxed">{description}</p>
     </div>
   )
+
+  if (href) {
+    return <Link href={href} className="block h-full">{content}</Link>
+  }
+
+  return content
 }
 
 export default function FinanceiroPage() {
@@ -98,6 +126,7 @@ export default function FinanceiroPage() {
             description="Clientes com pendências financeiras"
             color="amber"
             isCurrency={false}
+            href="/dashboard/financeiro/inadimplencia?status=vencidas"
           />
           <FinanceCard 
             label="Histórico Total" 

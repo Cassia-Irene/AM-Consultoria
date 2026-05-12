@@ -89,5 +89,10 @@ def get_today_agenda(db: Session = Depends(get_db)):
     """Visitas programadas para o dia de hoje."""
     return AnalyticsService.get_today_agenda(db)
 
+@router.get("/weekly-agenda", response_model=List[TodayVisit])
+def get_weekly_agenda(db: Session = Depends(get_db)):
+    """Visitas programadas para os próximos 7 dias."""
+    return AnalyticsService.get_weekly_agenda(db)
+
 
 

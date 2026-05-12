@@ -16,31 +16,34 @@ class FarmaciaScenario(Scenario):
 
     def generate_structure(self):
         cliente = self.get_or_create_cliente(
-            nome="FarmaVida",
-            tipo_instituicao="Farmácia",
-            cidade="São Luís",
+            nome="FarmaVida Farmácia Comunitária",
+            tipo_instituicao="Farmácia Popular",
+            cidade="Caxias/MA",
             status="ativo",
-            nivel_complexidade="baixa"
+            nivel_complexidade="média",
+            observacoes_gerais="Operação muito baseada na memória do dono. Resistência inicial ao uso de sistema. Grande preocupação com perda financeira por erro operacional."
         )
 
         # 1. Contatos
-        self.add_contato(cliente, "Dr. André", "Farmacêutico RT", "Técnico")
-        self.add_contato(cliente, "Carla Meireles", "Gerente Comercial", "Administrativo")
+        self.add_contato(cliente, "Raimundo Alves", "Proprietário", "Decisor")
+        self.add_contato(cliente, "Luciana Alves", "Financeiro", "Financeiro")
+        self.add_contato(cliente, "Rafael Sousa", "Farmacêutico Responsável", "Técnico")
 
         # 2. Contrato
         contrato = self.db.query(Contrato).filter(Contrato.id_cliente == cliente.id_cliente).first()
         if not contrato:
             contrato = Contrato(
                 id_cliente=cliente.id_cliente,
-                servicos_contratados="Auditoria Regulatória e Farmácia Popular",
+                servicos_contratados="Organização operacional e rastreabilidade",
                 visitas_previstas_mes=2,
-                data_inicio=date(2025, 2, 1)
+                inclui_relatorio=False,
+                data_inicio=date(2024, 9, 1)
             )
             self.db.add(contrato)
             self.db.flush()
         
         # 3. Pagamento
-        self.add_contrato_pagamento(contrato, "Mensal", 1800.00)
+        self.add_contrato_pagamento(contrato, "Por visita", 3800.00)
 
         return cliente, contrato
 
@@ -49,15 +52,16 @@ class FarmaciaScenario(Scenario):
         mes_passado = subtrair_meses(hoje_date, 1)
         dois_meses_atras = subtrair_meses(hoje_date, 2)
 
-        # 1. Projeto: Otimização de Estoque
-        projeto = self.add_projeto(contrato, "Otimização de Curva ABC", valor_total=1000.00)
+        # 1. Projeto: Dispensação
+        p_disp = self.add_projeto(contrato, "Controle de dispensação", valor_total=1500.00)
         self._add_and_commit([
-            Entrega(id_projeto=projeto.id_projeto, descricao="Análise de Giro", data_entrega_prevista=dois_meses_atras, entregue=True),
-            Entrega(id_projeto=projeto.id_projeto, descricao="Implementação de Alertas", data_entrega_prevista=mes_passado, entregue=True)
+            Entrega(id_projeto=p_disp.id_projeto, descricao="Mapeamento de perdas", data_entrega_prevista=mes_passado, entregue=True),
         ])
+        
+        # 2. Projeto: Fluxo Popular
+        p_pop = self.add_projeto(contrato, "Revisão de fluxo Farmácia Popular", valor_total=1800.00)
         self._add_and_commit([
-            ProjetoParcela(id_projeto=projeto.id_projeto, numero_parcela=1, valor_parcela=500.00, data_pagamento_prevista=dois_meses_atras, pago=True, data_pagamento=dois_meses_atras),
-            ProjetoParcela(id_projeto=projeto.id_projeto, numero_parcela=2, valor_parcela=500.00, data_pagamento_prevista=mes_passado, pago=True, data_pagamento=mes_passado)
+            Entrega(id_projeto=p_pop.id_projeto, descricao="Treinamento de balcão", data_entrega_prevista=hoje_date, entregue=False),
         ])
 
         visitas = []

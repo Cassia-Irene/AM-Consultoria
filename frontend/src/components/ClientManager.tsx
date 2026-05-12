@@ -98,8 +98,8 @@ export function ClientManager({ id, onClose, onSuccess }: ClientManagerProps) {
 
       <div>
         <label className={labelClass}>Nível de Complexidade Operacional</label>
-        <div className="grid grid-cols-4 gap-2">
-          {['baixo', 'medio', 'alto', 'critico'].map(nivel => (
+        <div className="grid grid-cols-3 gap-2">
+          {['baixa', 'média', 'alta'].map(nivel => (
             <button
               key={nivel}
               type="button"

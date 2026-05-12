@@ -17,30 +17,32 @@ class CrecheScenario(Scenario):
     def generate_structure(self):
         cliente = self.get_or_create_cliente(
             nome="Creche Sonho de Criança",
-            tipo_instituicao="Escola",
-            cidade="São Luís",
+            tipo_instituicao="Creche Comunitária Conveniada",
+            cidade="São Luís/MA",
             status="ativo",
-            nivel_complexidade="baixa"
+            nivel_complexidade="média",
+            observacoes_gerais="Equipe afetiva e pouco organizada documentalmente. Grande medo de auditoria da prefeitura."
         )
 
         # 1. Contatos
-        self.add_contato(cliente, "Tia Jô", "Diretora Pedagógica", "Institucional")
-        self.add_contato(cliente, "Marcão", "Zelador Chefe", "Operacional")
+        self.add_contato(cliente, "Rosângela Teixeira", "Diretora", "Decisor")
+        self.add_contato(cliente, "Ana Paula Ferreira", "Secretaria", "Operacional")
 
         # 2. Contrato
         contrato = self.db.query(Contrato).filter(Contrato.id_cliente == cliente.id_cliente).first()
         if not contrato:
             contrato = Contrato(
                 id_cliente=cliente.id_cliente,
-                servicos_contratados="Conformidade e Processos",
-                visitas_previstas_mes=2,
-                data_inicio=date(2025, 4, 1)
+                servicos_contratados="Organização administrativa e prestação de contas",
+                visitas_previstas_mes=3,
+                inclui_relatorio=True,
+                data_inicio=date(2024, 6, 1)
             )
             self.db.add(contrato)
             self.db.flush()
         
         # 3. Pagamento
-        self.add_contrato_pagamento(contrato, "Mensal", 1500.00)
+        self.add_contrato_pagamento(contrato, "Mensal", 4500.00)
 
         return cliente, contrato
 
@@ -48,14 +50,19 @@ class CrecheScenario(Scenario):
         hoje_date = get_hoje_date()
         mes_passado = subtrair_meses(hoje_date, 1)
 
-        # 1. Projeto: Portal dos Pais
-        projeto = self.add_projeto(contrato, "Portal de Comunicação", valor_total=1000.00)
+        # 1. Projeto: Frequência Escolar
+        p_freq = self.add_projeto(contrato, "Revisão de frequência escolar", valor_total=1000.00)
         self._add_and_commit([
-            Entrega(id_projeto=projeto.id_projeto, descricao="Design de Interface", data_entrega_prevista=mes_passado, entregue=True),
-            Entrega(id_projeto=projeto.id_projeto, descricao="Lançamento Beta", data_entrega_prevista=hoje_date, entregue=False)
+            Entrega(id_projeto=p_freq.id_projeto, descricao="Mapeamento de faltas", data_entrega_prevista=mes_passado, entregue=True),
+        ])
+        
+        # 2. Projeto: Documentação Convênio
+        p_conv = self.add_projeto(contrato, "Organização documental de convênio", valor_total=2000.00)
+        self._add_and_commit([
+            Entrega(id_projeto=p_conv.id_projeto, descricao="Dossiê para prefeitura", data_entrega_prevista=hoje_date, entregue=False),
         ])
         self._add_and_commit([
-            ProjetoParcela(id_projeto=projeto.id_projeto, numero_parcela=1, valor_parcela=1000.00, data_pagamento_prevista=mes_passado, pago=True, data_pagamento=mes_passado)
+            ProjetoParcela(id_projeto=p_conv.id_projeto, numero_parcela=1, valor_parcela=1000.00, data_pagamento_prevista=mes_passado, pago=True, data_pagamento=mes_passado)
         ])
 
         visitas = []

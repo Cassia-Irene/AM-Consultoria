@@ -16,55 +16,36 @@ class HomeCareScenario(Scenario):
 
     def generate_structure(self):
         cliente = self.get_or_create_cliente(
-            nome="CuidaBem Home Care",
+            nome="CuidaBem Serviços Domiciliares",
             tipo_instituicao="Home Care",
-            cidade="São Luís",
+            cidade="São Luís/MA",
             status="ativo",
-            nivel_complexidade="alta"
+            nivel_complexidade="alta",
+            observacoes_gerais="Cliente extremamente acelerado. Tudo acontece via WhatsApp. Marcela toma decisão emocional sob pressão. Mudanças de escala acontecem o tempo todo."
         )
 
         # 1. Contatos
-        contato_gestor = self.add_contato(cliente, "Dra. Márcia Silva", "Diretora Operacional", "Gestão de Escalas")
-        self.add_contato(cliente, "Roberto Santos", "Coordenador de Enfermagem", "Ponto Focal")
+        self.add_contato(cliente, "Marcela Viana", "Fundadora", "Decisor")
+        self.add_contato(cliente, "Felipe Braga", "Coordenação Operacional", "Operacional")
+        self.add_contato(cliente, "Amanda Sousa", "Financeiro", "Financeiro")
 
-        # 2. Contrato com Histórico
-        contrato_antigo = self.db.query(Contrato).filter(
-            Contrato.id_cliente == cliente.id_cliente,
-            Contrato.data_fim != None
-        ).first()
-
-        if not contrato_antigo:
-            contrato_antigo = Contrato(
-                id_cliente=cliente.id_cliente,
-                servicos_contratados="Consultoria Inicial em Escalas",
-                visitas_previstas_mes=2,
-                data_inicio=date(2024, 1, 1),
-                data_fim=date(2024, 12, 31)
-            )
-            self.db.add(contrato_antigo)
-            self.db.flush()
-
-        contrato = self.db.query(Contrato).filter(
-            Contrato.id_cliente == cliente.id_cliente,
-            Contrato.data_fim == None
-        ).first()
-
+        # 2. Contrato
+        contrato = self.db.query(Contrato).filter(Contrato.id_cliente == cliente.id_cliente).first()
         if not contrato:
             contrato = Contrato(
                 id_cliente=cliente.id_cliente,
-                servicos_contratados="Gestão Operacional de Escalas + Auditoria de Plantão",
-                visitas_previstas_mes=4,
+                servicos_contratados="Estruturação operacional e escala",
+                visitas_previstas_mes=8,
+                inclui_relatorio=False,
                 data_inicio=date(2025, 1, 1)
             )
             self.db.add(contrato)
             self.db.flush()
-            
-            # Registrar Histórico de Renovação
-            self.registrar_historico(contrato_antigo.id_contrato, contrato.id_contrato, "Renovação Anual com ampliação de escopo", date(2025, 1, 1))
+        
+        # 3. Pagamento
+        self.add_contrato_pagamento(contrato, "Mensal + Projetos paralelos", 12000.00)
 
-        # 3. Pagamentos do Contrato
-        self.add_contrato_pagamento(contrato, "Mensal", 4500.00)
-        self.add_contrato_pagamento(contrato, "Por Visita", 500.00) # Valor para visitas extras
+        return cliente, contrato
 
         return cliente, contrato
 
@@ -73,22 +54,17 @@ class HomeCareScenario(Scenario):
         mes_passado = subtrair_meses(hoje_date, 1)
         dois_meses_atras = subtrair_meses(hoje_date, 2)
 
-        # 1. Projetos e Entregas
-        projeto = self.add_projeto(contrato, "Digitalização de Escalas 2026", valor_total=3000.00)
+        # 1. Projeto: Controle de Cuidadores
+        p_ctrl = self.add_projeto(contrato, "Estruturação de controle de cuidadores", valor_total=3000.00)
+        self._add_and_commit([
+            Entrega(id_projeto=p_ctrl.id_projeto, descricao="Planilha de controle ativa", data_entrega_prevista=mes_passado, entregue=True),
+        ])
         
-        entregas = [
-            Entrega(id_projeto=projeto.id_projeto, descricao="Mapeamento de Processos", data_entrega_prevista=subtrair_meses(hoje_date, 1), entregue=True),
-            Entrega(id_projeto=projeto.id_projeto, descricao="Treinamento da Equipe", data_entrega_prevista=hoje_date, entregue=False),
-            # Entrega Atrasada em modo stress
-            Entrega(id_projeto=projeto.id_projeto, descricao="Configuração de Software", data_entrega_prevista=subtrair_meses(hoje_date, 1), entregue=False) if mode == "stress" else None
-        ]
-        self._add_and_commit([e for e in entregas if e])
-
-        parcelas = [
-            ProjetoParcela(id_projeto=projeto.id_projeto, numero_parcela=1, valor_parcela=1500.00, data_pagamento_prevista=subtrair_meses(hoje_date, 1), pago=True, data_pagamento=subtrair_meses(hoje_date, 1)),
-            ProjetoParcela(id_projeto=projeto.id_projeto, numero_parcela=2, valor_parcela=1500.00, data_pagamento_prevista=hoje_date, pago=False)
-        ]
-        self._add_and_commit(parcelas)
+        # 2. Projeto: Redesenho de Escala
+        p_esc = self.add_projeto(contrato, "Redesenho da escala de plantão", valor_total=2000.00)
+        self._add_and_commit([
+            Entrega(id_projeto=p_esc.id_projeto, descricao="Nova grade horária", data_entrega_prevista=hoje_date, entregue=False),
+        ])
 
         visitas = []
         pendencias = []

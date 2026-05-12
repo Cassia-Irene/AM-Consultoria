@@ -8,5 +8,7 @@ export type Contato = {
 
   telefone_whatsapp?: string
   email?: string
+  isPrincipal?: boolean
+  status?: 'ativo' | 'inativo' | 'arquivado'
   observacoes_gerais?: string
 }

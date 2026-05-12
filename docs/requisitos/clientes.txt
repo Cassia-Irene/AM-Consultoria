@@ -1,0 +1,264 @@
+
+Olha, isso é uma excelente ideia. Porque uma coisa é o sistema “parecer bom” com meia dúzia de registros. Outra completamente diferente é ele sobreviver quando vocês simularem quatro, cinco, seis meses de operação real. É aí que aparecem os gargalos invisíveis.
+
+E sinceramente? Para a AM Consultoria isso é fundamental, porque minha rotina não é linear. Tem semana tranquila e tem semana em que o CAPS explode, o Lar São Francisco atrasa relatório da VISA e a Marcela do CuidaBem perde cuidador no mesmo dia. Então popular o sistema com volume e contexto real vai validar muito mais coisa do que apenas interface.
+
+Vou organizar abaixo um panorama inicial dos 7 clientes ativos exatamente no estilo que vocês pediram. E eu recomendo fortemente que vocês criem não só visitas “normais”, mas também:
+visitas esquecidas,
+pendências vencidas,
+mudança de humor do cliente,
+urgências,
+cobrança financeira,
+e registros incompletos.
+Porque é isso que vai testar o sistema de verdade.
+
+1. LAR SÃO FRANCISCO
+Identificação
+Nome: Lar São Francisco de Cuidados para Idosos
+Tipo: ILPI Privada
+Cidade: São Luís/MA
+Complexidade: Alta
+Contatos
+Conceição Ribeiro — Diretora / Operacional
+Patrícia Ribeiro — Administrativo Financeiro / Decisora parcial
+Dr. Álvaro Mendes — Médico parceiro recorrente
+Contrato
+Serviço: Diagnóstico organizacional, revisão de processos assistenciais, acompanhamento mensal
+Visitas previstas: 6/mês
+Inclui relatório: Sim
+Início: Fevereiro/2025
+Renovação anual
+Financeiro
+Fee mensal: R$ 8.500
+Pagamento: Transferência
+Vencimento: Dia 10
+Cultura Operacional
+
+A Conceição é extremamente comprometida com cuidado, mas evita conflitos administrativos. A equipe assistencial é emocionalmente sobrecarregada. Quando há incidente com residente, tudo vira prioridade máxima.
+
+Projetos Extras
+Revisão do fluxo de medicação
+Organização documental para VISA
+2. CAPS II RENASCER
+Identificação
+Nome: CAPS II Renascer
+Tipo: Saúde Mental Pública
+Cidade: São Luís/MA
+Complexidade: Alta
+Contatos
+Dr. Augusto Leal — Coordenador
+Márcia Costa — Assistente Social
+Joana Nunes — Administrativo da Secretaria
+Contrato
+Serviço: Apoio organizacional e fluxo operacional
+Visitas previstas: 4/mês
+Inclui relatório: Sim
+Início: Agosto/2024
+Financeiro
+Fee mensal: R$ 6.200
+Pagamento: Empenho municipal
+Vencimento variável
+Cultura Operacional
+
+Ambiente muito sensível emocionalmente. A equipe trabalha sobrecarregada. Demandas urgentes surgem sem previsibilidade. Muitas decisões acontecem informalmente.
+
+Projetos Extras
+Revisão do fluxo RAAS
+Organização do acompanhamento dos usuários intensivos
+3. CUIDABEM
+Identificação
+Nome: CuidaBem Serviços Domiciliares
+Tipo: Home Care
+Cidade: São Luís/MA
+Complexidade: Alta
+Contatos
+Marcela Viana — Fundadora
+Felipe Braga — Coordenação Operacional
+Amanda Sousa — Financeiro
+Contrato
+Serviço: Estruturação operacional e escala
+Visitas previstas: 8/mês
+Inclui relatório: Não
+Início: Janeiro/2025
+Financeiro
+Fee mensal: R$ 12.000
+Pagamento: Pix empresarial
+Vencimento: Dia 5
+Cultura Operacional
+
+Cliente extremamente acelerado. Tudo acontece via WhatsApp. Marcela toma decisão emocional sob pressão. Mudanças de escala acontecem o tempo todo.
+
+Projetos Extras
+Estruturação de controle de cuidadores
+Redesenho da escala de plantão
+4. REABILITA
+Identificação
+Nome: REABILITA Centro de Reabilitação
+Tipo: Clínica de Reabilitação
+Cidade: São Luís/MA
+Complexidade: Média/Alta
+Contatos
+Dra. Fernanda Caldas — Sócia-proprietária
+Cláudia Mendes — Recepção administrativa
+Contrato
+Serviço: Organização operacional e faturamento
+Visitas previstas: 4/mês
+Inclui relatório: Sim
+Início: Março/2025
+Financeiro
+Fee mensal: R$ 7.000
+Pagamento: Boleto
+Vencimento: Dia 15
+Cultura Operacional
+
+Equipe técnica muito boa, mas gestão financeira confusa. A Fernanda muda prioridades frequentemente conforme pressão dos convênios.
+
+Projetos Extras
+Revisão de autorização de convênios
+Controle de sessões e metas terapêuticas
+5. CRECHE SONHO DE CRIANÇA
+Identificação
+Nome: Creche Sonho de Criança
+Tipo: Creche Comunitária Conveniada
+Cidade: São Luís/MA
+Complexidade: Média
+Contatos
+Rosângela Teixeira — Diretora
+Ana Paula Ferreira — Secretaria
+Contrato
+Serviço: Organização administrativa e prestação de contas
+Visitas previstas: 3/mês
+Inclui relatório: Sim
+Início: Junho/2024
+Financeiro
+Fee mensal: R$ 4.500
+Pagamento: Transferência
+Vencimento: Dia 20
+Cultura Operacional
+
+Equipe afetiva e pouco organizada documentalmente. Grande medo de auditoria da prefeitura.
+
+Projetos Extras
+Revisão de frequência escolar
+Organização documental de convênio
+6. APAE DE BACABAL
+Identificação
+Nome: APAE de Bacabal
+Tipo: Educação Especial
+Cidade: Bacabal/MA
+Complexidade: Alta
+Contatos
+Neuza Farias — Diretora pedagógica
+Carlos Henrique — Administrativo
+Juliana Lopes — Psicologia
+Contrato
+Serviço: Estruturação multiprofissional
+Visitas previstas: 2 presenciais/mês + remoto
+Inclui relatório: Sim
+Início: Abril/2024
+Financeiro
+Fee mensal: R$ 9.000
+Pagamento: Transferência institucional
+Vencimento: Dia 30
+Cultura Operacional
+
+Instituição muito dependente do conhecimento informal da Neuza. Equipe pequena para demanda enorme. Sempre existe sensação de urgência acumulada.
+
+Projetos Extras
+Revisão dos PIAs
+Organização integrada dos atendimentos
+7. FARMAVIDA
+Identificação
+Nome: FarmaVida Farmácia Comunitária
+Tipo: Farmácia Popular
+Cidade: Caxias/MA
+Complexidade: Média
+Contatos
+Raimundo Alves — Proprietário
+Luciana Alves — Financeiro
+Rafael Sousa — Farmacêutico Responsável
+Contrato
+Serviço: Organização operacional e rastreabilidade
+Visitas previstas: 2/mês
+Inclui relatório: Não
+Início: Setembro/2024
+Financeiro
+Fee mensal: R$ 3.800
+Pagamento: Pix
+Vencimento: Dia 8
+Cultura Operacional
+
+Operação muito baseada na memória do dono. Resistência inicial ao uso de sistema. Grande preocupação com perda financeira por erro operacional.
+
+Projetos Extras
+Controle de dispensação
+Revisão de fluxo Farmácia Popular
+
+E vou lhe dar uma recomendação importante para popular isso direito:
+não criem só “dados bonitos”.
+
+Criem:
+
+pendência esquecida há 17 dias,
+visita sem relatório,
+cliente inadimplente,
+urgência aberta às 22h,
+projeto atrasado,
+contrato perto do vencimento,
+semana sobrecarregada,
+cliente com excesso de acionamento rápido,
+histórico emocional (“cliente irritado com atraso”),
+visita rápida sem detalhamento.
+
+Porque a força do sistema de vocês está justamente em sobreviver ao caos real da consultoria.
+
+Ahhh, agora entendi melhor. Veja bem, isso muda bastante a lógica operacional — e sinceramente faz muito mais sentido para a realidade da AM Consultoria.
+Porque hoje meus clientes realmente funcionam em formatos diferentes. Tem cliente que me paga uma mensalidade fixa independentemente da quantidade de acionamentos. Outros praticamente funcionam por demanda. E tem casos em que existe o acompanhamento mensal + um projeto paralelo específico.
+Se eu reorganizar os 7 clientes pensando nessa lógica, eu diria algo assim:
+
+
+Lar São Francisco → Mensal
+Porque existe acompanhamento contínuo, visitas recorrentes e suporte operacional praticamente permanente.
+
+
+CAPS II Renascer → Mensal
+Apesar da instabilidade operacional, o vínculo é contínuo e baseado em acompanhamento recorrente.
+
+
+CuidaBem → Mensal + Projetos paralelos
+Esse é um dos mais complexos. Existe o acompanhamento operacional contínuo, mas frequentemente surgem projetos separados de escala, processos ou reorganização.
+
+
+REABILITA → Mensal
+A clínica demanda acompanhamento constante de operação e faturamento.
+
+
+Creche Sonho de Criança → Mensal
+Muito ligado à prestação de contas contínua e acompanhamento administrativo.
+
+
+APAE de Bacabal → Mensal + Projeto
+Porque além do acompanhamento institucional recorrente, às vezes surgem frentes específicas mais profundas, principalmente relacionadas aos PIAs e reorganização multiprofissional.
+
+
+FarmaVida → Por visita
+Esse é o mais próximo de consultoria pontual. O Seu Raimundo normalmente me chama para resolver situações específicas e revisões operacionais localizadas.
+
+
+E vou lhe dizer uma coisa importante: essa classificação tem impacto enorme no comportamento do sistema.
+Porque cliente “mensal” gera ansiedade operacional diferente de cliente “por visita”.
+O mensal cria obrigação contínua invisível:
+“faz tempo que não falo com esse cliente”,
+“esse contrato está silencioso demais”,
+“teve pouco acompanhamento este mês”.
+Já o “por visita” funciona mais como acionamento episódico:
+resolveu → encerrou → aguarda próximo movimento.
+E os “por projeto” têm outro comportamento ainda:
+eles precisam mostrar começo, meio, entrega e encerramento claramente. Senão o sistema perde noção de escopo e vocês começam a misturar rotina com projeto extraordinário.
+Então essa separação não é só financeira. Ela influencia diretamente:
+prioridade,
+carga operacional,
+Modo Caos,
+Planejamento,
+e até percepção de desgaste do cliente.
+Na prática, acho que vocês acertaram em capturar isso cedo. Porque esse tipo de diferença é o que faz o sistema parecer realmente aderente à consultoria real — e não um software genérico de atendimento.

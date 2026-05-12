@@ -26,6 +26,13 @@ def criar_contato(contato: ContatoCreate, db: Session = Depends(get_db)):
     novo_contato = Contato(**contato.model_dump())
     
     try:
+        # Se for principal, desmarca os outros
+        if novo_contato.is_principal:
+            db.query(Contato).filter(
+                Contato.id_cliente == novo_contato.id_cliente,
+                Contato.is_principal == True
+            ).update({"is_principal": False})
+
         db.add(novo_contato)
         db.commit()
         db.refresh(novo_contato)
@@ -52,6 +59,14 @@ def atualizar_contato(
         raise HTTPException(status_code=404, detail="Contato não encontrado")
 
     update_data = contato_update.model_dump(exclude_unset=True)
+
+    # Se estiver tornando este principal, desmarca os outros do mesmo cliente
+    if update_data.get("is_principal") is True:
+        db.query(Contato).filter(
+            Contato.id_cliente == db_contato.id_cliente,
+            Contato.id_contato != id_contato,
+            Contato.is_principal == True
+        ).update({"is_principal": False})
 
     for key, value in update_data.items():
         setattr(db_contato, key, value)

@@ -1,10 +1,10 @@
 export const Contratos = [
   {
-    id: '1',
-    clienteId: '1',
-    servicos_contratados: 'Gestão Operacional Home Care',
-    visitas_previstas_mes: 4,
-    valor_mensal: 4500,
+    id: '46',
+    clienteId: '46',
+    servicos_contratados: 'Estruturação operacional e escala',
+    visitas_previstas_mes: 8,
+    valor_mensal: 12000,
     status: 'ativo',
     data_inicio: '2025-01-01'
   },

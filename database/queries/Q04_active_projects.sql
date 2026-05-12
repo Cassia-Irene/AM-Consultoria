@@ -5,6 +5,7 @@
 */
 
 SELECT 
+    p.id_projeto as id,
     c.nome AS cliente,
     p.titulo AS projeto,
     p.status,

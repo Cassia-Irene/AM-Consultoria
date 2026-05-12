@@ -17,7 +17,32 @@ export const ContatosService = {
   },
 
   async getByClienteId(clienteId: string): Promise<Contato[]> {
-    const all = await this.getAll()
-    return all.filter(c => c.clienteId === clienteId)
+    if (USE_MOCKS) {
+       const all = await this.getAll()
+       return all.filter(c => c.clienteId === clienteId)
+    }
+    try {
+      const data = await fetchApi<ContatoRaw[]>('/contatos/') // Idealmente teríamos /clientes/{id}/contatos
+      return data.filter(r => String(r.id_cliente) === clienteId).map(mapContato)
+    } catch (error) {
+      console.error(`[SERVICE][ERROR] Falha ao buscar contatos do cliente ${clienteId}:`, error)
+      return []
+    }
+  },
+
+  async create(data: Partial<ContatoRaw>): Promise<Contato> {
+    const raw = await fetchApi<ContatoRaw>('/contatos/', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    })
+    return mapContato(raw)
+  },
+
+  async update(id: string, data: Partial<ContatoRaw>): Promise<Contato> {
+    const raw = await fetchApi<ContatoRaw>(`/contatos/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    })
+    return mapContato(raw)
   }
 }

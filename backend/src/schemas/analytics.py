@@ -41,6 +41,7 @@ class CaosScore(BaseAnalyticsSchema):
     caos_score: int
 
 class OpenPendency(BaseAnalyticsSchema):
+    id: int
     cliente: str
     descricao: str
     responsavel: str
@@ -49,6 +50,7 @@ class OpenPendency(BaseAnalyticsSchema):
     status_prazo: str
 
 class ActiveProject(BaseAnalyticsSchema):
+    id: int
     cliente: str
     projeto: str
     status: str

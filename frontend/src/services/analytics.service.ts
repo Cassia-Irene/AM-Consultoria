@@ -34,6 +34,7 @@ export interface TimelineEvent {
 }
 
 export interface OpenPendency {
+  id: string | number
   cliente: string
   descricao: string
   responsavel: string
@@ -112,6 +113,10 @@ export const AnalyticsService = {
 
   async getTodayAgenda(): Promise<TodayVisit[]> {
     return fetchApi<TodayVisit[]>('/analytics/today-agenda', {}, [])
+  },
+
+  async getWeeklyAgenda(): Promise<TodayVisit[]> {
+    return fetchApi<TodayVisit[]>('/analytics/weekly-agenda', {}, [])
   },
 
 

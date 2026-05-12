@@ -12,5 +12,7 @@ export interface ContatoRaw {
 
   telefone_whatsapp: string | null
   email: string | null
+  is_principal?: boolean
+  status?: string
   observacoes_gerais: string | null
 }

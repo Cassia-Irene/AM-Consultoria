@@ -1,8 +1,8 @@
 export const Visitas = [
   {
     id_visita: 1,
-    id_cliente: 1,
-    id_contrato: 1,
+    id_cliente: 46,
+    id_contrato: 46,
     id_projeto: null,
     status: 'realizada',
     data_hora: '2026-05-06T22:30:00', // Noturna
@@ -15,8 +15,8 @@ export const Visitas = [
   },
   {
     id_visita: 2,
-    id_cliente: 1,
-    id_contrato: 1,
+    id_cliente: 46,
+    id_contrato: 46,
     id_projeto: null,
     status: 'realizada',
     data_hora: '2026-05-04T15:30:00',
@@ -29,8 +29,8 @@ export const Visitas = [
   },
   {
     id_visita: 3,
-    id_cliente: 1,
-    id_contrato: 1,
+    id_cliente: 46,
+    id_contrato: 46,
     id_projeto: null,
     status: 'realizada',
     data_hora: '2026-05-03T10:00:00', // Domingo
@@ -43,8 +43,8 @@ export const Visitas = [
   },
   {
     id_visita: 4,
-    id_cliente: 1,
-    id_contrato: 1,
+    id_cliente: 46,
+    id_contrato: 46,
     id_projeto: null,
     status: 'agendada',
     data_hora: '2026-05-07T14:00:00',
@@ -56,8 +56,8 @@ export const Visitas = [
   },
   {
     id_visita: 5,
-    id_cliente: 2,
-    id_contrato: 2,
+    id_cliente: 48,
+    id_contrato: 48,
     id_projeto: 1,
     status: 'realizada',
     data_hora: '2026-04-27T08:00:00',
@@ -69,8 +69,8 @@ export const Visitas = [
   },
   {
     id_visita: 6,
-    id_cliente: 3,
-    id_contrato: 3,
+    id_cliente: 45,
+    id_contrato: 45,
     id_projeto: null,
     status: 'realizada',
     data_hora: '2026-05-05T10:00:00',
@@ -82,8 +82,8 @@ export const Visitas = [
   },
   {
     id_visita: 7,
-    id_cliente: 4,
-    id_contrato: 4,
+    id_cliente: 43,
+    id_contrato: 43,
     id_projeto: null,
     status: 'realizada',
     data_hora: '2026-05-02T14:00:00',
@@ -96,8 +96,8 @@ export const Visitas = [
   },
   {
     id_visita: 8,
-    id_cliente: 4,
-    id_contrato: 4,
+    id_cliente: 43,
+    id_contrato: 43,
     id_projeto: null,
     status: 'realizada',
     data_hora: '2026-04-25T09:00:00',

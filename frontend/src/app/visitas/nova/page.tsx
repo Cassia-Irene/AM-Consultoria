@@ -8,7 +8,6 @@
 //   3. Confirmação
 
 import { useState, useEffect, FormEvent } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ClientesService } from '@/services/clientes.service'
 import { ContratoService } from '@/services/contrato.service'
@@ -653,7 +652,7 @@ export default function NovaVisitaPage() {
 
       setSaving(false)
       setSaved(true)
-      setTimeout(() => router.push('/dashboard'), 1400)
+      // Redirecionamento automático removido para dar controle ao usuário na tela de sucesso.
     } catch (error: unknown) {
       console.error('[ERROR][API] Erro ao submeter visita:', error)
       setSaving(false)
@@ -691,25 +690,62 @@ export default function NovaVisitaPage() {
         {total > 0 && (
           <div className="mt-5 bg-[#0d1117] border border-[#23272F] rounded-2xl px-5 py-4 text-left w-full max-w-sm">
             <p className="text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
-              Gerado agora
+              Pendências Identificadas
             </p>
             <div className="space-y-1">
               {urgentes > 0 && (
                 <p className="text-red-400 text-sm font-semibold">
-                  {urgentes} pendência{urgentes > 1 ? 's' : ''} urgente{urgentes > 1 ? 's' : ''} → Modo Caos
+                  {urgentes} pendência{urgentes > 1 ? 's' : ''} com alta prioridade
                 </p>
               )}
               {total - urgentes > 0 && (
                 <p className="text-[#979DAC] text-sm">
-                  {total - urgentes} pendência{total - urgentes > 1 ? 's' : ''} → Planejamento
+                  {total - urgentes} pendência{total - urgentes > 1 ? 's' : ''} para acompanhamento
                 </p>
               )}
             </div>
           </div>
         )}
 
+        <div className="mt-10 w-full max-w-sm space-y-3">
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="w-full bg-[#0466C8] text-white font-bold py-4 rounded-xl transition-all active:scale-[0.98]"
+          >
+            Voltar ao Início
+          </button>
+          
+          <button
+            onClick={() => router.push(`/clientes/${form.clienteId}`)}
+            className="w-full bg-[#0d1117] border border-[#23272F] text-[#7D8597] font-bold py-4 rounded-xl transition-all active:scale-[0.98]"
+          >
+            Ver Timeline do Cliente
+          </button>
 
-        <p className="text-[#7D8597] text-xs mt-5">Voltando ao painel...</p>
+          <button
+            onClick={() => {
+              setSaved(false)
+              setEtapa(1)
+              setForm({
+                clienteId: '',
+                contratoId: '',
+                projetoId: '',
+                status: 'realizada',
+                tipo_visita: 'rotineira',
+                modalidade: 'presencial',
+                duracao_minutos: 60,
+                data_hora: new Date().toISOString().slice(0, 16),
+                descricao: '',
+                resultados: '',
+                pendencias: [],
+              })
+              setSugestoes([])
+            }}
+            className="w-full text-[#4A5568] text-xs font-bold uppercase tracking-widest py-4"
+          >
+            Registrar outra visita
+          </button>
+        </div>
       </main>
     )
   }
@@ -738,23 +774,7 @@ export default function NovaVisitaPage() {
         
       </div>
 
-      {/* Toggle de Modo: Detalhado vs Rápido */}
-      <div className="px-4 mt-6 mb-6">
-        <div className="bg-[#0d1117] border border-[#23272F] p-1 rounded-2xl flex gap-1">
-          <button 
-            disabled
-            className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#0466C8] text-white shadow-lg"
-          >
-            Visita Detalhada
-          </button>
-          <Link 
-            href="/visitas/rapida"
-            className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#7D8597] hover:text-white text-center flex items-center justify-center gap-2"
-          >
-            <span>⚡</span> Relato Rápido
-          </Link>
-        </div>
-      </div>
+      {/* Toggle removido conforme nova orientação de fluxo separado */}
       
       {errorSubmit && (
         <div className="mx-4 mt-4 bg-red-950/40 border border-red-700/50 rounded-xl px-4 py-3 text-red-400 text-sm">

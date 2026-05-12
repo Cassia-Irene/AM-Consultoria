@@ -4,19 +4,33 @@
 // Listagem de projetos vinculados a contratos.
 // Padrão visual Dark/Glass alinhado ao Dashboard.
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ProjetosService } from '@/services/projetos.service'
 import Link from 'next/link'
 import type { Projeto, StatusProjeto } from '@/domain/projeto'
+import { OperationalTabs, type TabOption } from '@/components/OperationalTabs'
 
-export default function ProjetosPage() {
+type FiltroProjeto = 'todos' | StatusProjeto
+
+function ProjetosList() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [projetos, setProjetos] = useState<Projeto[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const filtro = (searchParams.get('status') as FiltroProjeto) || 'todos'
+
+  const setFiltro = (newStatus: FiltroProjeto) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (newStatus === 'todos') params.delete('status')
+    else params.set('status', newStatus)
+    router.replace(`/projetos?${params.toString()}`)
+  }
+
   useEffect(() => {
     let isMounted = true
-
     async function loadData() {
       try {
         const data = await ProjetosService.getAll()
@@ -30,37 +44,48 @@ export default function ProjetosPage() {
         if (isMounted) setLoading(false)
       }
     }
-
     loadData()
     return () => { isMounted = false }
   }, [])
+
+  const filteredItems = useMemo(() => {
+    if (filtro === 'todos') return projetos
+    return projetos.filter(p => p.status === filtro)
+  }, [projetos, filtro])
+
+  const tabOptions: TabOption<FiltroProjeto>[] = [
+    { value: 'todos', label: 'Todos', count: projetos.length },
+    { value: 'em_andamento', label: 'Em Andamento', count: projetos.filter(p => p.status === 'em_andamento').length },
+    { value: 'planejado', label: 'Planejados', count: projetos.filter(p => p.status === 'planejado').length },
+    { value: 'concluido', label: 'Concluídos', count: projetos.filter(p => p.status === 'concluido').length },
+  ]
 
   if (loading) return <LoadingSkeleton />
   if (error) return <ErrorBanner message={error} />
 
   return (
     <main className="min-h-screen bg-[#07090D] text-zinc-300 pb-32">
-      {/* ── HEADER ── */}
-      <header className="px-5 pt-12 pb-8">
+      <header className="px-5 pt-12 pb-4">
         <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-2">
           AM Consultoria
         </p>
         <h1 className="text-white text-3xl font-black tracking-tight">Projetos</h1>
         <p className="text-zinc-500 text-sm mt-1">Entregas e iniciativas vinculadas a contratos</p>
-
-        <div className="mt-6 flex items-center justify-center gap-3">
-          <StatPill label="Total" value={projetos.length} />
-          <StatPill label="Em andamento" value={projetos.filter(p => p.status === 'em_andamento').length} color="sky" />
-          <StatPill label="Concluídos" value={projetos.filter(p => p.status === 'concluido').length} color="emerald" />
-        </div>
       </header>
 
-      {/* ── LISTA ── */}
+      <div className="px-5 mb-4">
+        <OperationalTabs 
+          options={tabOptions} 
+          currentValue={filtro} 
+          onChange={setFiltro} 
+        />
+      </div>
+
       <section className="px-5 space-y-4">
-        {projetos.length === 0 ? (
+        {filteredItems.length === 0 ? (
           <EmptyState />
         ) : (
-          projetos.map(p => (
+          filteredItems.map(p => (
             <Link key={p.id} href={`/projetos/${p.id}`} className="block">
               <ProjetoCard projeto={p} />
             </Link>
@@ -70,6 +95,15 @@ export default function ProjetosPage() {
     </main>
   )
 }
+
+export default function ProjetosPage() {
+  return (
+    <Suspense fallback={<LoadingSkeleton />}>
+      <ProjetosList />
+    </Suspense>
+  )
+}
+
 
 /* ── COMPONENTES ── */
 

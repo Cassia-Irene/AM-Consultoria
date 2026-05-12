@@ -65,7 +65,7 @@ def create_causal_event(visita, descricao, acao_tomada=None):
 
 def ensure_tipos_pagamento(db):
     """Garante que os tipos de pagamento padrão existam."""
-    tipos = ["Mensal", "Por Visita", "Por Projeto"]
+    tipos = ["Mensal", "Por Visita", "Por Projeto", "Mensal + Projetos paralelos"]
     results = {}
     for t in tipos:
         tp = db.query(TipoPagamento).filter(TipoPagamento.tipo.ilike(t)).first()

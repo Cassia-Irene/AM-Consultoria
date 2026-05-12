@@ -184,13 +184,20 @@ export const AnalyticsService = {
   /**
    * Helper para filtrar e formatar a timeline no formato esperado pelo componente OperationalTimeline.
    */
-  getOperationalTimeline(data: OperationalInsight): { date: string; type: string; title: string; subtitle: string; critical: boolean }[] {
+  getOperationalTimeline(data: OperationalInsight): { id: string; idReferencia: number; date: string; type: string; title: string; subtitle: string; critical: boolean; pendencias?: { id: string; descricao: string; data_prazo: string }[] }[] {
     return (data.timeline || []).map(event => ({
+      id: `${event.tipo}-${event.idReferencia}`,
+      idReferencia: event.idReferencia,
       date: event.data,
       type: event.tipo,
       title: event.titulo,
       subtitle: event.cliente,
-      critical: event.criticidade === 'critica' || event.criticidade === 'alta'
+      critical: event.criticidade === 'critica' || event.criticidade === 'alta',
+      pendencias: event.pendenciasLista?.map(p => ({
+        id: String(p.id),
+        descricao: p.descricao,
+        data_prazo: p.dataPrazo || ''
+      }))
     }))
   }
 }

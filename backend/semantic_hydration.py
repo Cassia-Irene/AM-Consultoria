@@ -11,7 +11,8 @@ sys.path.append(os.getcwd())
 from src.database import SessionLocal
 from src.models import (
     Cliente, Contato, Contrato, Visita, Pendencia, 
-    FaturamentoCliente, EventoCritico, Projeto, ProjetoParcela
+    FaturamentoCliente, EventoCritico, Projeto, ProjetoParcela,
+    TipoPagamento, ContratoPagamento
 )
 
 # Configuração Determinística
@@ -208,8 +209,7 @@ def hydrate_entities(db: Session):
                 
                 contrato.servicos_contratados = info["contrato"].get("servicos", f"Acompanhamento tático de {info['tipo']}")
                 
-                # --- NOVO: Registro de Pagamento ---
-                from src.models import TipoPagamento, ContratoPagamento
+                # Registro de Pagamento
                 tipo_nome = info["contrato"].get("tipo_pagamento", "Mensal")
                 tp = db.query(TipoPagamento).filter(TipoPagamento.tipo.ilike(tipo_nome)).first()
                 if not tp:

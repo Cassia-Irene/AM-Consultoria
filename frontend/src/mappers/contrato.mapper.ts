@@ -39,8 +39,8 @@ export function mapContrato(raw: ContratoRaw): Contrato {
     data_inicio: raw.data_inicio,
     data_fim: raw.data_fim ?? undefined,
     
-    // Campo híbrido (não existe no backend contratos)
-    valor_mensal: 0, 
+    // Campo híbrido (vindo agora do backend via property)
+    valor_mensal: Number(raw.valor_mensal) || 0, 
     
     status: statusDerivado,
     observacoes_gerais: raw.observacoes_gerais ?? undefined,

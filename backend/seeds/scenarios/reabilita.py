@@ -20,7 +20,7 @@ class ReabilitaScenario(Scenario):
             tipo_instituicao="Clínica de Reabilitação",
             cidade="São Luís/MA",
             status="ativo",
-            nivel_complexidade="média/alta",
+            nivel_complexidade="alta",
             observacoes_gerais="Equipe técnica muito boa, mas gestão financeira confusa. A Fernanda muda prioridades frequentemente conforme pressão dos convênios."
         )
 

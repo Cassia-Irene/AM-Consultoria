@@ -5,10 +5,10 @@ from src.database import Base
 class ContratoPagamento(Base):
     __tablename__ = "contrato_pagamento"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id_pagamento = Column(Integer, primary_key=True, index=True)
     # 🔗 FKs apontando para contrato e para o tipo de pagamento
     id_contrato = Column(Integer, ForeignKey("contratos.id_contrato"), nullable=False)
-    id_tipo_pagamento = Column(Integer, ForeignKey("tipos_pagamento.id_tipo"), nullable=False)
+    id_tipo = Column(Integer, ForeignKey("tipos_pagamento.id_tipo"), nullable=False)
     
     valor = Column(Numeric(10, 2), nullable=False)
 

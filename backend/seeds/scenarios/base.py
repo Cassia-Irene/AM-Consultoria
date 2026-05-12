@@ -49,7 +49,7 @@ class Scenario:
         tp = self.tipos_pagamento.get(tipo.lower())
         if not tp:
             raise ValueError(f"Tipo de pagamento {tipo} não encontrado.")
-        cp = ContratoPagamento(id_contrato=contrato.id_contrato, id_tipo_pagamento=tp.id_tipo, valor=valor)
+        cp = ContratoPagamento(id_contrato=contrato.id_contrato, id_tipo=tp.id_tipo, valor=valor)
         self.db.add(cp)
         self.db.flush()
         return cp

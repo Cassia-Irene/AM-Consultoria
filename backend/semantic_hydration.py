@@ -18,18 +18,31 @@ from src.models import (
 # Configuração Determinística
 random.seed(42)
 
-CLIENT_IDS = [43, 44, 45, 46, 47, 48, 49]
+CLIENT_NAMES = [
+    "Lar São Francisco de Cuidados para Idosos",
+    "CAPS II Renascer",
+    "CuidaBem Serviços Domiciliares",
+    "REABILITA Centro de Reabilitação",
+    "Creche Sonho de Criança",
+    "APAE de Bacabal",
+    "FarmaVida Farmácia Comunitária"
+]
 
 def cleanup_operational_data(db: Session):
     """Limpa dados operacionais vinculados aos 7 clientes para garantir idempotência."""
-    print("[IDEMPOTÊNCIA] Limpando histórico operacional dos clientes 43-49...")
+    print("[IDEMPOTÊNCIA] Limpando histórico operacional dos clientes padrão...")
     
+    # Busca IDs atuais baseados nos nomes
+    client_ids = [r[0] for r in db.execute(text("SELECT id_cliente FROM clientes WHERE nome IN :names"), {"names": tuple(CLIENT_NAMES)}).fetchall()]
+    
+    if not client_ids:
+        print("[IDEMPOTÊNCIA] Nenhum dos 7 clientes padrão encontrado. Pulando limpeza.")
+        return
+
     # Busca todos os IDs de contrato destes clientes
-    contrato_ids = [r[0] for r in db.execute(text("SELECT id_contrato FROM contratos WHERE id_cliente IN :ids"), {"ids": tuple(CLIENT_IDS)}).fetchall()]
+    contrato_ids = [r[0] for r in db.execute(text("SELECT id_contrato FROM contratos WHERE id_cliente IN :ids"), {"ids": tuple(client_ids)}).fetchall()]
     
-    if not contrato_ids:
-        print("[AVISO] Nenhum contrato encontrado para limpeza prévia.")
-    else:
+    if contrato_ids:
         # Ordem reversa de dependência (Folhas primeiro)
         db.execute(text("DELETE FROM entregas WHERE id_projeto IN (SELECT id_projeto FROM projetos WHERE id_contrato IN :ids)"), {"ids": tuple(contrato_ids)})
         db.execute(text("DELETE FROM projeto_parcelas WHERE id_projeto IN (SELECT id_projeto FROM projetos WHERE id_contrato IN :ids)"), {"ids": tuple(contrato_ids)})
@@ -41,7 +54,7 @@ def cleanup_operational_data(db: Session):
         db.execute(text("DELETE FROM faturamento_cliente WHERE id_contrato IN :ids"), {"ids": tuple(contrato_ids)})
 
     # Tabelas ligadas diretamente ao id_cliente
-    db.execute(text("DELETE FROM contatos WHERE id_cliente IN :ids"), {"ids": tuple(CLIENT_IDS)})
+    db.execute(text("DELETE FROM contatos WHERE id_cliente IN :ids"), {"ids": tuple(client_ids)})
     db.commit()
 
 def hydrate_entities(db: Session):
@@ -49,7 +62,7 @@ def hydrate_entities(db: Session):
     print("[ENTIDADES] Atualizando Clientes e Contratos...")
     
     data = {
-        43: {
+        "Lar São Francisco de Cuidados para Idosos": {
             "nome": "Lar São Francisco de Cuidados para Idosos",
             "tipo": "ILPI Privada",
             "complexidade": "alta",
@@ -68,7 +81,7 @@ def hydrate_entities(db: Session):
                 {"nome": "Dr. Álvaro Mendes", "papel": "Técnico", "cargo": "Médico parceiro recorrente"}
             ]
         },
-        45: {
+        "CAPS II Renascer": {
             "nome": "CAPS II Renascer",
             "tipo": "Saúde Mental Pública",
             "complexidade": "alta",
@@ -87,7 +100,7 @@ def hydrate_entities(db: Session):
                 {"nome": "Joana Nunes", "papel": "Operacional", "cargo": "Administrativo da Secretaria"}
             ]
         },
-        46: {
+        "CuidaBem Serviços Domiciliares": {
             "nome": "CuidaBem Serviços Domiciliares",
             "tipo": "Home Care",
             "complexidade": "alta",
@@ -107,10 +120,10 @@ def hydrate_entities(db: Session):
                 {"nome": "Amanda Sousa", "papel": "Financeiro", "cargo": "Financeiro"}
             ]
         },
-        47: {
+        "REABILITA Centro de Reabilitação": {
             "nome": "REABILITA Centro de Reabilitação",
             "tipo": "Clínica de Reabilitação",
-            "complexidade": "média/alta",
+            "complexidade": "alta",
             "cidade": "São Luís/MA",
             "observacoes": "Equipe técnica muito boa, mas gestão financeira confusa. A Fernanda muda prioridades frequentemente conforme pressão dos convênios.",
             "contrato": {
@@ -125,7 +138,7 @@ def hydrate_entities(db: Session):
                 {"nome": "Cláudia Mendes", "papel": "Operacional", "cargo": "Recepção administrativa"}
             ]
         },
-        44: {
+        "Creche Sonho de Criança": {
             "nome": "Creche Sonho de Criança",
             "tipo": "Creche Comunitária Conveniada",
             "complexidade": "média",
@@ -143,7 +156,7 @@ def hydrate_entities(db: Session):
                 {"nome": "Ana Paula Ferreira", "papel": "Operacional", "cargo": "Secretaria"}
             ]
         },
-        48: {
+        "APAE de Bacabal": {
             "nome": "APAE de Bacabal",
             "tipo": "Educação Especial",
             "complexidade": "alta",
@@ -163,7 +176,7 @@ def hydrate_entities(db: Session):
                 {"nome": "Juliana Lopes", "papel": "Técnico", "cargo": "Psicologia"}
             ]
         },
-        49: {
+        "FarmaVida Farmácia Comunitária": {
             "nome": "FarmaVida Farmácia Comunitária",
             "tipo": "Farmácia Popular",
             "complexidade": "média",
@@ -185,8 +198,8 @@ def hydrate_entities(db: Session):
         }
     }
 
-    for cid, info in data.items():
-        cliente = db.get(Cliente, cid)
+    for name, info in data.items():
+        cliente = db.query(Cliente).filter(Cliente.nome == name).first()
         if cliente:
             cliente.nome = info["nome"]
             cliente.tipo_instituicao = info["tipo"]
@@ -196,7 +209,7 @@ def hydrate_entities(db: Session):
             cliente.observacoes_gerais = info.get("observacoes")
             
             # Contrato
-            contrato = db.query(Contrato).filter_by(id_cliente=cid).first()
+            contrato = db.query(Contrato).filter_by(id_cliente=cliente.id_cliente).first()
             if contrato:
                 contrato.visitas_previstas_mes = info["contrato"]["visitas"]
                 contrato.inclui_relatorio = info["contrato"]["relatorio"]
@@ -237,7 +250,7 @@ def hydrate_entities(db: Session):
                 safe_name = safe_name.strip('.')
                 
                 db.add(Contato(
-                    id_cliente=cid,
+                    id_cliente=cliente.id_cliente,
                     nome=c["nome"],
                     papel=c["papel"],
                     cargo=c["cargo"],
@@ -261,7 +274,10 @@ def simulate_history(db: Session, client_data: dict):
     for month_offset in range(5, -1, -1):
         target_month_start = subtract_months(now, month_offset)
         
-        for cid, info in client_data.items():
+        for name, info in client_data.items():
+            cliente = db.query(Cliente).filter(Cliente.nome == name).first()
+            if not cliente: continue
+            cid = cliente.id_cliente
             contrato = db.query(Contrato).filter_by(id_cliente=cid).first()
             if not contrato: continue
 
@@ -269,11 +285,11 @@ def simulate_history(db: Session, client_data: dict):
             previstas = info["contrato"]["visitas"]
             
             realizadas_count = previstas
-            if cid == 43: # Lar São Francisco - Oscilação
+            if name == "Lar São Francisco de Cuidados para Idosos": # Oscilação
                 realizadas_count = previstas - 1 if month_offset % 2 == 0 else previstas + 1
-            elif cid == 46: # CuidaBem - Urgência
+            elif name == "CuidaBem Serviços Domiciliares": # Urgência
                 realizadas_count = previstas + random.randint(0, 2)
-            elif cid == 49: # FarmaVida - Espaçado
+            elif name == "FarmaVida Farmácia Comunitária": # Espaçado
                 realizadas_count = 1 if month_offset % 2 == 0 else 0
             
             for i in range(realizadas_count):
@@ -310,31 +326,45 @@ def simulate_history(db: Session, client_data: dict):
                         responsavel="Equipe Cliente" if random.random() > 0.5 else "Adriano"
                     ))
 
-            # --- FATURAMENTO ---
+            # --- FATURAMENTO (Upsert defensivo) ---
             valor_base = info["contrato"]["valor"]
             pago = True
-            if cid == 43 and month_offset in [1, 2]: pago = False 
-            if cid == 47 and month_offset == 0: pago = False 
+            if name == "Lar São Francisco de Cuidados para Idosos" and month_offset in [1, 2]: pago = False 
+            if name == "REABILITA Centro de Reabilitação" and month_offset == 0: pago = False 
 
-            db.add(FaturamentoCliente(
-                id_contrato=contrato.id_contrato,
-                mes_ano=target_month_start.date(),
-                valor_base=valor_base,
-                valor_total=valor_base,
-                pago=pago,
-                data_pagamento=(target_month_start + timedelta(days=15)).date() if pago else None,
-                visitas_realizadas=realizadas_count
-            ))
+            mes_ano_date = target_month_start.date()
+            # Verifica se já existe um faturamento para este contrato e mês (evita colisão com Fase 2)
+            faturamento_existente = db.query(FaturamentoCliente).filter_by(
+                id_contrato=contrato.id_contrato, 
+                mes_ano=mes_ano_date
+            ).first()
+
+            if faturamento_existente:
+                faturamento_existente.valor_base = valor_base
+                faturamento_existente.valor_total = valor_base
+                faturamento_existente.pago = pago
+                faturamento_existente.visitas_realizadas = realizadas_count
+                faturamento_existente.data_pagamento = (target_month_start + timedelta(days=15)).date() if pago else None
+            else:
+                db.add(FaturamentoCliente(
+                    id_contrato=contrato.id_contrato,
+                    mes_ano=mes_ano_date,
+                    valor_base=valor_base,
+                    valor_total=valor_base,
+                    pago=pago,
+                    data_pagamento=(target_month_start + timedelta(days=15)).date() if pago else None,
+                    visitas_realizadas=realizadas_count
+                ))
 
             # --- EVENTOS CRÍTICOS ---
-            if cid == 43 and month_offset == 2:
+            if name == "Lar São Francisco de Cuidados para Idosos" and month_offset == 2:
                 db.add(EventoCritico(
                     id_contrato=contrato.id_contrato,
                     descricao="Fiscalização da VISA - Alerta estrutural grave",
                     data_evento=(target_month_start + timedelta(days=10)).date(),
                     acao_tomada="Plano de adequação enviado."
                 ))
-            if cid == 46 and month_offset == 1:
+            if name == "CuidaBem Serviços Domiciliares" and month_offset == 1:
                  db.add(EventoCritico(
                     id_contrato=contrato.id_contrato,
                     descricao="Crise de Escala: Saída súbita de cuidadores",
@@ -343,34 +373,38 @@ def simulate_history(db: Session, client_data: dict):
                 ))
 
     # --- PROJETOS EXTRAS ---
-    for cid in [43, 44, 45, 46, 47, 48, 49]: # Todos os clientes ativos
+    for name in CLIENT_NAMES:
+        cliente = db.query(Cliente).filter(Cliente.nome == name).first()
+        if not cliente: continue
+        
+        cid = cliente.id_cliente # Usar o ID real para as condições abaixo
         contrato = db.query(Contrato).filter_by(id_cliente=cid).first()
         if contrato:
-            if cid == 43:
+            if name == "Lar São Francisco de Cuidados para Idosos":
                 # Projetos do Lar São Francisco
                 db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão do fluxo de medicação", status="em andamento", data_inicio=(now - timedelta(days=30)).date(), valor_total=2500.0))
                 db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Organização documental para VISA", status="em andamento", data_inicio=(now - timedelta(days=15)).date(), valor_total=3000.0))
-            elif cid == 44:
+            elif name == "Creche Sonho de Criança":
                 # Projetos da Creche
                 db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão de frequência escolar", status="em andamento", data_inicio=(now - timedelta(days=45)).date(), valor_total=1000.0))
                 db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Organização documental de convênio", status="em andamento", data_inicio=(now - timedelta(days=20)).date(), valor_total=2000.0))
-            elif cid == 45:
+            elif name == "CAPS II Renascer":
                 # Projetos do CAPS
                 db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão do fluxo RAAS", status="em andamento", data_inicio=(now - timedelta(days=40)).date(), valor_total=1200.0))
                 db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Acompanhamento de usuários intensivos", status="em andamento", data_inicio=(now - timedelta(days=20)).date(), valor_total=1500.0))
-            elif cid == 46:
+            elif name == "CuidaBem Serviços Domiciliares":
                 # Projetos do CuidaBem
                 db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Estruturação de controle de cuidadores", status="em andamento", data_inicio=(now - timedelta(days=45)).date(), valor_total=3000.0))
                 db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Redesenho da escala de plantão", status="em andamento", data_inicio=(now - timedelta(days=25)).date(), valor_total=2000.0))
-            elif cid == 47:
+            elif name == "REABILITA Centro de Reabilitação":
                 # Projetos do REABILITA
                 db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão de autorização de convênios", status="em andamento", data_inicio=(now - timedelta(days=35)).date(), valor_total=2800.0))
                 db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Controle de sessões e metas", status="em andamento", data_inicio=(now - timedelta(days=15)).date(), valor_total=2200.0))
-            elif cid == 48:
+            elif name == "APAE de Bacabal":
                 # Projetos da APAE
                 db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão dos PIAs", status="concluído", data_inicio=(now - timedelta(days=60)).date(), valor_total=3500.0))
                 db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Organização integrada de atendimentos", status="em andamento", data_inicio=(now - timedelta(days=30)).date(), valor_total=2500.0))
-            elif cid == 49:
+            elif name == "FarmaVida Farmácia Comunitária":
                 # Projetos da FarmaVida
                 db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Controle de dispensação", status="em andamento", data_inicio=(now - timedelta(days=50)).date(), valor_total=1500.0))
                 db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão de fluxo Farmácia Popular", status="em andamento", data_inicio=(now - timedelta(days=25)).date(), valor_total=1800.0))

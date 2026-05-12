@@ -25,3 +25,10 @@ class Contrato(Base):
     projetos = relationship("Projeto", back_populates="contrato")
     pendencias = relationship("Pendencia", back_populates="contrato")
     pagamentos = relationship("ContratoPagamento", back_populates="contrato")
+
+    @property
+    def valor_mensal(self):
+        """Soma os valores de pagamento vinculados a este contrato."""
+        if not self.pagamentos:
+            return 0
+        return sum(p.valor for p in self.pagamentos)

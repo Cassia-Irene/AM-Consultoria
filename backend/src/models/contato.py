@@ -12,8 +12,6 @@ class Contato(Base):
     papel = Column(String(30), nullable=False)
     telefone = Column(String(20))
     email = Column(String(50))
-    status = Column(String(20), default="ativo")
-    is_principal = Column(Boolean, default=False)
     observacoes_gerais = Column(Text)
 
     # Relacionamento com Cliente (muitos contatos para um cliente)

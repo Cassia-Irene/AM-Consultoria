@@ -96,35 +96,28 @@ export function ClientManager({ id, onClose, onSuccess }: ClientManagerProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className={labelClass}>Complexidade</label>
-          <select
-            className={inputClass}
-            value={formData.nivel_complexidade || ''}
-            onChange={e => setFormData({ ...formData, nivel_complexidade: e.target.value })}
-          >
-            <option value="baixo">Baixo</option>
-            <option value="medio">Médio</option>
-            <option value="alto">Alto</option>
-            <option value="critico">Crítico</option>
-          </select>
-        </div>
-        <div>
-          <label className={labelClass}>Status</label>
-          <select
-            className={inputClass}
-            value={formData.status || ''}
-            onChange={e => setFormData({ ...formData, status: e.target.value as 'ativo' | 'inativo' })}
-          >
-            <option value="ativo">Ativo</option>
-            <option value="inativo">Inativo / Encerrado</option>
-          </select>
+      <div>
+        <label className={labelClass}>Nível de Complexidade Operacional</label>
+        <div className="grid grid-cols-4 gap-2">
+          {['baixo', 'medio', 'alto', 'critico'].map(nivel => (
+            <button
+              key={nivel}
+              type="button"
+              onClick={() => setFormData({ ...formData, nivel_complexidade: nivel })}
+              className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                formData.nivel_complexidade === nivel 
+                  ? 'bg-sky-500 border-sky-400 text-white shadow-lg shadow-sky-900/20' 
+                  : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700'
+              }`}
+            >
+              {nivel}
+            </button>
+          ))}
         </div>
       </div>
 
       <div>
-        <label className={labelClass}>Observações Operacionais (Contexto)</label>
+        <label className={labelClass}>Memória Contextual / Observações</label>
         <textarea
           className={inputClass + " h-32 resize-none"}
           placeholder="Notas sobre a dinâmica da instituição, processos específicos ou particularidades do contrato..."
@@ -133,35 +126,13 @@ export function ClientManager({ id, onClose, onSuccess }: ClientManagerProps) {
         />
       </div>
 
-      <div className={`grid ${id ? 'grid-cols-2' : 'grid-cols-1'} gap-4 pt-4`}>
-        {id && (
-          <button
-            type="button"
-            onClick={async () => {
-              if (confirm('Deseja realmente desativar esta instituição? Ela será movida para o arquivo histórico.')) {
-                setLoading(true)
-                try {
-                  await ClientesService.update(id, { ...formData, status: 'inativo' })
-                  onSuccess()
-                  onClose()
-                } catch {
-                  alert('Erro ao desativar cliente.')
-                } finally {
-                  setLoading(false)
-                }
-              }
-            }}
-            className="bg-zinc-900 hover:bg-zinc-800 text-zinc-500 font-black py-4 rounded-xl transition-all uppercase tracking-widest text-[10px]"
-          >
-            Arquivar
-          </button>
-        )}
+      <div className="pt-4">
         <button
           type="submit"
           disabled={loading}
-          className="bg-sky-600 hover:bg-sky-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white font-black py-4 rounded-xl transition-all active:scale-[0.98] uppercase tracking-widest text-[10px]"
+          className="w-full bg-sky-600 hover:bg-sky-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white font-black py-4 rounded-xl transition-all active:scale-[0.98] uppercase tracking-widest text-[12px] shadow-lg shadow-sky-900/20"
         >
-          {loading ? '...' : id ? 'Salvar' : 'Criar Cliente'}
+          {loading ? 'Sincronizando...' : id ? 'Atualizar Prontuário' : 'Cadastrar Instituição'}
         </button>
       </div>
     </form>

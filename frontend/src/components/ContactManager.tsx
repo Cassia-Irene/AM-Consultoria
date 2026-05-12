@@ -30,8 +30,6 @@ export function ContactManager({ id, clienteId, onClose, onSuccess }: ContactMan
     papel: 'Operacional',
     telefone_whatsapp: '',
     email: '',
-    isPrincipal: false,
-    status: 'ativo',
     observacoes_gerais: ''
   })
 
@@ -72,7 +70,6 @@ export function ContactManager({ id, clienteId, onClose, onSuccess }: ContactMan
         ...formData,
         id_cliente: parseInt(clienteId),
         observacoes_gerais: finalObs,
-        is_principal: formData.isPrincipal,
         telefone_whatsapp: formData.telefone_whatsapp,
       }
 
@@ -102,20 +99,7 @@ export function ContactManager({ id, clienteId, onClose, onSuccess }: ContactMan
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="flex items-center justify-between bg-sky-500/5 border border-sky-500/10 p-4 rounded-2xl mb-2">
-        <div>
-          <p className="text-white text-sm font-bold">Contato Principal</p>
-          <p className="text-[10px] text-sky-400 font-medium">Este contato será o ponto focal da instituição.</p>
-        </div>
-        <button 
-          type="button"
-          onClick={() => setFormData({ ...formData, isPrincipal: !formData.isPrincipal })}
-          className={`w-12 h-6 rounded-full transition-all relative ${formData.isPrincipal ? 'bg-sky-500' : 'bg-zinc-800'}`}
-        >
-          <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-all ${formData.isPrincipal ? 'translate-x-6' : ''}`} />
-        </button>
-      </div>
-
+      
       <div>
         <label className={labelClass}>Nome Completo</label>
         <input
@@ -204,35 +188,20 @@ export function ContactManager({ id, clienteId, onClose, onSuccess }: ContactMan
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4 pt-4">
-        <button
-          type="button"
-          onClick={async () => {
-             if (confirm('Deseja realmente arquivar este contato?')) {
-               setFormData(prev => ({ ...prev, status: 'arquivado' }))
-               // O handleSubmit já usa o formData atualizado se chamarmos via ref ou trigger
-               // Aqui chamamos uma função de salvar direto para ser limpo
-               const traitsStr = selectedTraits.length > 0 ? `[${selectedTraits.join(', ')}] ` : ''
-               const finalObs = traitsStr + (formData.observacoes_gerais || '')
-               const payload = { ...formData, id_cliente: parseInt(clienteId), status: 'arquivado', observacoes_gerais: finalObs, is_principal: formData.isPrincipal }
-               
-               setLoading(true)
-               if (id) await ContatosService.update(id, payload)
-               setLoading(false)
-               onSuccess()
-               onClose()
-             }
-          }}
-          className="bg-zinc-900 hover:bg-zinc-800 text-zinc-500 font-black py-4 rounded-xl transition-all uppercase tracking-widest text-[10px]"
-        >
-          Arquivar
-        </button>
+      <div className="pt-4">
         <button
           type="submit"
           disabled={loading}
-          className="bg-sky-600 hover:bg-sky-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white font-black py-4 rounded-xl transition-all active:scale-[0.98] uppercase tracking-widest text-[10px]"
+          className="w-full bg-sky-600 hover:bg-sky-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white font-black py-4 rounded-xl transition-all active:scale-[0.98] uppercase tracking-widest text-[12px] shadow-lg shadow-sky-900/20"
         >
-          {loading ? '...' : id ? 'Salvar' : 'Adicionar'}
+          {loading ? 'Sincronizando...' : id ? 'Salvar Alterações' : 'Adicionar Contato'}
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full mt-3 bg-transparent text-zinc-600 hover:text-zinc-400 font-bold py-2 text-[10px] uppercase tracking-[0.2em] transition-colors"
+        >
+          Cancelar
         </button>
       </div>
     </form>

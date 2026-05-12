@@ -16,6 +16,7 @@ import { getStatusFaturamento } from '@/domain/faturamento'
 import { OperationalDrawer } from '@/components/OperationalDrawer'
 import { ClientManager } from '@/components/ClientManager'
 import { ContactManager } from '@/components/ContactManager'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 
 import type { Cliente } from '@/domain/cliente'
 import type { Contrato } from '@/domain/contrato'
@@ -67,7 +68,7 @@ export default function ClienteDetalhePage({ params }: PageProps) {
       ])
 
       setContratos(allContratos)
-      setContatos(allContatos.filter(c => c.status !== 'arquivado')) // Default: Esconder arquivados
+      setContatos(allContatos)
 
       const contratoIds = allContratos.map(c => c.id)
       setFaturamentos(allFaturamentos.filter(f => contratoIds.includes(f.contratoId)))
@@ -157,8 +158,9 @@ export default function ClienteDetalhePage({ params }: PageProps) {
             <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0">
               <button 
                 onClick={() => setIsClientDrawerOpen(true)}
-                className="bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-xl border border-white/10 transition-all active:scale-[0.98]"
+                className="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-xl border border-white/10 transition-all active:scale-[0.98]"
               >
+                <Pencil size={12} />
                 Editar Dados
               </button>
               <button 
@@ -166,9 +168,10 @@ export default function ClienteDetalhePage({ params }: PageProps) {
                   setSelectedContactId(undefined)
                   setIsContactDrawerOpen(true)
                 }}
-                className="bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all shadow-lg shadow-sky-900/20 active:scale-[0.98]"
+                className="flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-xl transition-all shadow-lg shadow-sky-900/20 active:scale-[0.98]"
               >
-                + Adicionar Contato
+                <Plus size={14} strokeWidth={3} />
+                Adicionar Contato
               </button>
               <button 
                 onClick={async () => {
@@ -181,8 +184,9 @@ export default function ClienteDetalhePage({ params }: PageProps) {
                     }
                   }
                 }}
-                className="bg-red-500/10 hover:bg-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-xl border border-red-500/20 transition-all active:scale-[0.98]"
+                className="flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-xl border border-red-500/20 transition-all active:scale-[0.98]"
               >
+                <Trash2 size={12} />
                 Arquivar Instituição
               </button>
             </div>
@@ -238,7 +242,7 @@ export default function ClienteDetalhePage({ params }: PageProps) {
               <SectionHeader label="Stakeholders & Contatos" />
               <div className="space-y-3 mt-4">
                 {contatos.length > 0 ? (
-                  contatos.sort((a, b) => (b.isPrincipal ? 1 : 0) - (a.isPrincipal ? 1 : 0)).map(contato => {
+                  contatos.map(contato => {
                     // Extrai tags das observações para exibição
                     const match = (contato.observacoes_gerais || '').match(/^\[(.*?)\]/)
                     const tags = match ? match[1].split(',').map(t => t.trim()) : []
@@ -251,21 +255,10 @@ export default function ClienteDetalhePage({ params }: PageProps) {
                            setSelectedContactId(contato.id)
                            setIsContactDrawerOpen(true)
                         }}
-                        className={`group border rounded-xl p-4 transition-all cursor-pointer ${
-                          contato.isPrincipal 
-                            ? 'bg-sky-500/5 border-sky-500/30 hover:border-sky-500/50' 
-                            : 'bg-zinc-900/30 border-zinc-800 hover:border-zinc-700'
-                        }`}
+                        className="group border rounded-xl p-4 transition-all cursor-pointer bg-zinc-900/30 border-zinc-800 hover:border-zinc-700"
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center gap-2">
-                            {contato.isPrincipal && (
-                              <span className="text-sky-500" title="Contato Principal">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                                </svg>
-                              </span>
-                            )}
                             <div>
                               <p className="text-white font-bold text-sm">{contato.nome}</p>
                               {contato.cargo && <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">{contato.cargo}</p>}

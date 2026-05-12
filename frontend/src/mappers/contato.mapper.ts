@@ -43,8 +43,6 @@ export function mapContato(raw: ContatoRaw): Contato {
 
     telefone_whatsapp: raw.telefone_whatsapp ?? undefined,
     email: raw.email ?? undefined,
-    isPrincipal: !!raw.is_principal,
-    status: (raw.status as 'ativo' | 'inativo' | 'arquivado') || 'ativo',
     observacoes_gerais: raw.observacoes_gerais ?? undefined,
   }
 }

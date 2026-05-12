@@ -9,8 +9,6 @@ class ContatoBase(BaseModel):
     papel: str
     telefone: Optional[str] = None
     email: Optional[EmailStr] = None
-    is_principal: bool = False
-    status: str = "ativo"
     observacoes_gerais: Optional[str] = None
 
 class ContatoCreate(ContatoBase):
@@ -27,6 +25,4 @@ class ContatoUpdate(BaseModel):
     papel: str | None = None
     telefone: str | None = None
     email: str | None = None
-    is_principal: bool | None = None
-    status: str | None = None
     observacoes_gerais: str | None = None

@@ -17,6 +17,7 @@ class ContratoCreate(ContratoBase):
 
 class ContratoRead(ContratoBase):
     id_contrato: int
+    valor_mensal: Optional[Decimal] = None
     
     model_config = ConfigDict(from_attributes=True)
 

@@ -1,4 +1,5 @@
 import React from 'react'
+import { MapPin, ClipboardCheck, Wallet, Info, ChevronRight, AlertCircle } from 'lucide-react'
 
 export interface TimelinePendencia {
   id: string
@@ -8,6 +9,7 @@ export interface TimelinePendencia {
 
 export interface TimelineEvent {
   id: string
+  idReferencia?: number // ID original do banco para abrir detalhes
   date: string
   type: string
   title: string
@@ -23,36 +25,36 @@ interface OperationalTimelineProps {
 
 export function OperationalTimeline({ events, onEventClick }: OperationalTimelineProps) {
   const getTypeStyles = (type: string, critical: boolean) => {
-    if (critical) return { color: 'bg-red-500', icon: '!' }
+    if (critical) return { color: 'bg-red-500', icon: AlertCircle }
     switch (type.toLowerCase()) {
-      case 'visita': return { color: 'bg-sky-500', icon: '📍' }
-      case 'pendencia': return { color: 'bg-emerald-500', icon: '✓' }
-      case 'financeiro': return { color: 'bg-amber-500', icon: '$' }
-      default: return { color: 'bg-zinc-600', icon: '•' }
+      case 'visita': return { color: 'bg-sky-500', icon: MapPin }
+      case 'pendencia': return { color: 'bg-emerald-500', icon: ClipboardCheck }
+      case 'financeiro': return { color: 'bg-amber-500', icon: Wallet }
+      default: return { color: 'bg-zinc-600', icon: Info }
     }
   }
 
   return (
-    <div className="space-y-6 relative before:absolute before:inset-y-0 before:left-[15px] before:w-0.5 before:bg-[#23272F]">
+    <div className="space-y-8 relative before:absolute before:inset-y-0 before:left-[15px] before:w-0.5 before:bg-[#23272F]">
       {events.map((event) => {
-        const { color, icon } = getTypeStyles(event.type, event.critical)
+        const { color, icon: Icon } = getTypeStyles(event.type, event.critical)
         return (
-          <div key={event.id} className="relative pl-10">
-            {/* Dot/Icon */}
-            <div className={`absolute left-0 top-1 size-[32px] rounded-full border-4 border-[#07090D] flex items-center justify-center shadow-lg ${color}`}>
-              <span className="text-[10px] font-black text-white">{icon}</span>
+          <div key={event.id} className="relative pl-12">
+            {/* Dot/Icon - Optical Center Alignment */}
+            <div className={`absolute left-0 top-1 size-[32px] rounded-full border-4 border-[#07090D] flex items-center justify-center shadow-lg transition-transform hover:scale-110 ${color}`}>
+              <Icon size={14} strokeWidth={3} className="text-white" />
             </div>
             
-            {/* Content Card */}
+            {/* Content Card - Design System Spacing (Gap-4) */}
             <div 
               onClick={() => onEventClick?.(event)}
-              className={`group bg-[#0d1117] border border-[#23272F] rounded-2xl px-4 py-4 transition-all ${
+              className={`group bg-[#0d1117] border border-[#23272F] rounded-2xl px-5 py-5 transition-all ${
                 onEventClick ? 'cursor-pointer hover:border-[#0466C8]/40 hover:bg-[#0d1117]/80' : ''
               }`}
             >
-              <div className="flex justify-between items-start mb-2">
-                <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
-                  event.critical ? 'bg-red-900/40 text-red-400' : 'bg-[#23272F] text-[#7D8597]'
+              <div className="flex justify-between items-start mb-3">
+                <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${
+                  event.critical ? 'bg-red-900/40 text-red-400 border border-red-500/20' : 'bg-[#23272F] text-[#7D8597]'
                 }`}>
                   {event.subtitle}
                 </span>
@@ -61,29 +63,29 @@ export function OperationalTimeline({ events, onEventClick }: OperationalTimelin
                 </span>
               </div>
               
-              <h4 className="text-white text-sm font-bold leading-snug group-hover:text-[#0466C8] transition-colors">
+              <h4 className="text-white text-sm font-bold leading-snug group-hover:text-[#0466C8] transition-colors pr-4">
                 {event.title}
               </h4>
 
-              {/* Inline Pendencies (Point D) */}
+              {/* Inline Pendencies (Point D) - Logical Hierarchy */}
               {event.pendencias && event.pendencias.length > 0 && (
-                <div className="mt-4 space-y-2 pt-3 border-t border-[#23272F]/50">
+                <div className="mt-5 space-y-3 pt-4 border-t border-[#23272F]/50">
                    <p className="text-[8px] font-black uppercase tracking-widest text-zinc-600">Ações Geradas</p>
                    {event.pendencias.map(p => (
-                     <div key={p.id} className="flex items-start gap-2">
-                        <span className="text-emerald-500 text-[10px] mt-0.5">↳</span>
+                     <div key={p.id} className="flex items-start gap-3 group/item">
+                        <ChevronRight size={12} className="text-emerald-500 mt-0.5 shrink-0 opacity-60 group-hover/item:opacity-100 transition-opacity" />
                         <p className="text-[11px] text-zinc-400 font-medium leading-tight">{p.descricao}</p>
                      </div>
                    ))}
                 </div>
               )}
 
-              <div className="flex items-center gap-2 mt-4 opacity-60">
-                <span className="text-[9px] font-bold uppercase tracking-widest text-[#4A5568]">
+              <div className="flex items-center gap-3 mt-5 opacity-60">
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#4A5568]">
                   {event.type}
                 </span>
                 <span className="size-1 rounded-full bg-[#23272F]" />
-                <span className="text-[9px] text-[#4A5568] font-medium">
+                <span className="text-[9px] text-[#4A5568] font-bold tabular-nums">
                   {new Date(event.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>

@@ -105,3 +105,6 @@ Agora evita:
 criar novas features grandes fora do fluxo
 mexer em UI sem lógica nova
 adicionar informação sem função clara
+
+Mudar a cor da barra: Quando o projeto entra em atraso, a barra de progresso (que é azul/sky) deveria ficar vermelha ou amarela vibrante, indicando que aquele progresso "estourou".
+Progresso Real: No futuro, podemos calcular esse progresso baseando-se na quantidade de Entregas (Tasks) concluídas dentro do projeto, em vez de olhar apenas para o calendário.

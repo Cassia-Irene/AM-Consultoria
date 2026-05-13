@@ -14,6 +14,7 @@ export interface ContratoRaw {
   data_fim: string | null
   
   observacoes_gerais: string | null
+  valor_mensal?: string | number // Novo campo híbrido (property)
 }
 
 export interface HistoricoContratoRaw {

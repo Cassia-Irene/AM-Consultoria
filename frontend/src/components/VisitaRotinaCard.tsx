@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { useState } from 'react'
 
 export interface CardEvent {
   cliente: string
@@ -26,7 +27,8 @@ function labelPrazo(dateStr: string) {
   return `em ${days}d`
 }
 
-export function VisitaRotinaCard({ event }: { event: CardEvent }) {
+export function VisitaRotinaCard({ event, compact = false }: { event: CardEvent; compact?: boolean }) {
+  const [expanded, setExpanded] = useState(!compact)
 
   const statusPagamento = event.statusPagamento
   const pendenciasCount = event.pendenciasContagem || 0
@@ -36,15 +38,20 @@ export function VisitaRotinaCard({ event }: { event: CardEvent }) {
 
 
   return (
-    <div className="bg-[#001845] border border-[#002855] rounded-2xl overflow-hidden shadow-lg">
+    <div 
+      onClick={() => compact && setExpanded(!expanded)}
+      className={`bg-[#001845] border border-[#002855] rounded-2xl overflow-hidden shadow-lg transition-all duration-300 ${compact ? 'cursor-pointer hover:border-sky-500/30' : ''}`}
+    >
       <div className="p-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 mb-1">
-            <span className="size-1.5 rounded-full bg-sky-400 shadow-[0_0_5px_rgba(56,189,248,0.5)]" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-sky-400">Hoje</span>
+            <span className={`size-1.5 rounded-full ${labelPrazo(data) === 'hoje' ? 'bg-sky-400 shadow-[0_0_5px_rgba(56,189,248,0.5)]' : 'bg-zinc-500'}`} />
+            <span className={`text-[10px] font-black uppercase tracking-widest ${labelPrazo(data) === 'hoje' ? 'text-sky-400' : 'text-zinc-500'}`}>
+              {labelPrazo(data)}
+            </span>
           </div>
-          <h3 className="text-white font-black text-[17px] leading-tight tracking-tight truncate">{event.cliente}</h3>
-          <p className="text-[#7D8597] text-[11px] font-bold mt-1">
+          <h3 className={`text-white font-black leading-tight tracking-tight truncate ${compact ? 'text-[15px]' : 'text-[17px]'}`}>{event.cliente}</h3>
+          <p className="text-[#7D8597] text-[10px] font-bold mt-0.5">
             {new Date(data).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
           </p>
 
@@ -63,8 +70,16 @@ export function VisitaRotinaCard({ event }: { event: CardEvent }) {
               {pendenciasCount} em aberto
             </span>
           )}
+          {compact && (
+             <span className={`text-[10px] transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}>
+               ▼
+             </span>
+          )}
         </div>
       </div>
+
+      {expanded && (
+        <div className="animate-in fade-in slide-in-from-top-2 duration-300">
 
       {ultimaVisita && (
         <div className="mx-4 mb-4 p-3.5 bg-black/30 rounded-xl border border-white/5">
@@ -102,13 +117,15 @@ export function VisitaRotinaCard({ event }: { event: CardEvent }) {
         </div>
       )}
 
-      <div className="px-4 pb-4">
-        <Link href={`/visitas/nova?contratoId=${event.idContrato}`} className="block">
-          <div className="bg-[#0466C8] hover:bg-[#0353A4] active:scale-[0.98] transition-all text-white text-[13px] font-black text-center rounded-xl py-3.5 shadow-lg shadow-blue-900/30 uppercase tracking-widest">
-            Registrar visita
-          </div>
-        </Link>
-      </div>
+        <div className="px-4 pb-4">
+          <Link href={`/visitas/nova?contratoId=${event.idContrato}`} className="block" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-[#0466C8] hover:bg-[#0353A4] active:scale-[0.98] transition-all text-white text-[12px] font-black text-center rounded-xl py-3 shadow-lg shadow-blue-900/30 uppercase tracking-widest">
+              Registrar visita
+            </div>
+          </Link>
+        </div>
+        </div>
+      )}
     </div>
   )
 }

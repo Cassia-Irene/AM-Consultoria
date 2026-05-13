@@ -16,33 +16,34 @@ class APAEScenario(Scenario):
 
     def generate_structure(self):
         cliente = self.get_or_create_cliente(
-            nome="APAE Bacabal",
-            tipo_instituicao="Filantrópica",
-            cidade="Bacabal",
+            nome="APAE de Bacabal",
+            tipo_instituicao="Educação Especial",
+            cidade="Bacabal/MA",
             status="ativo",
-            nivel_complexidade="alta"
+            nivel_complexidade="alta",
+            observacoes_gerais="Instituição muito dependente do conhecimento informal da Neuza. Equipe pequena para demanda enorme. Sempre existe sensação de urgência acumulada."
         )
 
         # 1. Contatos
-        contato_pres = self.add_contato(cliente, "Maria das Dores", "Presidente", "Institucional")
-        self.add_contato(cliente, "João Kleber", "Contador", "Financeiro")
+        self.add_contato(cliente, "Neuza Farias", "Diretora pedagógica", "Decisor")
+        self.add_contato(cliente, "Carlos Henrique", "Administrativo", "Operacional")
+        self.add_contato(cliente, "Juliana Lopes", "Psicologia", "Técnico")
 
         # 2. Contrato
         contrato = self.db.query(Contrato).filter(Contrato.id_cliente == cliente.id_cliente).first()
         if not contrato:
             contrato = Contrato(
                 id_cliente=cliente.id_cliente,
-                servicos_contratados="Adequação de Processos e PIA",
+                servicos_contratados="Estruturação multiprofissional",
                 visitas_previstas_mes=2,
                 inclui_relatorio=True,
-                data_inicio=date(2024, 6, 1)
+                data_inicio=date(2024, 4, 1)
             )
             self.db.add(contrato)
             self.db.flush()
         
         # 3. Pagamento
-        self.add_contrato_pagamento(contrato, "Mensal", 3800.00)
-        self.add_contrato_pagamento(contrato, "Por Visita", 800.00)
+        self.add_contrato_pagamento(contrato, "Mensal + Projeto", 9000.00)
 
         return cliente, contrato
 
@@ -51,15 +52,16 @@ class APAEScenario(Scenario):
         mes_passado = subtrair_meses(hoje_date, 1)
         dois_meses_atras = subtrair_meses(hoje_date, 2)
 
-        # 1. Projeto: Mapeamento Curricular Inclusivo
-        projeto = self.add_projeto(contrato, "Mapeamento Curricular Inclusivo", valor_total=2400.00)
+        # 1. Projeto: Revisão dos PIAs
+        p_pias = self.add_projeto(contrato, "Revisão dos PIAs", valor_total=3500.00, status="concluído")
         self._add_and_commit([
-            Entrega(id_projeto=projeto.id_projeto, descricao="Diagnóstico Inicial", data_entrega_prevista=dois_meses_atras, entregue=True),
-            Entrega(id_projeto=projeto.id_projeto, descricao="Plano de Aula Adaptado", data_entrega_prevista=hoje_date, entregue=False)
+            Entrega(id_projeto=p_pias.id_projeto, descricao="Mapeamento de alunos", data_entrega_prevista=dois_meses_atras, entregue=True),
         ])
+        
+        # 2. Projeto: Atendimentos Integrados
+        p_integ = self.add_projeto(contrato, "Organização integrada de atendimentos", valor_total=2500.00)
         self._add_and_commit([
-            ProjetoParcela(id_projeto=projeto.id_projeto, numero_parcela=1, valor_parcela=1200.00, data_pagamento_prevista=dois_meses_atras, pago=True, data_pagamento=dois_meses_atras),
-            ProjetoParcela(id_projeto=projeto.id_projeto, numero_parcela=2, valor_parcela=1200.00, data_pagamento_prevista=mes_passado, pago=False)
+            Entrega(id_projeto=p_integ.id_projeto, descricao="Novo fluxo de agendamento", data_entrega_prevista=hoje_date, entregue=False),
         ])
 
         visitas = []

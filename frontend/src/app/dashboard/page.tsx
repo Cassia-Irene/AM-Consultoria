@@ -15,15 +15,24 @@ import { VisitaRotinaCard } from '@/components/VisitaRotinaCard'
 
 // --- Componentes Locais ---
 
-function SectionHeader({ label, count, cor }: { label: string; count?: number; cor: 'red' | 'sky' }) {
+function SectionHeader({ label, count, cor, href }: { label: string; count?: number; cor: 'red' | 'sky'; href?: string }) {
   const dotColor = cor === 'red' ? 'bg-red-500' : 'bg-sky-500'
+  const content = (
+    <div className="flex items-center gap-2 group cursor-pointer">
+      <span className={`size-2 rounded-full ${dotColor} shadow-[0_0_8px_rgba(0,0,0,0.5)] group-hover:scale-125 transition-transform`} />
+      <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#7D8597] group-hover:text-zinc-300 transition-colors">{label}</h2>
+      {count !== undefined && <span className="text-[11px] text-[#4A5568] font-bold">({count})</span>}
+      {href && (
+        <svg className="text-[#4A5568] group-hover:text-sky-500 transition-colors" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+          <path d="M9 18l6-6-6-6" />
+        </svg>
+      )}
+    </div>
+  )
+
   return (
     <div className="flex items-center justify-between mb-4 px-1">
-      <div className="flex items-center gap-2">
-        <span className={`size-2 rounded-full ${dotColor} shadow-[0_0_8px_rgba(0,0,0,0.5)]`} />
-        <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#7D8597]">{label}</h2>
-        {count !== undefined && <span className="text-[11px] text-[#4A5568] font-bold">({count})</span>}
-      </div>
+      {href ? <Link href={href}>{content}</Link> : content}
     </div>
   )
 }
@@ -51,7 +60,7 @@ function DecisaoCard({ item }: { item: TopPriority }) {
           <span className="text-zinc-400 text-xs font-medium">{item.cliente}</span>
         </div>
 
-        <Link href={`/pendencias/${item.id}`} className="block">
+        <Link href={`/pendencias?id=${item.id}`} className="block">
           <div className="bg-red-600 hover:bg-red-500 text-white text-sm font-bold text-center rounded-xl py-3.5 transition-colors shadow-lg shadow-red-900/20">
             Agir agora
           </div>
@@ -63,7 +72,7 @@ function DecisaoCard({ item }: { item: TopPriority }) {
 
 function AcaoCard({ item }: { item: TopPriority }) {
   return (
-    <Link href={`/pendencias/${item.id}`} className="block active:scale-[0.98] transition-transform">
+    <Link href={`/pendencias?id=${item.id}`} className="block active:scale-[0.98] transition-transform">
       <div className="flex items-center gap-3 bg-[#0d1117] border-l-4 border-red-500 rounded-r-2xl px-4 py-3 min-h-[64px]">
         <div className="flex-1 min-w-0">
           <p className="text-white font-semibold text-[14px] leading-tight truncate">{item.titulo}</p>
@@ -193,7 +202,7 @@ export default function DashboardPage() {
 
         {otherPriorities.length > 0 && (
           <section>
-            <SectionHeader label="Ações Imediatas" count={otherPriorities.length} cor="red" />
+            <SectionHeader label="Ações Imediatas" count={otherPriorities.length} cor="red" href="/pendencias" />
             <div className="space-y-4">
               {Array.from(prioritiesByClient.entries()).map(([cliente, items]) => (
                 <GrupoCliente key={cliente} clienteNome={cliente} items={items} />
@@ -203,7 +212,7 @@ export default function DashboardPage() {
         )}
 
         <section>
-          <SectionHeader label="Visitas Hoje" count={visitsToday.length} cor="sky" />
+          <SectionHeader label="Visitas Hoje" count={visitsToday.length} cor="sky" href="/dashboard/planejamento?tab=operacao" />
           <div className="space-y-3">
             {visitsToday.length > 0 ? (
               visitsToday.map((v, i) => <VisitaRotinaCard key={i} event={v} />)
@@ -233,7 +242,7 @@ export default function DashboardPage() {
             </div>
           </Link>
           
-          <Link href="/visitas/nova" className="flex-1">
+          <Link href="/visitas/escolha" className="flex-1">
             <div className="bg-[#0466C8] hover:bg-[#0353A4] text-white rounded-2xl py-4 flex items-center justify-center gap-2 shadow-2xl shadow-blue-900/40 transition-all active:scale-[0.98]">
               <div className="size-5 rounded-md border-2 border-white/60 flex items-center justify-center font-bold text-xs">+</div>
               <span className="text-[13px] font-black uppercase tracking-widest">Visita</span>

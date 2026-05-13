@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ClientesService } from '@/services/clientes.service'
 import { ContratoService } from '@/services/contrato.service'
@@ -15,6 +14,7 @@ export default function RegistroRapidoPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const [clientes, setClientes] = useState<Cliente[]>([])
@@ -87,7 +87,8 @@ export default function RegistroRapidoPage() {
 
       await VisitasService.criar(input)
       clearDraft()
-      router.push('/dashboard')
+      setSaving(false)
+      setSaved(true)
     } catch (err: unknown) {
       console.error('Erro ao salvar registro rápido:', err)
       const message = err instanceof Error ? err.message : 'Falha ao salvar. Tente novamente.'
@@ -104,6 +105,49 @@ export default function RegistroRapidoPage() {
     )
   }
 
+  if (saved) {
+    return (
+      <main className="min-h-screen bg-[#07090D] flex flex-col items-center justify-center px-6 text-center">
+        <div className="size-16 rounded-full bg-emerald-900/50 border border-emerald-700 flex items-center justify-center mb-5">
+          <span className="text-emerald-400 text-3xl">⚡</span>
+        </div>
+        <p className="text-white text-xl font-bold mb-1">Relato rápido salvo</p>
+        <p className="text-[#7D8597] text-sm">O histórico foi atualizado com sucesso.</p>
+
+        <div className="mt-10 w-full max-w-sm space-y-3">
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="w-full bg-[#0466C8] text-white font-bold py-4 rounded-xl transition-all active:scale-[0.98]"
+          >
+            Voltar ao Início
+          </button>
+          
+          <button
+            onClick={() => router.push(`/clientes/${form.clienteId}`)}
+            className="w-full bg-[#0d1117] border border-[#23272F] text-[#7D8597] font-bold py-4 rounded-xl transition-all active:scale-[0.98]"
+          >
+            Ver Timeline do Cliente
+          </button>
+
+          <button
+            onClick={() => {
+              setSaved(false)
+              setForm({
+                clienteId: '',
+                tipoVisita: 'rotineira',
+                descricao: '',
+                pendenciaRapida: ''
+              })
+            }}
+            className="w-full text-[#4A5568] text-xs font-bold uppercase tracking-widest py-4"
+          >
+            Registrar outro relato
+          </button>
+        </div>
+      </main>
+    )
+  }
+
   return (
     <main className="min-h-screen bg-[#07090D] text-white p-4 pb-24">
       {/* Header */}
@@ -116,23 +160,7 @@ export default function RegistroRapidoPage() {
         <h1 className="text-white text-base font-bold">Relato Rápido</h1>
       </div>
 
-      {/* Toggle de Modo: Rápido vs Detalhado */}
-      <div className="mb-8">
-        <div className="bg-[#0d1117] border border-[#23272F] p-1 rounded-2xl flex gap-1">
-          <Link 
-            href="/visitas/nova"
-            className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-[#7D8597] hover:text-white text-center flex items-center justify-center"
-          >
-            Visita Detalhada
-          </Link>
-          <button 
-            disabled
-            className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#0466C8] text-white shadow-lg flex items-center justify-center gap-2"
-          >
-            <span>⚡</span> Relato Rápido
-          </button>
-        </div>
-      </div>
+      {/* Toggle removido conforme nova orientação de fluxo separado */}
 
       {error && (
         <div className="bg-red-500/10 border border-red-500/50 text-red-500 text-xs p-4 rounded-xl mb-6">

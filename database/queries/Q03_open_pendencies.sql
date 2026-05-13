@@ -5,6 +5,7 @@
 */
 
 SELECT 
+    p.id_pendencia as id,
     c.nome AS cliente,
     p.descricao,
     p.responsavel,

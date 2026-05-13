@@ -39,6 +39,18 @@ try:
             VALUES (:id, 'pendente', CURRENT_TIMESTAMP, 'rotineira', 'presencial', :desc, 45)
         """), {"id": c['id'], "desc": c['desc']})
 
+        # Inserir Visita de AMANHÃ
+        db.execute(text("""
+            INSERT INTO visitas (id_contrato, status, data_hora, tipo_visita, modalidade, descricao, duracao_minutos)
+            VALUES (:id, 'pendente', CURRENT_TIMESTAMP + INTERVAL '1 day', 'rotineira', 'presencial', 'Revisão Pós-Fato', 45)
+        """), {"id": c['id']})
+
+        # Inserir Visita da PRÓXIMA SEMANA
+        db.execute(text("""
+            INSERT INTO visitas (id_contrato, status, data_hora, tipo_visita, modalidade, descricao, duracao_minutos)
+            VALUES (:id, 'pendente', CURRENT_TIMESTAMP + INTERVAL '5 days', 'estrategica', 'remota', 'Check-in Semanal', 30)
+        """), {"id": c['id']})
+
         # Inserir Pendência (Para o badge e lista 'Em Aberto')
         db.execute(text("""
             INSERT INTO pendencias (id_contrato, descricao, responsavel, data_origem, resolvida, data_prazo)

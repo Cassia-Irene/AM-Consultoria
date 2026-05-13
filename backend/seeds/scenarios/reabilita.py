@@ -16,31 +16,33 @@ class ReabilitaScenario(Scenario):
 
     def generate_structure(self):
         cliente = self.get_or_create_cliente(
-            nome="REABILITA",
-            tipo_instituicao="Clínica",
-            cidade="São Luís",
+            nome="REABILITA Centro de Reabilitação",
+            tipo_instituicao="Clínica de Reabilitação",
+            cidade="São Luís/MA",
             status="ativo",
-            nivel_complexidade="média"
+            nivel_complexidade="alta",
+            observacoes_gerais="Equipe técnica muito boa, mas gestão financeira confusa. A Fernanda muda prioridades frequentemente conforme pressão dos convênios."
         )
 
         # 1. Contatos
-        self.add_contato(cliente, "Dra. Elen", "Dona/Fisioterapeuta", "Institucional")
-        self.add_contato(cliente, "Suzana", "Faturamento", "Ponto Focal")
+        self.add_contato(cliente, "Dra. Fernanda Caldas", "Sócia-proprietária", "Decisor")
+        self.add_contato(cliente, "Cláudia Mendes", "Recepção administrativa", "Operacional")
 
         # 2. Contrato
         contrato = self.db.query(Contrato).filter(Contrato.id_cliente == cliente.id_cliente).first()
         if not contrato:
             contrato = Contrato(
                 id_cliente=cliente.id_cliente,
-                servicos_contratados="Gestão de Faturamento e Processos",
-                visitas_previstas_mes=3,
-                data_inicio=date(2025, 1, 10)
+                servicos_contratados="Organização operacional e faturamento",
+                visitas_previstas_mes=4,
+                inclui_relatorio=True,
+                data_inicio=date(2025, 3, 1)
             )
             self.db.add(contrato)
             self.db.flush()
         
         # 3. Pagamento
-        self.add_contrato_pagamento(contrato, "Mensal", 2800.00)
+        self.add_contrato_pagamento(contrato, "Mensal", 7000.00)
 
         return cliente, contrato
 
@@ -49,15 +51,16 @@ class ReabilitaScenario(Scenario):
         mes_passado = subtrair_meses(hoje_date, 1)
         dois_meses_atras = subtrair_meses(hoje_date, 2)
 
-        # 1. Projeto: Nova Ala de Fisioterapia
-        projeto = self.add_projeto(contrato, "Expansão Ala Sul", valor_total=3000.00)
+        # 1. Projeto: Convênios
+        p_conv = self.add_projeto(contrato, "Revisão de autorização de convênios", valor_total=2800.00)
         self._add_and_commit([
-            Entrega(id_projeto=projeto.id_projeto, descricao="Planta Técnica", data_entrega_prevista=dois_meses_atras, entregue=True),
-            Entrega(id_projeto=projeto.id_projeto, descricao="Lista de Equipamentos", data_entrega_prevista=mes_passado, entregue=True)
+            Entrega(id_projeto=p_conv.id_projeto, descricao="Mapeamento de glosas", data_entrega_prevista=mes_passado, entregue=True),
         ])
+        
+        # 2. Projeto: Sessões e Metas
+        p_metas = self.add_projeto(contrato, "Controle de sessões e metas", valor_total=2200.00)
         self._add_and_commit([
-            ProjetoParcela(id_projeto=projeto.id_projeto, numero_parcela=1, valor_parcela=1500.00, data_pagamento_prevista=dois_meses_atras, pago=True, data_pagamento=dois_meses_atras),
-            ProjetoParcela(id_projeto=projeto.id_projeto, numero_parcela=2, valor_parcela=1500.00, data_pagamento_prevista=mes_passado, pago=True, data_pagamento=mes_passado)
+            Entrega(id_projeto=p_metas.id_projeto, descricao="Planilha de produtividade", data_entrega_prevista=hoje_date, entregue=False),
         ])
 
         visitas = []

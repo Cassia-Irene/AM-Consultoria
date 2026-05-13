@@ -10,11 +10,17 @@ import { fetchApi } from './api'
 import { mapVisita } from '@/mappers/visita.mapper'
 import type { Visita } from '@/domain/visita'
 import type { VisitaRaw } from '@/types/visita.raw'
+import { USE_MOCKS } from '@/config/env'
 
 export type { NovaVisitaInput, CriarVisitaResponse } from '@/adapters/visita.adapter'
 
 export const VisitasService = {
   async getAll(): Promise<Visita[]> {
+    if (USE_MOCKS) {
+      const { Visitas: mockVisitas } = await import('@/mocks/visitas')
+      return (mockVisitas as unknown as VisitaRaw[]).map(mapVisita)
+    }
+
     try {
       const data = await fetchApi<VisitaRaw[]>('/visitas/')
       return data.map(mapVisita)
@@ -25,6 +31,12 @@ export const VisitasService = {
   },
 
   async getById(id: string | number): Promise<Visita> {
+    if (USE_MOCKS) {
+      const { Visitas: mockVisitas } = await import('@/mocks/visitas')
+      const found = mockVisitas.find(v => String(v.id_visita) === String(id))
+      if (found) return mapVisita(found as unknown as VisitaRaw)
+    }
+
     try {
       const data = await fetchApi<VisitaRaw>(`/visitas/${id}`)
       return mapVisita(data)

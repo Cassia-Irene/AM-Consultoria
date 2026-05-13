@@ -1,14 +1,16 @@
 'use client'
 // app/pendencias/page.tsx
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { PendenciasService } from '@/services/pendencias.service'
 import { ClientesService } from '@/services/clientes.service'
 import { ContratoService } from '@/services/contrato.service'
 import { getPendenciaSeveridade, getPendenciaStatus } from '@/utils/pendencia'
 import type { Pendencia } from '@/domain/pendencia'
 import { displayDate } from '@/utils/date'
+import { OperationalTabs } from '@/components/OperationalTabs'
 
 type Filtro = 'todas' | 'abertas' | 'atrasadas' | 'concluidas'
 
@@ -19,20 +21,23 @@ type PendenciaView = {
   severidade: 'urgente' | 'atencao' | 'normal'
 }
 
-const FILTROS: { value: Filtro; label: string }[] = [
-  { value: 'todas', label: 'Todas' },
-  { value: 'abertas', label: 'Abertas' },
-  { value: 'atrasadas', label: 'Atrasadas' },
-  { value: 'concluidas', label: 'Concluídas' },
-]
-
-export default function PendenciasPage() {
-  const [filtro, setFiltro] = useState<Filtro>('todas')
+function PendenciasList() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [pendencias, setPendencias] = useState<PendenciaView[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<Partial<Pendencia>>({})
+
+  const filtro = (searchParams.get('status') as Filtro) || 'todas'
+
+  const setFiltro = (newStatus: Filtro) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (newStatus === 'todas') params.delete('status')
+    else params.set('status', newStatus)
+    router.replace(`/pendencias?${params.toString()}`)
+  }
 
   const loadData = useCallback(async () => {
     try {
@@ -71,6 +76,23 @@ export default function PendenciasPage() {
     }, 0)
     return () => clearTimeout(timer)
   }, [loadData])
+
+  // Lógica de destaque vindo do Dashboard
+  useEffect(() => {
+    const targetId = searchParams.get('id')
+    if (targetId && pendencias.length > 0) {
+      const found = pendencias.find(v => String(v.p.id) === targetId)
+      if (found) {
+        // Rolar até o item
+        const el = document.getElementById(`pendencia-${targetId}`)
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+        // Se for uma pendência urgente, podemos até abrir para edição automática
+        // startEdit(found.p) 
+      }
+    }
+  }, [searchParams, pendencias])
 
 
   async function handleResolve(id: string) {
@@ -163,11 +185,25 @@ export default function PendenciasPage() {
 
 
   const renderCard = (view: PendenciaView) => {
+    const highlightParam = searchParams.get('highlight') || 'red'
+    const isTarget = searchParams.get('id') === String(view.p.id)
+    
+    const highlightColors = {
+      red: 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]',
+      amber: 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]',
+      zinc: 'border-zinc-500 shadow-[0_0_15px_rgba(113,113,122,0.3)]',
+      blue: 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]'
+    }
+    
+    const highlightClass = isTarget 
+      ? `${highlightColors[highlightParam as keyof typeof highlightColors] || highlightColors.red} animate-pulse scale-[1.01]` 
+      : 'border-zinc-800'
+      
     const isEditing = editingId === view.p.id
 
     if (isEditing) {
       return (
-        <div key={view.p.id} className="rounded-2xl border border-blue-500 bg-zinc-900 p-4 space-y-4">
+        <div key={view.p.id} id={`pendencia-${view.p.id}`} className="rounded-2xl border border-blue-500 bg-zinc-900 p-4 space-y-4">
           <div>
             <label className="text-[10px] font-bold uppercase tracking-widest text-blue-400 block mb-1">Descrição</label>
             <textarea
@@ -218,7 +254,7 @@ export default function PendenciasPage() {
     }
 
     return (
-      <div key={view.p.id} className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 hover:border-zinc-700 transition-all group">
+      <div key={view.p.id} id={`pendencia-${view.p.id}`} className={`relative rounded-2xl border ${highlightClass} bg-zinc-900/60 p-4 hover:border-zinc-700 transition-all group`}>
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <p className="text-white text-base font-medium mb-1 wrap-break-word">{view.p.descricao}</p>
@@ -375,26 +411,16 @@ export default function PendenciasPage() {
         </div>
 
         {/* ── FILTROS ── */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none mb-6">
-          {FILTROS.map(f => {
-            const isActive = filtro === f.value
-            return (
-              <button
-                key={f.value}
-                onClick={() => setFiltro(f.value)}
-                className={`
-                  shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-colors border
-                  ${isActive 
-                    ? 'bg-zinc-800 text-white border-zinc-700' 
-                    : 'bg-zinc-900/40 text-zinc-400 border-zinc-800 hover:bg-zinc-800/80'
-                  }
-                `}
-              >
-                {f.label}
-              </button>
-            )
-          })}
-        </div>
+        <OperationalTabs
+          options={[
+            { value: 'todas', label: 'Todas', count: pendencias.length },
+            { value: 'abertas', label: 'Abertas', count: kpiAbertas },
+            { value: 'atrasadas', label: 'Atrasadas', count: kpiAtrasadas },
+            { value: 'concluidas', label: 'Concluídas', count: kpiConcluidas },
+          ]}
+          currentValue={filtro}
+          onChange={setFiltro}
+        />
 
         {/* ── LISTAGEM PRINCIPAL ── */}
         {filtradas.length === 0 ? (
@@ -413,6 +439,15 @@ export default function PendenciasPage() {
     </main>
   )
 }
+
+export default function PendenciasPage() {
+  return (
+    <Suspense fallback={<LoadingSkeleton />}>
+      <PendenciasList />
+    </Suspense>
+  )
+}
+
 
 function LoadingSkeleton() {
   return (

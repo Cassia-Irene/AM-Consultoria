@@ -30,6 +30,17 @@ export const PendenciasService = {
     return all.filter(p => p.contratoId === contratoId)
   },
 
+  async getById(id: string | number): Promise<Pendencia> {
+    if (USE_MOCKS) {
+      const all = getPendencias()
+      const found = all.find(p => String(p.id) === String(id))
+      if (!found) throw new Error('Pendência não encontrada (mock)')
+      return found
+    }
+    const data = await fetchApi<PendenciaRaw>(`/pendencias/${id}`)
+    return mapPendencia(data)
+  },
+
   async criar(input: NovaPendenciaInput): Promise<{ id: string }> {
     const payload = {
       id_contrato: Number(input.contratoId),

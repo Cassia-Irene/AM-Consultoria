@@ -39,6 +39,18 @@ function InsightCard({
 }
 
 function ClientHealthRow({ health }: { health: ClientHealth }) {
+  const statusColors = {
+    'emergência': 'text-rose-500',
+    'atenção': 'text-amber-500',
+    'normal': 'text-emerald-500'
+  }
+  
+  const barColors = {
+    'emergência': 'bg-rose-500',
+    'atenção': 'bg-amber-500',
+    'normal': 'bg-emerald-500'
+  }
+
   return (
     <div className="bg-[#0d1117] border border-[#23272F] rounded-2xl px-5 py-4 flex items-center justify-between shadow-sm">
       <div className="min-w-0 flex-1">
@@ -46,18 +58,18 @@ function ClientHealthRow({ health }: { health: ClientHealth }) {
         <div className="flex items-center gap-3 mt-1.5">
           <div className="flex-1 h-1.5 bg-[#23272F] rounded-full overflow-hidden max-w-[120px]">
             <div 
-              className={`h-full ${health.indiceDesgaste > 70 ? 'bg-red-500' : 'bg-sky-500'}`} 
-              style={{ width: `${health.indiceDesgaste}%` }} 
+              className={`h-full ${barColors[health.statusOperacional]}`} 
+              style={{ width: `${health.progressoMedio}%` }} 
             />
           </div>
-          <span className={`text-[10px] font-bold ${health.indiceDesgaste > 70 ? 'text-red-400' : 'text-sky-400'}`}>
-            {health.indiceDesgaste}% de esforço
+          <span className={`text-[10px] font-bold ${statusColors[health.statusOperacional]}`}>
+            {health.progressoMedio}% concluído
           </span>
         </div>
       </div>
       <div className="text-right ml-4">
         <span className="text-[9px] font-black uppercase tracking-widest text-[#7D8597] bg-[#23272F] px-2 py-1 rounded">
-          {health.perfil.replace('_', ' ')}
+          {health.statusOperacional}
         </span>
       </div>
     </div>
@@ -151,7 +163,12 @@ export default function ModoReflexaoPage() {
       <OperationalDrawer
         isOpen={!!selectedItem}
         onClose={() => setSelectedItem(null)}
-        title={selectedItem?.type === 'visita' ? 'Gestão de Visita' : 'Gestão de Pendência'}
+        title={
+          selectedItem?.type === 'visita' ? 'Gestão de Visita' : 
+          selectedItem?.type === 'pendencia' ? 'Gestão de Pendência' :
+          selectedItem?.type === 'entrega' ? 'Marco de Entrega' :
+          'Alerta Crítico'
+        }
       >
         {selectedItem?.type === 'pendencia' ? (
           <PendenciaManager 

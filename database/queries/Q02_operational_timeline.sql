@@ -1,10 +1,9 @@
 /*
-  Q02: Linha do Tempo Operacional (Timeline) - VERSÃO ANALÍTICA
+  Q02: Linha do Tempo Operacional (Timeline) - VERSÃO ANALÍTICA (Densificada)
   Objetivo: Consolidar eventos derivando inteligência operacional via SQL.
-  NÃO utiliza campos de sensores físicos.
+  Inclui: Visitas, Pendências, Faturamento, Entregas e Eventos Críticos.
 */
 
--- CTE para calcular metadados de apoio
 WITH MetadadosContrato AS (
     SELECT 
         con.id_contrato,
@@ -17,7 +16,7 @@ WITH MetadadosContrato AS (
     FROM contratos con
 )
 
--- 1. Visitas (Derivando Severidade e Contexto)
+-- 1. Visitas
 SELECT 
     'visita' as tipo,
     v.id_visita as id_referencia,
@@ -25,22 +24,17 @@ SELECT
     v.data_hora as data,
     'Visita: ' || v.tipo_visita as titulo,
     c.nome as cliente,
-    -- Categoria Derivada (Normalização para o Frontend)
     CASE 
         WHEN v.tipo_visita = 'urgente' THEN 'Reativo (Urgência)'
         WHEN v.tipo_visita = 'estruturada' THEN 'Planejamento'
         WHEN v.tipo_visita = 'acompanhamento direcionado' THEN 'Monitoramento'
-        WHEN v.tipo_visita = 'pontual' THEN 'Operacional'
         ELSE 'Rotina'
     END as categoria,
-    -- Criticidade Derivada (Inteligência Analítica)
     CASE 
         WHEN v.tipo_visita = 'urgente' THEN 'critica'
         WHEN v.tipo_visita = 'acompanhamento direcionado' AND mc.pendencias_atrasadas > 0 THEN 'alta'
-        WHEN v.tipo_visita = 'pontual' AND mc.pendencias_atrasadas > 2 THEN 'alta'
         ELSE 'normal'
     END as criticidade,
-
     mc.status_pagamento,
     mc.pendencias_contagem,
     v.resultados as ultima_visita_resultados,
@@ -71,7 +65,46 @@ WHERE p.resolvida = false
 
 UNION ALL
 
--- 3. Faturamento
+-- 3. Entregas (Avanço de Projeto)
+SELECT 
+    'entrega' as tipo,
+    e.id_entrega as id_referencia,
+    proj.id_contrato,
+    COALESCE(e.data_entrega_real, e.data_entrega_prevista)::timestamp as data,
+    'Entrega: ' || e.descricao as titulo,
+    c.nome as cliente,
+    proj.titulo as categoria,
+    CASE 
+        WHEN e.entregue THEN 'normal'
+        WHEN e.data_entrega_prevista < CURRENT_DATE THEN 'critica'
+        ELSE 'alta'
+    END as criticidade,
+    NULL, 0, NULL, NULL
+FROM entregas e
+JOIN projetos proj ON e.id_projeto = proj.id_projeto
+JOIN contratos con ON proj.id_contrato = con.id_contrato
+JOIN clientes c ON con.id_cliente = c.id_cliente
+
+UNION ALL
+
+-- 4. Eventos Críticos (Rupturas e Crises)
+SELECT 
+    'alerta' as tipo,
+    ec.id_evento as id_referencia,
+    ec.id_contrato,
+    ec.data_evento::timestamp as data,
+    ec.descricao as titulo,
+    c.nome as cliente,
+    CASE WHEN ec.acao_tomada IS NOT NULL THEN 'Estabilizado' ELSE 'Em Crise' END as categoria,
+    'critica' as criticidade,
+    NULL, 0, NULL, NULL
+FROM eventos_criticos ec
+JOIN contratos con ON ec.id_contrato = con.id_contrato
+JOIN clientes c ON con.id_cliente = c.id_cliente
+
+UNION ALL
+
+-- 5. Faturamento
 SELECT 
     'financeiro' as tipo,
     f.id_faturamento as id_referencia,

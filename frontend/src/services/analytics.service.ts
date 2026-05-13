@@ -48,7 +48,8 @@ export interface CaosScore {
   idContrato: number
   visitasUrgentes: number
   pendenciasAtrasadas: number
-  caosScore: number
+  eventosAtivos: number
+  totalAlertas: number
 }
 
 export interface FinancialMonth {
@@ -64,9 +65,10 @@ export interface ClientHealth {
   idContrato: number
   visitasUrgentes: number
   pendenciasAtrasadas: number
+  eventosAtivos: number
+  progressoMedio: number
   totalMinutosInvisiveis: number
-  indiceDesgaste: number
-  perfil: 'drenante' | 'urgente' | 'equilibrado'
+  statusOperacional: 'emergência' | 'atenção' | 'normal'
 }
 
 export interface OperationalInsight {
@@ -175,7 +177,7 @@ export const AnalyticsService = {
     return {
       totalHorasInvisiveis: totalMinutosInvisiveis,
       urgenciasNoMes,
-      topDrainingClients: healthData.sort((a, b) => b.indiceDesgaste - a.indiceDesgaste),
+      topDrainingClients: healthData.sort((a, b) => b.eventosAtivos - a.eventosAtivos || b.visitasUrgentes - a.visitasUrgentes),
       clientes: healthData.map(c => ({ id: String(c.idContrato), nome_instituicao: c.cliente })),
       timeline
     }
@@ -221,4 +223,17 @@ export interface TopPriority {
   dataPrazo?: string
   statusPrazo: string
   scorePrioridade: number
+}
+
+export interface AttentionItem {
+  idContrato: number
+  cliente: string
+  progressoReal: number
+  eventosAtivos: number
+  state: 'emergência' | 'atenção' | 'normal'
+  stagnationRisk: boolean
+  lastDeliveryDays: number
+  summary: string
+  valueNarrative: string
+  statusOperacional: string
 }

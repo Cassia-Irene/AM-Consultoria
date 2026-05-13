@@ -175,7 +175,7 @@ function PlanningList() {
   const [pendencies, setPendencies] = useState<OpenPendency[]>([])
   const [timeline, setTimeline] = useState<TimelineEvent[]>([])
   const [selectedItem, setSelectedItem] = useState<{ 
-    type: 'visita' | 'pendencia'; 
+    type: string; 
     id: number | string;
     color?: 'amber' | 'zinc' | 'red'
   } | null>(null)
@@ -355,7 +355,7 @@ function PlanningList() {
                   <HistoryItem 
                     key={i} 
                     event={e} 
-                    onClick={() => setSelectedItem({ type: 'visita', id: e.idReferencia })}
+                    onClick={() => setSelectedItem({ type: e.tipo, id: e.idReferencia })}
                   />
                 ))}
               </div>
@@ -367,7 +367,12 @@ function PlanningList() {
         <OperationalDrawer
           isOpen={!!selectedItem}
           onClose={() => setSelectedItem(null)}
-          title={selectedItem?.type === 'visita' ? 'Gestão de Visita' : 'Gestão de Pendência'}
+          title={
+            selectedItem?.type === 'visita' ? 'Gestão de Visita' : 
+            selectedItem?.type === 'pendencia' ? 'Gestão de Pendência' :
+            selectedItem?.type === 'entrega' ? 'Marco de Entrega' :
+            'Alerta Crítico'
+          }
         >
           {selectedItem?.type === 'pendencia' ? (
             <PendenciaManager 

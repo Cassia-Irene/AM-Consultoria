@@ -38,6 +38,7 @@ class CaosScore(BaseAnalyticsSchema):
     id_contrato: int
     visitas_urgentes: int
     pendencias_atrasadas: int
+    eventos_ativos: int # Adicionado
     caos_score: int
 
 class OpenPendency(BaseAnalyticsSchema):
@@ -85,7 +86,6 @@ class ExtraVisitSummary(BaseAnalyticsSchema):
     qtd_extras: int
     mes: int
     ano: int
-    # Removido dia para focar no mensal analytics
     
 class TopPriority(BaseAnalyticsSchema):
     id: int
@@ -109,9 +109,11 @@ class ClientHealth(BaseAnalyticsSchema):
     id_contrato: int
     visitas_urgentes: int
     pendencias_atrasadas: int
+    eventos_ativos: int # Adicionado
+    progresso_medio: int # Adicionado
+    ultima_entrega_data: Optional[date] = None # Adicionado
     total_minutos_invisiveis: int
-    indice_desgaste: int
-    perfil: str
+    status_operacional: str # Substituiu perfil e indice_desgaste
 
 class TodayVisit(BaseAnalyticsSchema):
     id_visita: int
@@ -125,7 +127,3 @@ class TodayVisit(BaseAnalyticsSchema):
     status_pagamento: Optional[str] = None
     ultima_visita_resultados: Optional[str] = None
     pendencias_lista: Optional[List[dict]] = None
-
-
-
-

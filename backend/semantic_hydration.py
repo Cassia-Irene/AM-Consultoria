@@ -1,526 +1,174 @@
-import sys
-import os
-import random
-from datetime import datetime, timedelta, date
-from sqlalchemy import text
 from sqlalchemy.orm import Session
+from datetime import date, timedelta, datetime
+import random
+from src.models import Projeto, Entrega, EventoCritico, Visita, Contrato, Cliente
 
-# Adiciona o caminho do backend ao sys.path
-sys.path.append(os.getcwd())
+# Configurações de Janela Temporal
+BASE_DATE = date(2026, 5, 12)
+START_DATE = date(2025, 11, 12)
+END_DATE = date(2026, 6, 12)
 
-from src.database import SessionLocal
-from src.models import (
-    Cliente, Contato, Contrato, Visita, Pendencia, 
-    FaturamentoCliente, EventoCritico, Projeto, ProjetoParcela,
-    TipoPagamento, ContratoPagamento
-)
+def get_profile(cliente_nome: str) -> str:
+    nome = cliente_nome.lower()
+    if "lar são francisco" in nome: return "LAR"
+    if any(x in nome for x in ["caps", "apae", "cuidabem"]): return "MICRO"
+    return "MACRO" # Farmácia, Creche, Reabilita
 
-# Configuração Determinística
-random.seed(42)
+PROJECT_MILESTONES = {
+    "Revisão do fluxo de medicação": [
+        "Mapeamento de riscos de dispensação", "Treinamento: Protocolo de 5 certos", 
+        "Implementação de ficha de controle", "Auditoria de estoque inicial", 
+        "Validar armazenamento de psicotrópicos", "Revisão de prontuários"
+    ],
+    "Organização documental para VISA": [
+        "Checklist de conformidade", "Dossiê técnico", "Regularização de alvará",
+        "Atestados de treinamento", "Manual de Boas Práticas", "Plano de Gerenciamento de Resíduos"
+    ],
+    "Revisão do fluxo RAAS": [
+        "Auditoria de prontuários ativos", "Cruzamento RAAS x Atendimento",
+        "Treinamento de preenchimento", "Implementação de fluxo de glosa zero",
+        "Validação de faturamento mensal"
+    ],
+    "Redesenho da escala de plantão": [
+        "Mapeamento de horas extras", "Acordo de banco de horas",
+        "Escala de feriados e folgas", "Implementação de sistema de ponto",
+        "Monitoramento de absenteísmo"
+    ],
+    "Controle de dispensação": [
+        "Layout de estoque", "Inventário rotativo", "Segregação de vencidos",
+        "Treinamento de balcão", "Sistema de perdas"
+    ]
+}
 
-CLIENT_NAMES = [
-    "Lar São Francisco de Cuidados para Idosos",
-    "CAPS II Renascer",
-    "CuidaBem Serviços Domiciliares",
-    "REABILITA Centro de Reabilitação",
-    "Creche Sonho de Criança",
-    "APAE de Bacabal",
-    "FarmaVida Farmácia Comunitária"
-]
+CRITICAL_EVENTS = {
+    "LAR": [
+        "Tensão Institucional: Ruptura de confiança com equipe noturna",
+        "Incidente: Queda de residente sem registro imediato",
+        "Bloqueio: Direção relutante em implementar protocolo de medicação",
+        "Crise: Familiares questionando conduta técnica"
+    ],
+    "MICRO": [
+        "Gargalo: Acúmulo de prontuários sem assinatura técnica",
+        "Erro Operacional: Falha na escala gerando dobra de turno",
+        "Risco Sanitário: Medicamento vencido encontrado em estoque ativo",
+        "Conflito: Resistência da equipe assistencial às novas metas"
+    ],
+    "MACRO": [
+        "Atraso Estratégico: Aguardando aprovação de orçamento para reforma",
+        "Risco Contratual: Cliente questionando valor de visitas extras",
+        "Pausa Operacional: Mudança de gestão interna pausou o projeto",
+        "Divergência: Diferença entre estoque físico e contábil"
+    ]
+}
 
-def cleanup_operational_data(db: Session):
-    """Limpa dados operacionais vinculados aos 7 clientes para garantir idempotência."""
-    print("[IDEMPOTÊNCIA] Limpando histórico operacional dos clientes padrão...")
+def enrich_operational_data(db: Session):
+    print(f"\n[DENSIDADE] Iniciando enriquecimento operacional ({START_DATE} -> {END_DATE})")
     
-    # Busca IDs atuais baseados nos nomes
-    client_ids = [r[0] for r in db.execute(text("SELECT id_cliente FROM clientes WHERE nome IN :names"), {"names": tuple(CLIENT_NAMES)}).fetchall()]
-    
-    if not client_ids:
-        print("[IDEMPOTÊNCIA] Nenhum dos 7 clientes padrão encontrado. Pulando limpeza.")
-        return
-
-    # Busca todos os IDs de contrato destes clientes
-    contrato_ids = [r[0] for r in db.execute(text("SELECT id_contrato FROM contratos WHERE id_cliente IN :ids"), {"ids": tuple(client_ids)}).fetchall()]
-    
-    if contrato_ids:
-        # Ordem reversa de dependência (Folhas primeiro)
-        db.execute(text("DELETE FROM entregas WHERE id_projeto IN (SELECT id_projeto FROM projetos WHERE id_contrato IN :ids)"), {"ids": tuple(contrato_ids)})
-        db.execute(text("DELETE FROM projeto_parcelas WHERE id_projeto IN (SELECT id_projeto FROM projetos WHERE id_contrato IN :ids)"), {"ids": tuple(contrato_ids)})
-        db.execute(text("DELETE FROM projetos WHERE id_contrato IN :ids"), {"ids": tuple(contrato_ids)})
-        db.execute(text("DELETE FROM eventos_criticos WHERE id_contrato IN :ids"), {"ids": tuple(contrato_ids)})
-        db.execute(text("DELETE FROM pendencias WHERE id_contrato IN :ids"), {"ids": tuple(contrato_ids)})
-        db.execute(text("DELETE FROM visitas_extra WHERE id_visita IN (SELECT id_visita FROM visitas WHERE id_contrato IN :ids)"), {"ids": tuple(contrato_ids)})
-        db.execute(text("DELETE FROM visitas WHERE id_contrato IN :ids"), {"ids": tuple(contrato_ids)})
-        db.execute(text("DELETE FROM faturamento_cliente WHERE id_contrato IN :ids"), {"ids": tuple(contrato_ids)})
-
-    # Tabelas ligadas diretamente ao id_cliente
-    db.execute(text("DELETE FROM contatos WHERE id_cliente IN :ids"), {"ids": tuple(client_ids)})
-    db.commit()
-
-def hydrate_entities(db: Session):
-    """Atualiza as entidades base (Clientes, Contatos, Contratos)."""
-    cleanup_operational_data(db)
-    print("[ENTIDADES] Atualizando Clientes e Contratos...")
-    
-    data = {
-        "Lar São Francisco de Cuidados para Idosos": {
-            "nome": "Lar São Francisco de Cuidados para Idosos",
-            "tipo": "ILPI Privada",
-            "complexidade": "alta",
-            "cidade": "São Luís/MA",
-            "observacoes": "A Conceição é extremamente comprometida com cuidado, mas evita conflitos administrativos. A equipe assistencial é emocionalmente sobrecarregada. Quando há incidente com residente, tudo vira prioridade máxima.",
-            "contrato": {
-                "visitas": 6, 
-                "valor": 8500.0, 
-                "relatorio": True, 
-                "servicos": "Diagnóstico organizacional, revisão de processos assistenciais, acompanhamento mensal",
-                "inicio": date(2025, 2, 1)
-            },
-            "contatos": [
-                {"nome": "Conceição Ribeiro", "papel": "Operacional", "cargo": "Diretora / Operacional"},
-                {"nome": "Patrícia Ribeiro", "papel": "Decisor", "cargo": "Administrativo Financeiro / Decisora parcial"},
-                {"nome": "Dr. Álvaro Mendes", "papel": "Técnico", "cargo": "Médico parceiro recorrente"}
-            ]
-        },
-        "CAPS II Renascer": {
-            "nome": "CAPS II Renascer",
-            "tipo": "Saúde Mental Pública",
-            "complexidade": "alta",
-            "cidade": "São Luís/MA",
-            "observacoes": "Ambiente muito sensível emocionalmente. A equipe trabalha sobrecarregada. Demandas urgentes surgem sem previsibilidade. Muitas decisões acontecem informalmente.",
-            "contrato": {
-                "visitas": 4, 
-                "valor": 6200.0, 
-                "relatorio": True, 
-                "servicos": "Apoio organizacional e fluxo operacional",
-                "inicio": date(2024, 8, 1)
-            },
-            "contatos": [
-                {"nome": "Dr. Augusto Leal", "papel": "Decisor", "cargo": "Coordenador"},
-                {"nome": "Márcia Costa", "papel": "Operacional", "cargo": "Assistente Social"},
-                {"nome": "Joana Nunes", "papel": "Operacional", "cargo": "Administrativo da Secretaria"}
-            ]
-        },
-        "CuidaBem Serviços Domiciliares": {
-            "nome": "CuidaBem Serviços Domiciliares",
-            "tipo": "Home Care",
-            "complexidade": "alta",
-            "cidade": "São Luís/MA",
-            "observacoes": "Cliente extremamente acelerado. Tudo acontece via WhatsApp. Marcela toma decisão emocional sob pressão. Mudanças de escala acontecem o tempo todo.",
-            "contrato": {
-                "visitas": 8, 
-                "valor": 12000.0, 
-                "relatorio": False, 
-                "servicos": "Estruturação operacional e escala",
-                "inicio": date(2025, 1, 1),
-                "tipo_pagamento": "Mensal + Projetos paralelos"
-            },
-            "contatos": [
-                {"nome": "Marcela Viana", "papel": "Decisor", "cargo": "Fundadora"},
-                {"nome": "Felipe Braga", "papel": "Operacional", "cargo": "Coordenação Operacional"},
-                {"nome": "Amanda Sousa", "papel": "Financeiro", "cargo": "Financeiro"}
-            ]
-        },
-        "REABILITA Centro de Reabilitação": {
-            "nome": "REABILITA Centro de Reabilitação",
-            "tipo": "Clínica de Reabilitação",
-            "complexidade": "alta",
-            "cidade": "São Luís/MA",
-            "observacoes": "Equipe técnica muito boa, mas gestão financeira confusa. A Fernanda muda prioridades frequentemente conforme pressão dos convênios.",
-            "contrato": {
-                "visitas": 4, 
-                "valor": 7000.0, 
-                "relatorio": True, 
-                "servicos": "Organização operacional e faturamento",
-                "inicio": date(2025, 3, 1)
-            },
-            "contatos": [
-                {"nome": "Dra. Fernanda Caldas", "papel": "Decisor", "cargo": "Sócia-proprietária"},
-                {"nome": "Cláudia Mendes", "papel": "Operacional", "cargo": "Recepção administrativa"}
-            ]
-        },
-        "Creche Sonho de Criança": {
-            "nome": "Creche Sonho de Criança",
-            "tipo": "Creche Comunitária Conveniada",
-            "complexidade": "média",
-            "cidade": "São Luís/MA",
-            "observacoes": "Equipe afetiva e pouco organizada documentalmente. Grande medo de auditoria da prefeitura.",
-            "contrato": {
-                "visitas": 3, 
-                "valor": 4500.0, 
-                "relatorio": True,
-                "servicos": "Organização administrativa e prestação de contas",
-                "inicio": date(2024, 6, 1)
-            },
-            "contatos": [
-                {"nome": "Rosângela Teixeira", "papel": "Decisor", "cargo": "Diretora"},
-                {"nome": "Ana Paula Ferreira", "papel": "Operacional", "cargo": "Secretaria"}
-            ]
-        },
-        "APAE de Bacabal": {
-            "nome": "APAE de Bacabal",
-            "tipo": "Educação Especial",
-            "complexidade": "alta",
-            "cidade": "Bacabal/MA",
-            "observacoes": "Instituição muito dependente do conhecimento informal da Neuza. Equipe pequena para demanda enorme. Sempre existe sensação de urgência acumulada.",
-            "contrato": {
-                "visitas": 2, 
-                "valor": 9000.0, 
-                "relatorio": True,
-                "servicos": "Estruturação multiprofissional",
-                "inicio": date(2024, 4, 1),
-                "tipo_pagamento": "Mensal + Projeto"
-            },
-            "contatos": [
-                {"nome": "Neuza Farias", "papel": "Decisor", "cargo": "Diretora pedagógica"},
-                {"nome": "Carlos Henrique", "papel": "Operacional", "cargo": "Administrativo"},
-                {"nome": "Juliana Lopes", "papel": "Técnico", "cargo": "Psicologia"}
-            ]
-        },
-        "FarmaVida Farmácia Comunitária": {
-            "nome": "FarmaVida Farmácia Comunitária",
-            "tipo": "Farmácia Popular",
-            "complexidade": "média",
-            "cidade": "Caxias/MA",
-            "observacoes": "Operação muito baseada na memória do dono. Resistência inicial ao uso de sistema. Grande preocupação com perda financeira por erro operacional.",
-            "contrato": {
-                "visitas": 2, 
-                "valor": 3800.0, 
-                "relatorio": False,
-                "servicos": "Organização operacional e rastreabilidade",
-                "inicio": date(2024, 9, 1),
-                "tipo_pagamento": "Por visita"
-            },
-            "contatos": [
-                {"nome": "Raimundo Alves", "papel": "Decisor", "cargo": "Proprietário"},
-                {"nome": "Luciana Alves", "papel": "Financeiro", "cargo": "Financeiro"},
-                {"nome": "Rafael Sousa", "papel": "Técnico", "cargo": "Farmacêutico Responsável"}
-            ]
-        }
-    }
-
-    for name, info in data.items():
-        cliente = db.query(Cliente).filter(Cliente.nome == name).first()
-        if cliente:
-            cliente.nome = info["nome"]
-            cliente.tipo_instituicao = info["tipo"]
-            cliente.nivel_complexidade = info["complexidade"]
-            cliente.cidade = info["cidade"]
-            cliente.status = "ativo"
-            cliente.observacoes_gerais = info.get("observacoes")
-            
-            # Contrato
-            contrato = db.query(Contrato).filter_by(id_cliente=cliente.id_cliente).first()
-            if contrato:
-                contrato.visitas_previstas_mes = info["contrato"]["visitas"]
-                contrato.inclui_relatorio = info["contrato"]["relatorio"]
-                
-                # Data de início customizada ou padrão (180 dias atrás)
-                if "inicio" in info["contrato"]:
-                    contrato.data_inicio = info["contrato"]["inicio"]
-                else:
-                    contrato.data_inicio = datetime.now().date() - timedelta(days=180)
-                
-                contrato.servicos_contratados = info["contrato"].get("servicos", f"Acompanhamento tático de {info['tipo']}")
-                
-                # Registro de Pagamento
-                tipo_nome = info["contrato"].get("tipo_pagamento", "Mensal")
-                tp = db.query(TipoPagamento).filter(TipoPagamento.tipo.ilike(tipo_nome)).first()
-                if not tp:
-                    tp = TipoPagamento(tipo=tipo_nome)
-                    db.add(tp)
-                    db.flush()
-                
-                # Limpa pagamentos anteriores para idempotência
-                db.execute(text("DELETE FROM contrato_pagamento WHERE id_contrato = :id"), {"id": contrato.id_contrato})
-                db.add(ContratoPagamento(
-                    id_contrato=contrato.id_contrato,
-                    id_tipo_pagamento=tp.id_tipo,
-                    valor=info["contrato"]["valor"]
-                ))
-            
-            # Contatos (Upsert para evitar duplicados)
-            for c in info["contatos"]:
-                # Gerar email seguro
-                import unicodedata
-                normalized = unicodedata.normalize('NFD', c["nome"].lower())
-                safe_name = "".join(x for x in normalized if unicodedata.category(x) != 'Mn')
-                safe_name = safe_name.replace(' ', '.')
-                safe_name = "".join(x for x in safe_name if x.isalnum() or x == '.')
-                while '..' in safe_name: safe_name = safe_name.replace('..', '.')
-                safe_name = safe_name.strip('.')
-                
-                email = f"{safe_name}@cliente.com"
-                
-                contato_existente = db.query(Contato).filter_by(
-                    id_cliente=cliente.id_cliente, 
-                    nome=c["nome"]
-                ).first()
-                
-                if contato_existente:
-                    contato_existente.papel = c["papel"]
-                    contato_existente.cargo = c["cargo"]
-                    contato_existente.email = email
-                else:
-                    db.add(Contato(
-                        id_cliente=cliente.id_cliente,
-                        nome=c["nome"],
-                        papel=c["papel"],
-                        cargo=c["cargo"],
-                        email=email
-                    ))
-            
-            # --- CAOS INICIAL: Pendência Esquecida (17+ dias) ---
-            if name == "Lar São Francisco de Cuidados para Idosos":
-                 db.add(Pendencia(
-                    id_contrato=contrato.id_contrato,
-                    descricao="Revisar escala de enfermagem para feriado (Cobrança WhatsApp)",
-                    resolvida=False,
-                    data_origem=(datetime.now() - timedelta(days=25)).date(),
-                    data_prazo=(datetime.now() - timedelta(days=18)).date(),
-                    responsavel="Adriano"
-                ))
-    db.commit()
-    return data
-
-def subtract_months(sourcedate, months):
-    month = sourcedate.month - 1 - months
-    year = sourcedate.year + month // 12
-    month = month % 12 + 1
-    return datetime(year, month, 1)
-
-def simulate_history(db: Session, client_data: dict):
-    """Gera 6 meses de histórico determinístico e caótico."""
-    print("[HISTÓRICO] Gerando 6 meses de operação verossímil...")
-    
-    # Sincroniza com o fuso horário do Adriano (GMT-3)
-    now = datetime.utcnow() - timedelta(hours=3)
-    
-    for month_offset in range(5, -1, -1):
-        target_month_start = subtract_months(now, month_offset)
+    projetos = db.query(Projeto).all()
+    for proj in projetos:
+        # 1. Gerar Entregas (Cronograma Irregular)
+        milestones = PROJECT_MILESTONES.get(proj.titulo, [
+            f"Etapa 1: {proj.titulo}", f"Etapa 2: {proj.titulo}", 
+            f"Etapa 3: {proj.titulo}", f"Validação: {proj.titulo}"
+        ])
         
-        for name, info in client_data.items():
-            cliente = db.query(Cliente).filter(Cliente.nome == name).first()
-            if not cliente: continue
-            cid = cliente.id_cliente
-            contrato = db.query(Contrato).filter_by(id_cliente=cid).first()
-            if not contrato: continue
-
-            # --- VISITAS E CAOS ---
-            previstas = info["contrato"]["visitas"]
-            
-            realizadas_count = previstas
-            if name == "Lar São Francisco de Cuidados para Idosos": # Oscilação
-                realizadas_count = previstas - 1 if month_offset % 2 == 0 else previstas + 1
-            elif name == "CuidaBem Serviços Domiciliares": # Urgência
-                realizadas_count = previstas + random.randint(0, 2)
-            elif name == "FarmaVida Farmácia Comunitária": # Espaçado
-                realizadas_count = 1 if month_offset % 2 == 0 else 0
-            
-            for i in range(realizadas_count):
-                day = random.randint(1, 28)
-                v_date = target_month_start + timedelta(days=day)
-                if v_date > now: continue
-
-                # Visita Tardia/Urgente (Caos)
-                hour = 14
-                minute = 0
-                if name == "CuidaBem Serviços Domiciliares" and random.random() > 0.7:
-                    hour = 22 # Urgência noturna
-                    minute = random.randint(10, 50)
-                
-                status_v = "realizada"
-                # Visita "Zumbi": Realizada mas sem detalhamento/relatório
-                resultados_v = "Acompanhamento operacional mensal."
-                if random.random() > 0.8:
-                    resultados_v = "" # Sem relatório!
-                
-                # Contexto Emocional (Integrado em resultados)
-                if name == "Lar São Francisco de Cuidados para Idosos":
-                    contexto = random.choice(["Conceição ansiosa com fiscalização.", "Equipe assistencial sobrecarregada.", "Conflito administrativo entre sócias."])
-                    resultados_v = f"{resultados_v} | {contexto}" if resultados_v else contexto
-                elif name == "CuidaBem Serviços Domiciliares":
-                    contexto = random.choice(["Marcela irritada com falta de cuidador.", "Decisão emocional sob pressão.", "Acionamento rápido via WhatsApp."])
-                    resultados_v = f"{resultados_v} | {contexto}" if resultados_v else contexto
-
-                visita = Visita(
-                    id_contrato=contrato.id_contrato,
-                    data_hora=v_date.replace(hour=hour, minute=minute),
-                    status=status_v,
-                    tipo_visita="rotineira" if hour < 18 else "urgente",
-                    modalidade="presencial" if random.random() > 0.3 else "remota",
-                    duracao_minutos=random.choice([45, 60, 90, 120]),
-                    descricao=f"Ciclo Operacional M-{month_offset}",
-                    resultados=resultados_v
-                )
-                db.add(visita)
-                db.flush()
-
-                # Pendências
-                if random.random() > 0.4:
-                    is_resolvida = (now - v_date).days > 20
-                    if month_offset == 0 and random.random() > 0.3: is_resolvida = False
-                    
-                    db.add(Pendencia(
-                        id_contrato=contrato.id_contrato,
-                        id_visita=visita.id_visita,
-                        descricao=f"Ajustar fluxo de {random.choice(['medicamentos', 'escala', 'documentação', 'financeiro'])}",
-                        resolvida=is_resolvida,
-                        data_origem=v_date.date(),
-                        data_prazo=(v_date + timedelta(days=7)).date(),
-                        data_resolucao=(v_date + timedelta(days=5)).date() if is_resolvida else None,
-                        responsavel="Equipe Cliente" if random.random() > 0.5 else "Adriano"
-                    ))
-
-            # --- FATURAMENTO (Upsert defensivo) ---
-            valor_base = info["contrato"]["valor"]
-            pago = True
-            if name == "Lar São Francisco de Cuidados para Idosos" and month_offset in [1, 2]: pago = False 
-            if name == "REABILITA Centro de Reabilitação" and month_offset == 0: pago = False 
-
-            mes_ano_date = target_month_start.date()
-            # Verifica se já existe um faturamento para este contrato e mês (evita colisão com Fase 2)
-            faturamento_existente = db.query(FaturamentoCliente).filter_by(
-                id_contrato=contrato.id_contrato, 
-                mes_ano=mes_ano_date
-            ).first()
-
-            if faturamento_existente:
-                faturamento_existente.valor_base = valor_base
-                faturamento_existente.valor_total = valor_base
-                faturamento_existente.pago = pago
-                faturamento_existente.visitas_realizadas = realizadas_count
-                faturamento_existente.data_pagamento = (target_month_start + timedelta(days=15)).date() if pago else None
+        current_date = proj.data_inicio
+        profile = get_profile(proj.contrato.cliente.nome)
+        
+        for i, m_desc in enumerate(milestones):
+            # Adiciona irregularidade no tempo
+            if profile == "MICRO":
+                gap = random.randint(7, 15)
+            elif profile == "LAR":
+                gap = random.randint(15, 30)
             else:
-                db.add(FaturamentoCliente(
-                    id_contrato=contrato.id_contrato,
-                    mes_ano=mes_ano_date,
-                    valor_base=valor_base,
-                    valor_total=valor_base,
-                    pago=pago,
-                    data_pagamento=(target_month_start + timedelta(days=15)).date() if pago else None,
-                    visitas_realizadas=realizadas_count
+                gap = random.randint(20, 45)
+            
+            due_date = current_date + timedelta(days=gap)
+            current_date = due_date # Cascata
+            
+            # Se a data prevista já passou e estamos no passado da simulação
+            is_past = due_date < BASE_DATE
+            
+            # Lógica de entrega: Algumas concluídas, algumas atrasadas, algumas futuras
+            entregue = False
+            data_real = None
+            
+            if is_past:
+                # 80% de chance de estar entregue se for antigo
+                if random.random() > 0.2:
+                    entregue = True
+                    # Atraso ou adiantamento na entrega real
+                    data_real = due_date + timedelta(days=random.randint(-3, 10))
+            
+            # Garantir que não duplicamos
+            exists = db.query(Entrega).filter_by(id_projeto=proj.id_projeto, descricao=m_desc).first()
+            if not exists:
+                db.add(Entrega(
+                    id_projeto=proj.id_projeto,
+                    descricao=m_desc,
+                    data_entrega_prevista=due_date,
+                    data_entrega_real=data_real,
+                    entregue=entregue
                 ))
+                print(f"  [ENTREGA] {proj.contrato.cliente.nome[:15]}... -> {m_desc}")
 
-            # --- EVENTOS CRÍTICOS ---
-            if name == "Lar São Francisco de Cuidados para Idosos" and month_offset == 2:
+    db.commit()
+
+    # 2. Gerar Eventos Críticos (Causais e Agrupados)
+    contratos = db.query(Contrato).all()
+    for contrato in contratos:
+        profile = get_profile(contrato.cliente.nome)
+        
+        # Buscar visitas deste contrato para ancorar eventos
+        visitas = db.query(Visita).filter_by(id_contrato=contrato.id_contrato).all()
+        
+        # Quantidade de eventos baseada no perfil
+        num_eventos = random.randint(1, 3) if profile == "LAR" else random.randint(0, 2)
+        
+        for _ in range(num_eventos):
+            event_template = random.choice(CRITICAL_EVENTS[profile])
+            
+            # Escolher uma data aleatória no passado (foco em meses de tensão)
+            days_ago = random.randint(30, 150)
+            event_date = BASE_DATE - timedelta(days=days_ago)
+            
+            # Tentar associar a uma visita próxima (causalidade)
+            id_visita = None
+            visita_proxima = next((v for v in visitas if abs((v.data_hora.date() - event_date).days) < 3), None)
+            if visita_proxima:
+                id_visita = visita_proxima.id_visita
+            
+            # Ação tomada (Cadeia Causal)
+            acao = None
+            if event_date < BASE_DATE - timedelta(days=20):
+                acao = "Resolvido via nova rodada de treinamentos e ajuste de fluxo."
+            
+            exists = db.query(EventoCritico).filter_by(id_contrato=contrato.id_contrato, descricao=event_template).first()
+            if not exists:
                 db.add(EventoCritico(
                     id_contrato=contrato.id_contrato,
-                    descricao="Fiscalização da VISA - Alerta estrutural grave",
-                    data_evento=(target_month_start + timedelta(days=10)).date(),
-                    acao_tomada="Plano de adequação enviado."
+                    id_visita=id_visita,
+                    data_evento=event_date,
+                    descricao=event_template,
+                    acao_tomada=acao
                 ))
-            if name == "CuidaBem Serviços Domiciliares" and month_offset == 1:
-                 db.add(EventoCritico(
-                    id_contrato=contrato.id_contrato,
-                    descricao="Crise de Escala: Saída súbita de cuidadores",
-                    data_evento=(target_month_start + timedelta(days=5)).date(),
-                    acao_tomada="Reorganização de plantões."
-                ))
-
-    # --- PROJETOS EXTRAS (Status Reais) ---
-    for name in CLIENT_NAMES:
-        cliente = db.query(Cliente).filter(Cliente.nome == name).first()
-        if not cliente: continue
-        
-        cid = cliente.id_cliente 
-        contrato = db.query(Contrato).filter_by(id_cliente=cid).first()
-        if contrato:
-            if name == "Lar São Francisco de Cuidados para Idosos":
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão do fluxo de medicação", status="em andamento", data_inicio=(now - timedelta(days=60)).date(), data_fim_prevista=(now - timedelta(days=15)).date(), valor_total=2500.0))
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Organização documental para VISA", status="em andamento", data_inicio=(now - timedelta(days=20)).date(), valor_total=3000.0))
-            elif name == "Creche Sonho de Criança":
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão de frequência escolar", status="concluído", data_inicio=(now - timedelta(days=90)).date(), valor_total=1000.0))
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Organização documental de convênio", status="em andamento", data_inicio=(now - timedelta(days=45)).date(), data_fim_prevista=(now - timedelta(days=5)).date(), valor_total=2000.0))
-            elif name == "CAPS II Renascer":
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão do fluxo RAAS", status="em andamento", data_inicio=(now - timedelta(days=70)).date(), data_fim_prevista=(now - timedelta(days=10)).date(), valor_total=1200.0))
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Organização do acompanhamento de usuários intensivos", status="em andamento", data_inicio=(now - timedelta(days=15)).date(), valor_total=1500.0))
-            elif name == "CuidaBem Serviços Domiciliares":
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Estruturação de controle de cuidadores", status="em andamento", data_inicio=(now - timedelta(days=50)).date(), data_fim_prevista=(now - timedelta(days=10)).date(), valor_total=3000.0))
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Redesenho da escala de plantão", status="concluído", data_inicio=(now - timedelta(days=30)).date(), valor_total=2000.0))
-            elif name == "REABILITA Centro de Reabilitação":
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão de autorização de convênios", status="em andamento", data_inicio=(now - timedelta(days=25)).date(), valor_total=2800.0))
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Controle de sessões e metas terapêuticas", status="em andamento", data_inicio=(now - timedelta(days=40)).date(), data_fim_prevista=(now - timedelta(days=15)).date(), valor_total=2200.0))
-            elif name == "APAE de Bacabal":
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão dos PIAs", status="concluído", data_inicio=(now - timedelta(days=120)).date(), valor_total=3500.0))
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Organização integrada dos atendimentos", status="em andamento", data_inicio=(now - timedelta(days=30)).date(), data_fim_prevista=(now - timedelta(days=5)).date(), valor_total=2500.0))
-            elif name == "FarmaVida Farmácia Comunitária":
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Controle de dispensação", status="em andamento", data_inicio=(now - timedelta(days=20)).date(), valor_total=1500.0))
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão de fluxo Farmácia Popular", status="concluído", data_inicio=(now - timedelta(days=60)).date(), valor_total=1800.0))
-
-    # --- AGENDA FUTURA (Próximos 30 dias) ---
-    # Adriano é um cara ocupado: Pelo menos 1 visita por dia.
-    # Respeitando buffers de desgaste cognitivo e peso operacional.
-    
-    print("[AGENDA] Gerando próximos 30 dias de operação...")
-    
-    # Mapeamento de "Peso e Buffer" (em minutos)
-    BUFFERS = {
-        "CAPS II Renascer": 120,          # 2h de respiro
-        "Lar São Francisco de Cuidados para Idosos": 90, # 1h30
-        "CuidaBem Serviços Domiciliares": 60,
-        "REABILITA Centro de Reabilitação": 45,
-        "Creche Sonho de Criança": 30,
-        "FarmaVida Farmácia Comunitária": 15,
-        "APAE de Bacabal": 480            # Ocupa o dia todo
-    }
-
-    for d in range(0, 31):
-        target_date = now + timedelta(days=d)
-        if target_date.weekday() >= 5: continue # Pula final de semana (Adriano também descansa)
-
-        # Escolhe clientes para o dia (sem repetir)
-        available_names = list(CLIENT_NAMES)
-        random.shuffle(available_names)
-        
-        # Decide se terá 1 ou 2 visitas
-        num_visitas = 1 if random.random() > 0.3 else 2
-        
-        current_time = target_date.replace(hour=9, minute=0, second=0, microsecond=0)
-        
-        for i in range(num_visitas):
-            if not available_names: break
-            name = available_names.pop(0)
-            
-            # Se for APAE, cancela qualquer outra visita no dia
-            if name == "APAE de Bacabal":
-                if i > 0: continue # Se já teve visita, não vai pra Bacabal hoje
-                duracao = 480
-                num_visitas = 1 # Trava o dia
-            else:
-                duracao = random.choice([60, 90, 120])
-
-            cliente = db.query(Cliente).filter(Cliente.nome == name).first()
-            contrato = db.query(Contrato).filter_by(id_cliente=cliente.id_cliente).first()
-            
-            visita = Visita(
-                id_contrato=contrato.id_contrato,
-                data_hora=current_time,
-                status="planejada",
-                duracao_minutos=duracao,
-                tipo_visita="rotineira",
-                modalidade="presencial",
-                descricao=f"Visita Operacional Programada - {name}",
-                resultados="Pauta: Acompanhamento de indicadores e processos."
-            )
-            db.add(visita)
-            
-            # Avança o tempo: Duracao + Buffer
-            buffer_min = BUFFERS.get(name, 60)
-            current_time += timedelta(minutes=duracao + buffer_min)
-            
-            # Se passar das 18h, para o dia
-            if current_time.hour >= 18:
-                break
+                print(f"  [CRÍTICO] {contrato.cliente.nome[:15]}... -> {event_template}")
 
     db.commit()
-    print("[SEED] Hidratação Semântica e Agenda Futura concluídas com sucesso!")
+    print("[DENSIDADE] Enriquecimento concluído.\n")
+
+# Aliases para compatibilidade
+def hydrate_entities(db: Session):
+    return {}
+
+def simulate_history(db: Session, client_data=None):
+    enrich_operational_data(db)
 
 if __name__ == "__main__":
+    from src.database import SessionLocal
     db = SessionLocal()
     try:
-        cleanup_operational_data(db)
-        client_data = hydrate_entities(db)
-        simulate_history(db, client_data)
+        enrich_operational_data(db)
     finally:
         db.close()

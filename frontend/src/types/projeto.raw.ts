@@ -15,5 +15,6 @@ export interface ProjetoRaw {
 
   valor_total: string | number
   status: string
+  atrasado?: boolean
   observacoes_gerais: string | null
 }

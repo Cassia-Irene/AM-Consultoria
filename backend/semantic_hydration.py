@@ -59,6 +59,7 @@ def cleanup_operational_data(db: Session):
 
 def hydrate_entities(db: Session):
     """Atualiza as entidades base (Clientes, Contatos, Contratos)."""
+    cleanup_operational_data(db)
     print("[ENTIDADES] Atualizando Clientes e Contratos...")
     
     data = {
@@ -238,9 +239,9 @@ def hydrate_entities(db: Session):
                     valor=info["contrato"]["valor"]
                 ))
             
-            # Contatos
+            # Contatos (Upsert para evitar duplicados)
             for c in info["contatos"]:
-                # Gerar email seguro (sem acentos ou caracteres especiais)
+                # Gerar email seguro
                 import unicodedata
                 normalized = unicodedata.normalize('NFD', c["nome"].lower())
                 safe_name = "".join(x for x in normalized if unicodedata.category(x) != 'Mn')
@@ -249,12 +250,35 @@ def hydrate_entities(db: Session):
                 while '..' in safe_name: safe_name = safe_name.replace('..', '.')
                 safe_name = safe_name.strip('.')
                 
-                db.add(Contato(
-                    id_cliente=cliente.id_cliente,
-                    nome=c["nome"],
-                    papel=c["papel"],
-                    cargo=c["cargo"],
-                    email=f"{safe_name}@cliente.com"
+                email = f"{safe_name}@cliente.com"
+                
+                contato_existente = db.query(Contato).filter_by(
+                    id_cliente=cliente.id_cliente, 
+                    nome=c["nome"]
+                ).first()
+                
+                if contato_existente:
+                    contato_existente.papel = c["papel"]
+                    contato_existente.cargo = c["cargo"]
+                    contato_existente.email = email
+                else:
+                    db.add(Contato(
+                        id_cliente=cliente.id_cliente,
+                        nome=c["nome"],
+                        papel=c["papel"],
+                        cargo=c["cargo"],
+                        email=email
+                    ))
+            
+            # --- CAOS INICIAL: Pendência Esquecida (17+ dias) ---
+            if name == "Lar São Francisco de Cuidados para Idosos":
+                 db.add(Pendencia(
+                    id_contrato=contrato.id_contrato,
+                    descricao="Revisar escala de enfermagem para feriado (Cobrança WhatsApp)",
+                    resolvida=False,
+                    data_origem=(datetime.now() - timedelta(days=25)).date(),
+                    data_prazo=(datetime.now() - timedelta(days=18)).date(),
+                    responsavel="Adriano"
                 ))
     db.commit()
     return data
@@ -269,7 +293,8 @@ def simulate_history(db: Session, client_data: dict):
     """Gera 6 meses de histórico determinístico e caótico."""
     print("[HISTÓRICO] Gerando 6 meses de operação verossímil...")
     
-    now = datetime.now()
+    # Sincroniza com o fuso horário do Adriano (GMT-3)
+    now = datetime.utcnow() - timedelta(hours=3)
     
     for month_offset in range(5, -1, -1):
         target_month_start = subtract_months(now, month_offset)
@@ -297,15 +322,36 @@ def simulate_history(db: Session, client_data: dict):
                 v_date = target_month_start + timedelta(days=day)
                 if v_date > now: continue
 
+                # Visita Tardia/Urgente (Caos)
+                hour = 14
+                minute = 0
+                if name == "CuidaBem Serviços Domiciliares" and random.random() > 0.7:
+                    hour = 22 # Urgência noturna
+                    minute = random.randint(10, 50)
+                
+                status_v = "realizada"
+                # Visita "Zumbi": Realizada mas sem detalhamento/relatório
+                resultados_v = "Acompanhamento operacional mensal."
+                if random.random() > 0.8:
+                    resultados_v = "" # Sem relatório!
+                
+                # Contexto Emocional (Integrado em resultados)
+                if name == "Lar São Francisco de Cuidados para Idosos":
+                    contexto = random.choice(["Conceição ansiosa com fiscalização.", "Equipe assistencial sobrecarregada.", "Conflito administrativo entre sócias."])
+                    resultados_v = f"{resultados_v} | {contexto}" if resultados_v else contexto
+                elif name == "CuidaBem Serviços Domiciliares":
+                    contexto = random.choice(["Marcela irritada com falta de cuidador.", "Decisão emocional sob pressão.", "Acionamento rápido via WhatsApp."])
+                    resultados_v = f"{resultados_v} | {contexto}" if resultados_v else contexto
+
                 visita = Visita(
                     id_contrato=contrato.id_contrato,
-                    data_hora=v_date.replace(hour=14, minute=0),
-                    status="realizada",
-                    tipo_visita="rotineira" if random.random() > 0.2 else "urgente",
-                    modalidade="presencial",
-                    duracao_minutos=60, # Garantir valor não nulo
-                    descricao=f"Acompanhamento operacional mensal - Ciclo M-{month_offset}",
-                    resultados="Revisão de processos concluída."
+                    data_hora=v_date.replace(hour=hour, minute=minute),
+                    status=status_v,
+                    tipo_visita="rotineira" if hour < 18 else "urgente",
+                    modalidade="presencial" if random.random() > 0.3 else "remota",
+                    duracao_minutos=random.choice([45, 60, 90, 120]),
+                    descricao=f"Ciclo Operacional M-{month_offset}",
+                    resultados=resultados_v
                 )
                 db.add(visita)
                 db.flush()
@@ -372,47 +418,103 @@ def simulate_history(db: Session, client_data: dict):
                     acao_tomada="Reorganização de plantões."
                 ))
 
-    # --- PROJETOS EXTRAS ---
+    # --- PROJETOS EXTRAS (Status Reais) ---
     for name in CLIENT_NAMES:
         cliente = db.query(Cliente).filter(Cliente.nome == name).first()
         if not cliente: continue
         
-        cid = cliente.id_cliente # Usar o ID real para as condições abaixo
+        cid = cliente.id_cliente 
         contrato = db.query(Contrato).filter_by(id_cliente=cid).first()
         if contrato:
             if name == "Lar São Francisco de Cuidados para Idosos":
-                # Projetos do Lar São Francisco
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão do fluxo de medicação", status="em andamento", data_inicio=(now - timedelta(days=30)).date(), valor_total=2500.0))
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Organização documental para VISA", status="em andamento", data_inicio=(now - timedelta(days=15)).date(), valor_total=3000.0))
+                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão do fluxo de medicação", status="em andamento", data_inicio=(now - timedelta(days=60)).date(), data_fim_prevista=(now - timedelta(days=15)).date(), valor_total=2500.0))
+                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Organização documental para VISA", status="em andamento", data_inicio=(now - timedelta(days=20)).date(), valor_total=3000.0))
             elif name == "Creche Sonho de Criança":
-                # Projetos da Creche
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão de frequência escolar", status="em andamento", data_inicio=(now - timedelta(days=45)).date(), valor_total=1000.0))
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Organização documental de convênio", status="em andamento", data_inicio=(now - timedelta(days=20)).date(), valor_total=2000.0))
+                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão de frequência escolar", status="concluído", data_inicio=(now - timedelta(days=90)).date(), valor_total=1000.0))
+                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Organização documental de convênio", status="em andamento", data_inicio=(now - timedelta(days=45)).date(), data_fim_prevista=(now - timedelta(days=5)).date(), valor_total=2000.0))
             elif name == "CAPS II Renascer":
-                # Projetos do CAPS
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão do fluxo RAAS", status="em andamento", data_inicio=(now - timedelta(days=40)).date(), valor_total=1200.0))
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Acompanhamento de usuários intensivos", status="em andamento", data_inicio=(now - timedelta(days=20)).date(), valor_total=1500.0))
+                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão do fluxo RAAS", status="em andamento", data_inicio=(now - timedelta(days=70)).date(), data_fim_prevista=(now - timedelta(days=10)).date(), valor_total=1200.0))
+                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Organização do acompanhamento de usuários intensivos", status="em andamento", data_inicio=(now - timedelta(days=15)).date(), valor_total=1500.0))
             elif name == "CuidaBem Serviços Domiciliares":
-                # Projetos do CuidaBem
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Estruturação de controle de cuidadores", status="em andamento", data_inicio=(now - timedelta(days=45)).date(), valor_total=3000.0))
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Redesenho da escala de plantão", status="em andamento", data_inicio=(now - timedelta(days=25)).date(), valor_total=2000.0))
+                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Estruturação de controle de cuidadores", status="em andamento", data_inicio=(now - timedelta(days=50)).date(), data_fim_prevista=(now - timedelta(days=10)).date(), valor_total=3000.0))
+                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Redesenho da escala de plantão", status="concluído", data_inicio=(now - timedelta(days=30)).date(), valor_total=2000.0))
             elif name == "REABILITA Centro de Reabilitação":
-                # Projetos do REABILITA
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão de autorização de convênios", status="em andamento", data_inicio=(now - timedelta(days=35)).date(), valor_total=2800.0))
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Controle de sessões e metas", status="em andamento", data_inicio=(now - timedelta(days=15)).date(), valor_total=2200.0))
+                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão de autorização de convênios", status="em andamento", data_inicio=(now - timedelta(days=25)).date(), valor_total=2800.0))
+                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Controle de sessões e metas terapêuticas", status="em andamento", data_inicio=(now - timedelta(days=40)).date(), data_fim_prevista=(now - timedelta(days=15)).date(), valor_total=2200.0))
             elif name == "APAE de Bacabal":
-                # Projetos da APAE
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão dos PIAs", status="concluído", data_inicio=(now - timedelta(days=60)).date(), valor_total=3500.0))
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Organização integrada de atendimentos", status="em andamento", data_inicio=(now - timedelta(days=30)).date(), valor_total=2500.0))
+                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão dos PIAs", status="concluído", data_inicio=(now - timedelta(days=120)).date(), valor_total=3500.0))
+                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Organização integrada dos atendimentos", status="em andamento", data_inicio=(now - timedelta(days=30)).date(), data_fim_prevista=(now - timedelta(days=5)).date(), valor_total=2500.0))
             elif name == "FarmaVida Farmácia Comunitária":
-                # Projetos da FarmaVida
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Controle de dispensação", status="em andamento", data_inicio=(now - timedelta(days=50)).date(), valor_total=1500.0))
-                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão de fluxo Farmácia Popular", status="em andamento", data_inicio=(now - timedelta(days=25)).date(), valor_total=1800.0))
+                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Controle de dispensação", status="em andamento", data_inicio=(now - timedelta(days=20)).date(), valor_total=1500.0))
+                db.add(Projeto(id_contrato=contrato.id_contrato, titulo="Revisão de fluxo Farmácia Popular", status="concluído", data_inicio=(now - timedelta(days=60)).date(), valor_total=1800.0))
+
+    # --- AGENDA FUTURA (Próximos 30 dias) ---
+    # Adriano é um cara ocupado: Pelo menos 1 visita por dia.
+    # Respeitando buffers de desgaste cognitivo e peso operacional.
+    
+    print("[AGENDA] Gerando próximos 30 dias de operação...")
+    
+    # Mapeamento de "Peso e Buffer" (em minutos)
+    BUFFERS = {
+        "CAPS II Renascer": 120,          # 2h de respiro
+        "Lar São Francisco de Cuidados para Idosos": 90, # 1h30
+        "CuidaBem Serviços Domiciliares": 60,
+        "REABILITA Centro de Reabilitação": 45,
+        "Creche Sonho de Criança": 30,
+        "FarmaVida Farmácia Comunitária": 15,
+        "APAE de Bacabal": 480            # Ocupa o dia todo
+    }
+
+    for d in range(0, 31):
+        target_date = now + timedelta(days=d)
+        if target_date.weekday() >= 5: continue # Pula final de semana (Adriano também descansa)
+
+        # Escolhe clientes para o dia (sem repetir)
+        available_names = list(CLIENT_NAMES)
+        random.shuffle(available_names)
+        
+        # Decide se terá 1 ou 2 visitas
+        num_visitas = 1 if random.random() > 0.3 else 2
+        
+        current_time = target_date.replace(hour=9, minute=0, second=0, microsecond=0)
+        
+        for i in range(num_visitas):
+            if not available_names: break
+            name = available_names.pop(0)
+            
+            # Se for APAE, cancela qualquer outra visita no dia
+            if name == "APAE de Bacabal":
+                if i > 0: continue # Se já teve visita, não vai pra Bacabal hoje
+                duracao = 480
+                num_visitas = 1 # Trava o dia
             else:
-                pass
+                duracao = random.choice([60, 90, 120])
+
+            cliente = db.query(Cliente).filter(Cliente.nome == name).first()
+            contrato = db.query(Contrato).filter_by(id_cliente=cliente.id_cliente).first()
+            
+            visita = Visita(
+                id_contrato=contrato.id_contrato,
+                data_hora=current_time,
+                status="planejada",
+                duracao_minutos=duracao,
+                tipo_visita="rotineira",
+                modalidade="presencial",
+                descricao=f"Visita Operacional Programada - {name}",
+                resultados="Pauta: Acompanhamento de indicadores e processos."
+            )
+            db.add(visita)
+            
+            # Avança o tempo: Duracao + Buffer
+            buffer_min = BUFFERS.get(name, 60)
+            current_time += timedelta(minutes=duracao + buffer_min)
+            
+            # Se passar das 18h, para o dia
+            if current_time.hour >= 18:
+                break
 
     db.commit()
-    print("[SUCESSO] Hidratação Semântica concluída com determinismo e idempotência.")
+    print("[SEED] Hidratação Semântica e Agenda Futura concluídas com sucesso!")
 
 if __name__ == "__main__":
     db = SessionLocal()

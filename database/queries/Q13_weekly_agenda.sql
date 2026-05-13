@@ -30,6 +30,6 @@ FROM visitas v
 JOIN contratos con ON v.id_contrato = con.id_contrato
 JOIN clientes c ON con.id_cliente = c.id_cliente
 JOIN MetadadosContrato mc ON v.id_contrato = mc.id_contrato
-WHERE v.data_hora::date >= CURRENT_DATE + INTERVAL '1 day'
-  AND v.data_hora::date <= CURRENT_DATE + INTERVAL '7 days'
+WHERE v.data_hora::date >= (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')::date + INTERVAL '1 day'
+  AND v.data_hora::date <= (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')::date + INTERVAL '7 days'
 ORDER BY v.data_hora ASC;

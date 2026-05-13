@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, computed_field
 from typing import Optional
 from datetime import date
 
@@ -23,6 +23,17 @@ class ProjetoRead(ProjetoBase):
     id_projeto: int
     
     model_config = ConfigDict(from_attributes=True)
+
+    @computed_field
+    @property
+    def atrasado(self) -> bool:
+        """Calcula se o projeto está atrasado com base na data atual."""
+        if not self.status or not self.data_fim_prevista:
+            return False
+            
+        # Normalização para comparação robusta
+        status_limpo = self.status.lower().strip()
+        return status_limpo == 'em andamento' and self.data_fim_prevista < date.today()
 
 class ProjetoUpdate(BaseModel):
     titulo: str | None = None

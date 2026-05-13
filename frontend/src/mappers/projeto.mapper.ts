@@ -41,22 +41,23 @@ export function mapProjeto(raw: ProjetoRaw): Projeto {
     valor_total: parseDecimal(raw.valor_total || '0'),
 
     status: normalizeStatus(raw.status || 'planejado'),
+    atrasado: !!raw.atrasado,
 
     observacoes_gerais: raw.observacoes_gerais ?? undefined,
   }
 }
 
 function normalizeStatus(status: string): StatusProjeto {
-  const s = String(status || '').toLowerCase()
+  const s = String(status || '').toLowerCase().trim()
   
-  // Normalização SQL -> Domain
-  if (s === 'em andamento' || s === 'em_andamento') return 'em_andamento'
-  if (s === 'concluído' || s === 'concluido') return 'concluido'
+  // Mapeamento resiliente para o Domain (Preservando espaços e acentos do Banco)
+  if (s === 'em andamento' || s === 'em_andamento') return 'em andamento'
+  if (s === 'concluído' || s === 'concluido') return 'concluído'
   if (s === 'cancelado') return 'cancelado'
   if (s === 'planejado') return 'planejado'
   
   console.warn('[MAPPER][PROJETO] Status desconhecido:', status)
-  return 'em_andamento' // Default resiliente
+  return 'em andamento' // Default resiliente
 }
 
 function parseDecimal(value: string | number): number {

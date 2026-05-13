@@ -14,6 +14,7 @@ from seeds.scenarios import (
     CrecheScenario,
     ReabilitaScenario
 )
+from semantic_hydration import hydrate_entities, simulate_history
 
 def clear_all(db: Session):
     """Limpa todo o banco respeitando a ordem de chaves estrangeiras."""
@@ -68,6 +69,11 @@ def run_all(db: Session, mode: str = "realistic"):
             nome_cenario = scenario.__class__.__name__
             print(f"  -> Simulando {nome_cenario} para {cliente.nome}...")
             scenario.simulate_timeline(cliente, contrato, mode)
+
+        # 3. Hidratação Semântica (Vida de 6 meses)
+        print("\n[SEED] Fase 3: Injetando Hidratação Semântica (6 meses de histórico)...")
+        client_data = hydrate_entities(db)
+        simulate_history(db, client_data)
 
         print("\n[SEED] >>> SIMULAÇÃO OPERACIONAL CONCLUÍDA COM SUCESSO! <<<\n")
 

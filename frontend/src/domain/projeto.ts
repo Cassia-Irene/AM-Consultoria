@@ -5,8 +5,8 @@
 
 export type StatusProjeto =
   | 'planejado'
-  | 'em_andamento'
-  | 'concluido'
+  | 'em andamento'
+  | 'concluído'
   | 'cancelado'
 
 export type Projeto = {
@@ -23,6 +23,7 @@ export type Projeto = {
   valor_total: number
 
   status: StatusProjeto
+  atrasado?: boolean
 
   observacoes_gerais?: string
 }

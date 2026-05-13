@@ -10,8 +10,9 @@ import { ProjetosService } from '@/services/projetos.service'
 import Link from 'next/link'
 import type { Projeto, StatusProjeto } from '@/domain/projeto'
 import { OperationalTabs, type TabOption } from '@/components/OperationalTabs'
+import { AlertTriangle } from 'lucide-react'
 
-type FiltroProjeto = 'todos' | StatusProjeto
+type FiltroProjeto = 'todos' | StatusProjeto | 'atrasados'
 
 function ProjetosList() {
   const router = useRouter()
@@ -50,14 +51,28 @@ function ProjetosList() {
 
   const filteredItems = useMemo(() => {
     if (filtro === 'todos') return projetos
-    return projetos.filter(p => p.status === filtro)
+    if (filtro === 'atrasados') return projetos.filter(p => p.atrasado)
+    
+    const normalize = (s: string) => s.toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, '_')
+
+    const normFiltro = normalize(filtro)
+    return projetos.filter(p => normalize(p.status) === normFiltro)
   }, [projetos, filtro])
+
+    const normalize = (s: string) => s.toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, '_')
 
   const tabOptions: TabOption<FiltroProjeto>[] = [
     { value: 'todos', label: 'Todos', count: projetos.length },
-    { value: 'em_andamento', label: 'Em Andamento', count: projetos.filter(p => p.status === 'em_andamento').length },
-    { value: 'planejado', label: 'Planejados', count: projetos.filter(p => p.status === 'planejado').length },
-    { value: 'concluido', label: 'Concluídos', count: projetos.filter(p => p.status === 'concluido').length },
+    { value: 'atrasados', label: 'Atrasados', count: projetos.filter(p => p.atrasado).length },
+    { value: 'em andamento', label: 'Em Andamento', count: projetos.filter(p => normalize(p.status) === 'em_andamento').length },
+    { value: 'planejado', label: 'Planejados', count: projetos.filter(p => normalize(p.status) === 'planejado').length },
+    { value: 'concluído', label: 'Concluídos', count: projetos.filter(p => normalize(p.status) === 'concluido').length },
   ]
 
   if (loading) return <LoadingSkeleton />
@@ -114,7 +129,17 @@ function ProjetoCard({ projeto: p }: { projeto: Projeto }) {
     <div className="rounded-2xl bg-zinc-900/60 border border-zinc-800 p-5 hover:border-zinc-700 transition-colors group">
       {/* Linha 1: título + badge */}
       <div className="flex items-start justify-between gap-3 mb-3">
-        <h2 className="text-white font-bold text-base leading-tight">{p.titulo}</h2>
+        <div className="flex flex-col gap-1">
+          <h2 className="text-white font-bold text-base leading-tight">{p.titulo}</h2>
+          {p.atrasado && (
+            <div className="flex items-center gap-1.5 text-red-500">
+              <AlertTriangle size={12} strokeWidth={3} />
+              <span className="text-[10px] font-black uppercase tracking-tighter">
+                Prazo excedido
+              </span>
+            </div>
+          )}
+        </div>
         <StatusBadge status={p.status} />
       </div>
 
@@ -126,7 +151,7 @@ function ProjetoCard({ projeto: p }: { projeto: Projeto }) {
       )}
 
       {/* Barra de progresso (apenas se em andamento) */}
-      {p.status === 'em_andamento' && pctConcluido !== null && (
+      {p.status === 'em andamento' && pctConcluido !== null && (
         <div className="mb-4">
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600">Progresso (estimado)</span>
@@ -134,7 +159,7 @@ function ProjetoCard({ projeto: p }: { projeto: Projeto }) {
           </div>
           <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
             <div
-              className="h-full bg-sky-500 rounded-full transition-all"
+              className={`h-full rounded-full transition-all ${p.atrasado ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]' : 'bg-sky-500'}`}
               style={{ width: `${pctConcluido}%` }}
             />
           </div>
@@ -179,27 +204,21 @@ function MetaItem({ label, value }: { label: string; value: string }) {
 }
 
 function StatusBadge({ status }: { status: StatusProjeto }) {
-  const config: Record<StatusProjeto, { label: string; className: string }> = {
-    planejado:    { label: 'Planejado',    className: 'bg-zinc-800 text-zinc-400 border-zinc-700/30' },
-    em_andamento: { label: 'Em andamento', className: 'bg-sky-900/40 text-sky-400 border-sky-800/30' },
-    concluido:    { label: 'Concluído',    className: 'bg-emerald-900/40 text-emerald-400 border-emerald-800/30' },
-    cancelado:    { label: 'Cancelado',    className: 'bg-red-900/40 text-red-400 border-red-800/30' },
+  const config: Record<string, { label: string; className: string }> = {
+    planejado:      { label: 'Planejado',    className: 'bg-zinc-800 text-zinc-400 border-zinc-700/30' },
+    'em andamento': { label: 'Em andamento', className: 'bg-sky-900/40 text-sky-400 border-sky-800/30' },
+    'em_andamento': { label: 'Em andamento', className: 'bg-sky-900/40 text-sky-400 border-sky-800/30' },
+    'concluído':    { label: 'Concluído',    className: 'bg-emerald-900/40 text-emerald-400 border-emerald-800/30' },
+    'concluido':    { label: 'Concluído',    className: 'bg-emerald-900/40 text-emerald-400 border-emerald-800/30' },
+    cancelado:      { label: 'Cancelado',    className: 'bg-red-900/40 text-red-400 border-red-800/30' },
   }
-  const { label, className } = config[status]
+  
+  const current = config[status] || { label: status, className: 'bg-zinc-900 text-zinc-500 border-zinc-800' }
+  
   return (
-    <span className={`shrink-0 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${className}`}>
-      {label}
+    <span className={`shrink-0 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${current.className}`}>
+      {current.label}
     </span>
-  )
-}
-
-function StatPill({ label, value, color = 'default' }: { label: string; value: number; color?: 'sky' | 'emerald' | 'default' }) {
-  const textColor = color === 'sky' ? 'text-sky-400' : color === 'emerald' ? 'text-emerald-400' : 'text-white'
-  return (
-    <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-xl px-4 py-2 text-center">
-      <p className={`text-lg font-black tabular-nums ${textColor}`}>{value}</p>
-      <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-600 mt-0.5">{label}</p>
-    </div>
   )
 }
 

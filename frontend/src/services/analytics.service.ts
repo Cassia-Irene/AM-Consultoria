@@ -66,6 +66,7 @@ export interface ClientHealth {
   visitasUrgentes: number
   pendenciasAtrasadas: number
   eventosAtivos: number
+  entregasAtrasadas: number
   progressoMedio: number
   totalMinutosInvisiveis: number
   statusOperacional: 'emergência' | 'atenção' | 'normal'
@@ -98,6 +99,7 @@ export interface ActiveProject {
   projeto: string
   status: string
   valorTotal: number
+  idContrato: number
   entregasPendentes: number
   parcelasPendentes: number
 }
@@ -195,6 +197,7 @@ export const AnalyticsService = {
       title: event.titulo,
       subtitle: event.cliente,
       critical: event.criticidade === 'critica' || event.criticidade === 'alta',
+      idProjeto: event.idProjeto,
       pendencias: event.pendenciasLista?.map(p => ({
         id: String(p.id),
         descricao: p.descricao,

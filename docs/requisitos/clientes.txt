@@ -30,7 +30,6 @@ Início: Fevereiro/2025
 Renovação anual
 Financeiro
 Fee mensal: R$ 8.500
-Pagamento: Transferência
 Vencimento: Dia 10
 Cultura Operacional
 
@@ -56,7 +55,6 @@ Inclui relatório: Sim
 Início: Agosto/2024
 Financeiro
 Fee mensal: R$ 6.200
-Pagamento: Empenho municipal
 Vencimento variável
 Cultura Operacional
 
@@ -82,7 +80,6 @@ Inclui relatório: Não
 Início: Janeiro/2025
 Financeiro
 Fee mensal: R$ 12.000
-Pagamento: Pix empresarial
 Vencimento: Dia 5
 Cultura Operacional
 
@@ -107,7 +104,6 @@ Inclui relatório: Sim
 Início: Março/2025
 Financeiro
 Fee mensal: R$ 7.000
-Pagamento: Boleto
 Vencimento: Dia 15
 Cultura Operacional
 
@@ -132,7 +128,6 @@ Inclui relatório: Sim
 Início: Junho/2024
 Financeiro
 Fee mensal: R$ 4.500
-Pagamento: Transferência
 Vencimento: Dia 20
 Cultura Operacional
 
@@ -158,7 +153,6 @@ Inclui relatório: Sim
 Início: Abril/2024
 Financeiro
 Fee mensal: R$ 9.000
-Pagamento: Transferência institucional
 Vencimento: Dia 30
 Cultura Operacional
 
@@ -184,7 +178,6 @@ Inclui relatório: Não
 Início: Setembro/2024
 Financeiro
 Fee mensal: R$ 3.800
-Pagamento: Pix
 Vencimento: Dia 8
 Cultura Operacional
 

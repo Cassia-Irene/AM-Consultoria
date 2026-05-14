@@ -32,6 +32,7 @@ class TimelineEvent(BaseAnalyticsSchema):
     pendencias_contagem: Optional[int] = 0
     ultima_visita_resultados: Optional[str] = None
     pendencias_lista: Optional[List[dict]] = None
+    id_projeto: Optional[int] = None
 
 class CaosScore(BaseAnalyticsSchema):
     cliente: str
@@ -56,6 +57,7 @@ class ActiveProject(BaseAnalyticsSchema):
     projeto: str
     status: str
     valor_total: Decimal
+    id_contrato: int
     entregas_pendentes: int
     parcelas_pendentes: int
 
@@ -109,8 +111,9 @@ class ClientHealth(BaseAnalyticsSchema):
     id_contrato: int
     visitas_urgentes: int
     pendencias_atrasadas: int
-    eventos_ativos: int # Adicionado
-    progresso_medio: int # Adicionado
+    eventos_ativos: int
+    entregas_atrasadas: int
+    progresso_medio: int
     ultima_entrega_data: Optional[date] = None # Adicionado
     total_minutos_invisiveis: int
     status_operacional: str # Substituiu perfil e indice_desgaste

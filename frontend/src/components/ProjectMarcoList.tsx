@@ -1,0 +1,94 @@
+'use client'
+
+import React, { useState, useEffect } from 'react'
+import { EntregasService } from '@/services/entregas.service'
+import { type Entrega } from '@/domain/entrega'
+import { CheckCircle2, Circle, Clock, Plus, AlertCircle, Edit2 } from 'lucide-react'
+import { displayDate } from '@/utils/date'
+
+interface ProjectMarcoListProps {
+  projetoId: string | number
+  onEntregaClick?: (id: string | number) => void
+  onAddEntrega?: (projetoId: string | number) => void
+  refreshSignal?: number
+  readOnly?: boolean
+}
+
+export function ProjectMarcoList({ projetoId, onEntregaClick, onAddEntrega, refreshSignal, readOnly = false }: ProjectMarcoListProps) {
+  const [entregas, setEntregas] = useState<Entrega[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadEntregas()
+  }, [projetoId, refreshSignal])
+
+  async function loadEntregas() {
+    setLoading(true)
+    const data = await EntregasService.getByProjetoId(String(projetoId))
+    setEntregas(data.sort((a, b) => new Date(a.data_entrega_prevista).getTime() - new Date(b.data_entrega_prevista).getTime()))
+    setLoading(false)
+  }
+
+  async function handleQuickToggle(e: React.MouseEvent, entrega: Entrega) {
+    e.stopPropagation()
+    const newStatus = !entrega.entregue
+    await EntregasService.update(entrega.id, {
+      entregue: newStatus,
+      data_entrega_real: newStatus ? new Date().toISOString().split('T')[0] : null
+    })
+    loadEntregas()
+  }
+
+  if (loading && entregas.length === 0) return <div className="py-2 animate-pulse text-[9px] text-zinc-600 uppercase font-black">Sincronizando marcos...</div>
+
+  return (
+    <div className="space-y-2 mt-4 ml-2 border-l border-zinc-800/50 pl-4">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600">Backlog de Valor</span>
+        {!readOnly && onAddEntrega && (
+          <button 
+            onClick={() => onAddEntrega(projetoId)}
+            className="text-sky-500 hover:text-sky-400 transition-colors"
+          >
+            <Plus size={14} />
+          </button>
+        )}
+      </div>
+
+      {entregas.length === 0 ? (
+        <p className="text-[10px] text-zinc-700 italic">Nenhum marco definido.</p>
+      ) : (
+        entregas.map(item => {
+          const isLate = !item.entregue && new Date(item.data_entrega_prevista) < new Date()
+          return (
+            <div 
+              key={item.id}
+              onClick={() => !readOnly && onEntregaClick && onEntregaClick(item.id)}
+              className={`group flex items-center gap-3 py-1.5 ${(!readOnly && onEntregaClick) ? 'cursor-pointer' : ''}`}
+            >
+              <button 
+                onClick={(e) => !readOnly && handleQuickToggle(e, item)}
+                disabled={readOnly}
+                className={`${item.entregue ? 'text-emerald-500' : isLate ? 'text-rose-500' : 'text-zinc-700'} ${!readOnly ? 'hover:scale-110' : ''} transition-transform`}
+              >
+                {item.entregue ? <CheckCircle2 size={16} /> : isLate ? <AlertCircle size={16} /> : <Circle size={16} />}
+              </button>
+              
+              <div className="flex-1 min-w-0">
+                <p className={`text-[11px] font-bold truncate ${item.entregue ? 'text-zinc-600' : 'text-zinc-300'}`}>
+                  {item.descricao}
+                </p>
+                <p className={`text-[9px] font-black uppercase tracking-tighter ${isLate ? 'text-rose-500' : 'text-zinc-600'}`}>
+                  {item.entregue ? `Concluído: ${displayDate(item.data_entrega_real!)}` : `Prazo: ${displayDate(item.data_entrega_prevista)}`}
+                  {isLate && ' • ATRASADO'}
+                </p>
+              </div>
+
+              {!readOnly && onEntregaClick && <Edit2 size={10} className="text-zinc-800 group-hover:text-zinc-500 transition-colors" />}
+            </div>
+          )
+        })
+      )}
+    </div>
+  )
+}

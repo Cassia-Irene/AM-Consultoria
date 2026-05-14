@@ -1,169 +1,206 @@
 from sqlalchemy.orm import Session
-from datetime import date, timedelta, datetime
+from datetime import date, timedelta
 import random
-from src.models import Projeto, Entrega, EventoCritico, Visita, Contrato, Cliente
+from src.models import (
+    Projeto, Entrega, EventoCritico, Visita, Contrato, Cliente, 
+    Pendencia, ProjetoExtra, ProjetoParcela, Contato
+)
 
 # Configurações de Janela Temporal
-BASE_DATE = date(2026, 5, 12)
-START_DATE = date(2025, 11, 12)
-END_DATE = date(2026, 6, 12)
+BASE_DATE = date(2026, 5, 13)
 
-def get_profile(cliente_nome: str) -> str:
-    nome = cliente_nome.lower()
-    if "lar são francisco" in nome: return "LAR"
-    if any(x in nome for x in ["caps", "apae", "cuidabem"]): return "MICRO"
-    return "MACRO" # Farmácia, Creche, Reabilita
-
-PROJECT_MILESTONES = {
-    "Revisão do fluxo de medicação": [
-        "Mapeamento de riscos de dispensação", "Treinamento: Protocolo de 5 certos", 
-        "Implementação de ficha de controle", "Auditoria de estoque inicial", 
-        "Validar armazenamento de psicotrópicos", "Revisão de prontuários"
-    ],
-    "Organização documental para VISA": [
-        "Checklist de conformidade", "Dossiê técnico", "Regularização de alvará",
-        "Atestados de treinamento", "Manual de Boas Práticas", "Plano de Gerenciamento de Resíduos"
-    ],
-    "Revisão do fluxo RAAS": [
-        "Auditoria de prontuários ativos", "Cruzamento RAAS x Atendimento",
-        "Treinamento de preenchimento", "Implementação de fluxo de glosa zero",
-        "Validação de faturamento mensal"
-    ],
-    "Redesenho da escala de plantão": [
-        "Mapeamento de horas extras", "Acordo de banco de horas",
-        "Escala de feriados e folgas", "Implementação de sistema de ponto",
-        "Monitoramento de absenteísmo"
-    ],
-    "Controle de dispensação": [
-        "Layout de estoque", "Inventário rotativo", "Segregação de vencidos",
-        "Treinamento de balcão", "Sistema de perdas"
-    ]
-}
-
-CRITICAL_EVENTS = {
-    "LAR": [
-        "Tensão Institucional: Ruptura de confiança com equipe noturna",
-        "Incidente: Queda de residente sem registro imediato",
-        "Bloqueio: Direção relutante em implementar protocolo de medicação",
-        "Crise: Familiares questionando conduta técnica"
-    ],
-    "MICRO": [
-        "Gargalo: Acúmulo de prontuários sem assinatura técnica",
-        "Erro Operacional: Falha na escala gerando dobra de turno",
+ADRIANO_LEXICON = {
+    "crises": [
+        "Ruptura operacional: Equipe não aderiu ao novo fluxo de dispensação",
+        "Tensão institucional: Direção relutante em validar protocolos",
+        "Incidente: Estoque voltou inconsistente após inventário rotativo",
+        "Gargalo documental: Prontuários sem assinatura técnica acumulados",
+        "Conflito: Resistência da equipe assistencial às metas de produtividade",
         "Risco Sanitário: Medicamento vencido encontrado em estoque ativo",
-        "Conflito: Resistência da equipe assistencial às novas metas"
+        "Instabilidade: Alta rotatividade na enfermagem prejudicando processos",
+        "Bloqueio: Falta de insumos básicos por erro de planejamento interno"
     ],
-    "MACRO": [
-        "Atraso Estratégico: Aguardando aprovação de orçamento para reforma",
-        "Risco Contratual: Cliente questionando valor de visitas extras",
-        "Pausa Operacional: Mudança de gestão interna pausou o projeto",
-        "Divergência: Diferença entre estoque físico e contábil"
+    "acoes": [
+        "Treinamento emergencial realizado com foco em segurança do paciente.",
+        "Reunião de alinhamento estratégico com a diretoria para destravar processos.",
+        "Ajuste imediato de fluxo e implementação de dupla checagem.",
+        "Auditoria completa de processos realizada após detecção de falha.",
+        "Revisão de prontuários e regularização de assinaturas pendentes."
+    ],
+    "entregas": [
+        "Mapeamento de riscos concluído",
+        "Protocolo de medicação validado",
+        "Dossiê técnico para VISA finalizado",
+        "Fluxo de faturamento RAAS regularizado",
+        "Manual de Boas Práticas implementado",
+        "Inventário inicial consolidado",
+        "Treinamento de equipe noturna concluído",
+        "Plano de Gerenciamento de Resíduos aprovado"
     ]
 }
 
 def enrich_operational_data(db: Session):
-    print(f"\n[DENSIDADE] Iniciando enriquecimento operacional ({START_DATE} -> {END_DATE})")
+    print(f"\n[DENSIDADE] >>> INICIANDO MOTOR DE VIDA OPERACIONAL (Base: {BASE_DATE}) <<<")
     
+    # 1. IDENTIFICAÇÃO DE ATORES (Contatos)
+    # Buscamos contatos reais criados pelo orchestrator anterior
+    contatos = {c.id_contato: c for c in db.query(Contato).all()}
+    def get_contact_for_client(client_id):
+        return [c for c in contatos.values() if c.id_cliente == client_id]
+
+    # 2. DEFINIÇÃO DE PROJETOS EXTRAS (Demandas Extraordinárias do Adriano)
+    extra_configs = [
+        {"id_projeto": 946, "desc": "Organização documental para VISA", "cliente": "Lar São Francisco"},
+        {"id_projeto": 947, "desc": "Revisão do fluxo RAAS", "cliente": "CAPS II Renascer"},
+        {"id_projeto": 949, "desc": "Estruturação de controle de cuidadores", "cliente": "CuidaBem"},
+        {"id_projeto": 951, "desc": "Revisão de autorização de convênios", "cliente": "REABILITA"}
+    ]
+
+    for cfg in extra_configs:
+        proj = db.query(Projeto).get(cfg["id_projeto"])
+        if proj and not db.query(ProjetoExtra).filter_by(id_projeto=proj.id_projeto).first():
+            client_contacts = get_contact_for_client(proj.contrato.id_cliente)
+            if client_contacts:
+                solicitante = client_contacts[0].id_contato
+                aprovador = client_contacts[1].id_contato if len(client_contacts) > 1 else None
+                db.add(ProjetoExtra(id_projeto=proj.id_projeto, solicitado_por=solicitante, aprovado_por=aprovador))
+                print(f"  [EXTRA] Projeto #{proj.id_projeto} vinculado como EXTRAORDINÁRIO ({cfg['cliente']})")
+
+    # 3. DENSIFICAÇÃO DE BACKLOG E RITMO
     projetos = db.query(Projeto).all()
     for proj in projetos:
-        # 1. Gerar Entregas (Cronograma Irregular)
-        milestones = PROJECT_MILESTONES.get(proj.titulo, [
-            f"Etapa 1: {proj.titulo}", f"Etapa 2: {proj.titulo}", 
-            f"Etapa 3: {proj.titulo}", f"Validação: {proj.titulo}"
-        ])
+        # Se o projeto já tem entregas, pulamos para não duplicar na densificação repetida
+        if db.query(Entrega).filter_by(id_projeto=proj.id_projeto).count() > 0:
+            continue
+            
+        # Determinar Perfil de Tensão
+        # Perfil A: Estagnado/Atrasado (Muita dor)
+        # Perfil B: Em Ritmo/Acelerado (Recuperação)
+        # Perfil C: Novo/Limpo
         
-        current_date = proj.data_inicio
-        profile = get_profile(proj.contrato.cliente.nome)
+        tension = random.choice(["high", "medium", "low"])
         
-        for i, m_desc in enumerate(milestones):
-            # Adiciona irregularidade no tempo
-            if profile == "MICRO":
-                gap = random.randint(7, 15)
-            elif profile == "LAR":
-                gap = random.randint(15, 30)
-            else:
-                gap = random.randint(20, 45)
-            
-            due_date = current_date + timedelta(days=gap)
-            current_date = due_date # Cascata
-            
-            # Se a data prevista já passou e estamos no passado da simulação
-            is_past = due_date < BASE_DATE
-            
-            # Lógica de entrega: Algumas concluídas, algumas atrasadas, algumas futuras
-            entregue = False
-            data_real = None
-            
-            if is_past:
-                # 80% de chance de estar entregue se for antigo
-                if random.random() > 0.2:
-                    entregue = True
-                    # Atraso ou adiantamento na entrega real
-                    data_real = due_date + timedelta(days=random.randint(-3, 10))
-            
-            # Garantir que não duplicamos
-            exists = db.query(Entrega).filter_by(id_projeto=proj.id_projeto, descricao=m_desc).first()
-            if not exists:
+        if tension == "high":
+            # 3 entregas vencidas (Backlog Acumulado)
+            for j in range(3):
+                prevista = BASE_DATE - timedelta(days=20 + (j*10))
                 db.add(Entrega(
-                    id_projeto=proj.id_projeto,
-                    descricao=m_desc,
-                    data_entrega_prevista=due_date,
-                    data_entrega_real=data_real,
-                    entregue=entregue
+                    id_projeto=proj.id_projeto, 
+                    descricao=random.choice(ADRIANO_LEXICON["entregas"]), 
+                    data_entrega_prevista=prevista, 
+                    entregue=False
                 ))
-                print(f"  [ENTREGA] {proj.contrato.cliente.nome[:15]}... -> {m_desc}")
+            # 1 entrega futura
+            db.add(Entrega(
+                id_projeto=proj.id_projeto, 
+                descricao="Próximo passo crítico do escopo", 
+                data_entrega_prevista=BASE_DATE + timedelta(days=5), 
+                entregue=False
+            ))
+            print(f"  [TENSÃO] Projeto #{proj.id_projeto} -> Gerado BACKLOG CRÍTICO (3 atrasadas)")
+            
+        elif tension == "medium":
+            # 2 entregas concluídas recentemente + 1 futura
+            for j in range(2):
+                real = BASE_DATE - timedelta(days=15 - (j*5))
+                db.add(Entrega(
+                    id_projeto=proj.id_projeto, 
+                    descricao=random.choice(ADRIANO_LEXICON["entregas"]), 
+                    data_entrega_prevista=real, 
+                    data_entrega_real=real,
+                    entregue=True
+                ))
+            db.add(Entrega(
+                id_projeto=proj.id_projeto, 
+                descricao="Entrega prevista para próxima semana", 
+                data_entrega_prevista=BASE_DATE + timedelta(days=7), 
+                entregue=False
+            ))
+            print(f"  [RITMO] Projeto #{proj.id_projeto} -> Gerado FLUXO REGULAR")
 
-    db.commit()
+    # 4. CICLO FINANCEIRO (Parcelas)
+    for proj in projetos:
+        if db.query(ProjetoParcela).filter_by(id_projeto=proj.id_projeto).count() > 0:
+            continue
+            
+        # Simular 3 parcelas para cada projeto
+        valor_parcela = proj.valor_total / 3
+        
+        # Parcela 1: Paga (Passado)
+        db.add(ProjetoParcela(
+            id_projeto=proj.id_projeto,
+            numero_parcela=1,
+            valor_parcela=valor_parcela,
+            data_pagamento_prevista=BASE_DATE - timedelta(days=30),
+            pago=True
+        ))
+        
+        # Parcela 2: Depende da sorte (Pode estar vencida ou pendente)
+        vencida = random.choice([True, False])
+        pago = random.choice([True, False]) if not vencida else False
+        
+        db.add(ProjetoParcela(
+            id_projeto=proj.id_projeto,
+            numero_parcela=2,
+            valor_parcela=valor_parcela,
+            data_pagamento_prevista=BASE_DATE - timedelta(days=2 if vencida else -10),
+            pago=pago
+        ))
+        
+        # Parcela 3: Futura
+        db.add(ProjetoParcela(
+            id_projeto=proj.id_projeto,
+            numero_parcela=3,
+            valor_parcela=valor_parcela,
+            data_pagamento_prevista=BASE_DATE + timedelta(days=30),
+            pago=False
+        ))
+        
+    # 5. TENSÃO INSTITUCIONAL E NARRATIVA (Descrições e Eventos)
+    for proj in projetos:
+        client_name = proj.contrato.cliente.nome
+        extra = db.query(ProjetoExtra).filter_by(id_projeto=proj.id_projeto).first()
+        
+        # Enriquecer Descrição com Contexto Narrativo
+        contexto = ""
+        if extra:
+            solicitante = contatos.get(extra.solicitado_por).nome if extra.solicitado_por in contatos else "Diretoria"
+            contexto = f"PROJETO EXTRA solicitado por {solicitante}. "
+            
+        if "Lar São Francisco" in client_name:
+            contexto += "Foco em regularização urgente para auditoria da VISA prevista para o próximo mês. Ambiente de alta pressão por prazos regulatórios."
+        elif "CAPS" in client_name:
+            contexto += "Demanda técnica complexa envolvendo o fluxo RAAS. Resistência moderada da equipe de enfermagem na transição de processos."
+        elif "CuidaBem" in client_name:
+            contexto += "Reorganização tática de escalas. Necessidade de alinhar a disponibilidade dos cuidadores com a nova política de plantão."
+        else:
+            contexto += "Acompanhamento rotineiro de processos para garantir a manutenção dos padrões institucionais."
 
-    # 2. Gerar Eventos Críticos (Causais e Agrupados)
-    contratos = db.query(Contrato).all()
-    for contrato in contratos:
-        profile = get_profile(contrato.cliente.nome)
+        proj.descricao = contexto
         
-        # Buscar visitas deste contrato para ancorar eventos
-        visitas = db.query(Visita).filter_by(id_contrato=contrato.id_contrato).all()
-        
-        # Quantidade de eventos baseada no perfil
-        num_eventos = random.randint(1, 3) if profile == "LAR" else random.randint(0, 2)
-        
-        for _ in range(num_eventos):
-            event_template = random.choice(CRITICAL_EVENTS[profile])
-            
-            # Escolher uma data aleatória no passado (foco em meses de tensão)
-            days_ago = random.randint(30, 150)
-            event_date = BASE_DATE - timedelta(days=days_ago)
-            
-            # Tentar associar a uma visita próxima (causalidade)
-            id_visita = None
-            visita_proxima = next((v for v in visitas if abs((v.data_hora.date() - event_date).days) < 3), None)
-            if visita_proxima:
-                id_visita = visita_proxima.id_visita
-            
-            # Ação tomada (Cadeia Causal)
-            acao = None
-            if event_date < BASE_DATE - timedelta(days=20):
-                acao = "Resolvido via nova rodada de treinamentos e ajuste de fluxo."
-            
-            exists = db.query(EventoCritico).filter_by(id_contrato=contrato.id_contrato, descricao=event_template).first()
-            if not exists:
+        # Simular um evento de tensão recente para o contrato deste projeto
+        if random.random() > 0.4:
+            ev_date = BASE_DATE - timedelta(days=random.randint(2, 10))
+            # Verificar se já existe evento nesse dia para evitar spam
+            if not db.query(EventoCritico).filter_by(id_contrato=proj.id_contrato, data_evento=ev_date).first():
                 db.add(EventoCritico(
-                    id_contrato=contrato.id_contrato,
-                    id_visita=id_visita,
-                    data_evento=event_date,
-                    descricao=event_template,
-                    acao_tomada=acao
+                    id_contrato=proj.id_contrato,
+                    data_evento=ev_date,
+                    descricao=f"Tensão no Projeto: {proj.titulo}. {random.choice(ADRIANO_LEXICON['crises'])}",
+                    acao_tomada="Intervenção técnica imediata realizada pelo Adriano."
                 ))
-                print(f"  [CRÍTICO] {contrato.cliente.nome[:15]}... -> {event_template}")
-
+            
     db.commit()
-    print("[DENSIDADE] Enriquecimento concluído.\n")
+    print("\n[DENSIDADE] >>> MOTOR DE VIDA OPERACIONAL CONCLUÍDO <<<\n")
 
-# Aliases para compatibilidade
-def hydrate_entities(db: Session):
+def hydrate_entities(db: Session): 
+    # Agora hydrate_entities apenas orquestra o enriquecimento
+    enrich_operational_data(db)
     return {}
 
-def simulate_history(db: Session, client_data=None):
-    enrich_operational_data(db)
+def simulate_history(db: Session, client_data=None): 
+    # Mantido para compatibilidade com o orchestrator, mas o core está em enrich_operational_data
+    pass
 
 if __name__ == "__main__":
     from src.database import SessionLocal

@@ -25,10 +25,10 @@ SELECT
     'Visita: ' || v.tipo_visita as titulo,
     c.nome as cliente,
     CASE 
-        WHEN v.tipo_visita = 'urgente' THEN 'Reativo (Urgência)'
-        WHEN v.tipo_visita = 'estruturada' THEN 'Planejamento'
-        WHEN v.tipo_visita = 'acompanhamento direcionado' THEN 'Monitoramento'
-        ELSE 'Rotina'
+        WHEN v.tipo_visita = 'urgente' THEN 'Intervenção Crítica'
+        WHEN v.tipo_visita = 'estruturada' THEN 'Planejamento Estratégico'
+        WHEN v.tipo_visita = 'acompanhamento direcionado' THEN 'Monitoramento Técnico'
+        ELSE 'Visita de Rotina'
     END as categoria,
     CASE 
         WHEN v.tipo_visita = 'urgente' THEN 'critica'
@@ -39,7 +39,8 @@ SELECT
     mc.pendencias_contagem,
     v.resultados as ultima_visita_resultados,
     (SELECT json_agg(json_build_object('id', p.id_pendencia, 'descricao', p.descricao, 'data_prazo', p.data_prazo))
-     FROM (SELECT id_pendencia, descricao, data_prazo FROM pendencias WHERE id_contrato = v.id_contrato AND resolvida = false ORDER BY data_prazo ASC LIMIT 3) p) as pendencias_lista
+     FROM (SELECT id_pendencia, descricao, data_prazo FROM pendencias WHERE id_contrato = v.id_contrato AND resolvida = false ORDER BY data_prazo ASC LIMIT 3) p) as pendencias_lista,
+    NULL::INT as id_projeto
 FROM visitas v
 JOIN contratos con ON v.id_contrato = con.id_contrato
 JOIN clientes c ON con.id_cliente = c.id_cliente
@@ -57,7 +58,7 @@ SELECT
     c.nome as cliente,
     p.responsavel as categoria,
     CASE WHEN p.data_prazo < CURRENT_DATE THEN 'critica' ELSE 'alta' END as criticidade,
-    NULL, 0, NULL, NULL
+    NULL, 0, NULL, NULL, NULL
 FROM pendencias p
 JOIN contratos con ON p.id_contrato = con.id_contrato
 JOIN clientes c ON con.id_cliente = c.id_cliente
@@ -73,13 +74,14 @@ SELECT
     COALESCE(e.data_entrega_real, e.data_entrega_prevista)::timestamp as data,
     'Entrega: ' || e.descricao as titulo,
     c.nome as cliente,
-    proj.titulo as categoria,
+    'Marco de Entrega: ' || proj.titulo as categoria,
     CASE 
         WHEN e.entregue THEN 'normal'
         WHEN e.data_entrega_prevista < CURRENT_DATE THEN 'critica'
         ELSE 'alta'
     END as criticidade,
-    NULL, 0, NULL, NULL
+    NULL, 0, NULL, NULL,
+    proj.id_projeto as id_projeto
 FROM entregas e
 JOIN projetos proj ON e.id_projeto = proj.id_projeto
 JOIN contratos con ON proj.id_contrato = con.id_contrato
@@ -95,9 +97,9 @@ SELECT
     ec.data_evento::timestamp as data,
     ec.descricao as titulo,
     c.nome as cliente,
-    CASE WHEN ec.acao_tomada IS NOT NULL THEN 'Estabilizado' ELSE 'Em Crise' END as categoria,
+    CASE WHEN ec.acao_tomada IS NOT NULL THEN 'Crise Estabilizada' ELSE 'RUPTURA OPERACIONAL' END as categoria,
     'critica' as criticidade,
-    NULL, 0, NULL, NULL
+    NULL, 0, NULL, NULL, NULL
 FROM eventos_criticos ec
 JOIN contratos con ON ec.id_contrato = con.id_contrato
 JOIN clientes c ON con.id_cliente = c.id_cliente
@@ -114,7 +116,7 @@ SELECT
     c.nome as cliente,
     CASE WHEN f.pago THEN 'pago' ELSE 'pendente' END as categoria,
     CASE WHEN NOT f.pago AND f.mes_ano < CURRENT_DATE THEN 'critica' ELSE 'normal' END as criticidade,
-    NULL, 0, NULL, NULL
+    NULL, 0, NULL, NULL, NULL
 FROM faturamento_cliente f
 JOIN contratos con ON f.id_contrato = con.id_contrato
 JOIN clientes c ON con.id_cliente = c.id_cliente

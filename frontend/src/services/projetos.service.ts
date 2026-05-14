@@ -6,7 +6,7 @@ import type { ProjetoRaw } from '@/types/projeto.raw'
 export const ProjetosService = {
   async getAll(): Promise<Projeto[]> {
     try {
-      const data = await fetchApi<ProjetoRaw[]>('/projetos/')
+      const data = await fetchApi<ProjetoRaw[]>('/projetos/', { cache: 'no-store' })
       return data.map(mapProjeto)
     } catch (error) {
       console.error('[SERVICE][ERROR] Falha ao buscar projetos:', error)

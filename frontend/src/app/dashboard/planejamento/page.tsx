@@ -17,6 +17,7 @@ import { displayDate } from '@/utils/date'
 import { OperationalDrawer } from '@/components/OperationalDrawer'
 import { PendenciaManager } from '@/components/PendenciaManager'
 import { VisitaDetailView } from '@/components/VisitaDetailView'
+import { EntregaManager } from '@/components/EntregaManager'
 
 type SubTab = 'organizacao' | 'operacao'
 
@@ -109,9 +110,9 @@ function HistoryItem({ event, onClick }: { event: TimelineEvent; onClick: () => 
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-zinc-300 font-bold text-sm truncate">{event.titulo}</p>
-        <p className="text-[#4A5568] text-[10px] font-black uppercase tracking-widest truncate">{event.cliente} · {displayDate(event.data)}</p>
+        <p className="text-[#4A5568] text-[9px] sm:text-[10px] font-black uppercase tracking-widest truncate">{event.cliente} · {displayDate(event.data)}</p>
       </div>
-      <div className="text-[10px] font-black uppercase tracking-widest text-blue-500">
+      <div className="hidden sm:block text-[10px] font-black uppercase tracking-widest text-blue-500">
         Ver Pendência
       </div>
     </Link>
@@ -145,7 +146,7 @@ function HistoryItem({ event, onClick }: { event: TimelineEvent; onClick: () => 
         </div>
       )}
 
-      <div className="text-[10px] font-black uppercase tracking-widest text-sky-500">
+      <div className="hidden sm:block text-[10px] font-black uppercase tracking-widest text-sky-500">
         Ver Log
       </div>
     </div>
@@ -241,10 +242,10 @@ function PlanningList() {
   ]
 
   return (
-    <main className="min-h-screen bg-[#07090D] pb-32">
+    <main className="min-h-screen bg-[#07090D] pb-32 overflow-x-hidden">
       <DashboardTabs />
 
-      <div className="px-4 pt-6">
+      <div className="px-4 pt-4 sm:pt-6">
         <OperationalTabs 
           options={tabOptions} 
           currentValue={activeTab} 
@@ -382,6 +383,8 @@ function PlanningList() {
             />
           ) : selectedItem?.type === 'visita' ? (
             <VisitaDetailView id={selectedItem.id} />
+          ) : selectedItem?.type === 'entrega' ? (
+            <EntregaManager id={selectedItem.id} onUpdate={loadData} />
           ) : (
             <div className="text-center py-10">
               <p className="text-zinc-600 text-xs italic">Selecione um item para operar.</p>

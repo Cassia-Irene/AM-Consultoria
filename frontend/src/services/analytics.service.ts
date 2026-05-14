@@ -31,6 +31,7 @@ export interface TimelineEvent {
   pendenciasContagem?: number
   ultimaVisitaResultados?: string
   pendenciasLista?: { id: number; descricao: string; dataPrazo?: string }[]
+  idProjeto?: number
 }
 
 export interface OpenPendency {
@@ -95,6 +96,7 @@ export interface TodayVisit {
 }
 
 export interface ActiveProject {
+  id: number
   cliente: string
   projeto: string
   status: string

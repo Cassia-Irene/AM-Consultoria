@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { EntregasService } from '@/services/entregas.service'
 import { type Entrega } from '@/domain/entrega'
-import { CheckCircle2, Circle, Clock, Plus, AlertCircle, Edit2 } from 'lucide-react'
+import { CheckCircle2, Circle, Plus, AlertCircle, Edit2 } from 'lucide-react'
 import { displayDate } from '@/utils/date'
 
 interface ProjectMarcoListProps {
@@ -18,16 +18,21 @@ export function ProjectMarcoList({ projetoId, onEntregaClick, onAddEntrega, refr
   const [entregas, setEntregas] = useState<Entrega[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadEntregas()
-  }, [projetoId, refreshSignal])
+  const loadEntregas = React.useCallback(async (showLoading = false) => {
+    if (showLoading) setLoading(true)
+    try {
+      const data = await EntregasService.getByProjetoId(String(projetoId))
+      setEntregas(data.sort((a, b) => new Date(a.data_entrega_prevista).getTime() - new Date(b.data_entrega_prevista).getTime()))
+    } finally {
+      setLoading(false)
+    }
+  }, [projetoId])
 
-  async function loadEntregas() {
-    setLoading(true)
-    const data = await EntregasService.getByProjetoId(String(projetoId))
-    setEntregas(data.sort((a, b) => new Date(a.data_entrega_prevista).getTime() - new Date(b.data_entrega_prevista).getTime()))
-    setLoading(false)
-  }
+  useEffect(() => {
+    // No mount inicial, loading já é true. Para sinais de refresh, mostramos loading.
+    const shouldShowLoading = refreshSignal !== undefined && refreshSignal > 0
+    Promise.resolve().then(() => loadEntregas(shouldShowLoading))
+  }, [loadEntregas, refreshSignal])
 
   async function handleQuickToggle(e: React.MouseEvent, entrega: Entrega) {
     e.stopPropagation()

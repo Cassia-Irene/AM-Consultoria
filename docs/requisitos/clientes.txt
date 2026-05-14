@@ -30,6 +30,7 @@ Início: Fevereiro/2025
 Renovação anual
 Financeiro
 Fee mensal: R$ 8.500
+Pagamento: Mensal
 Vencimento: Dia 10
 Cultura Operacional
 
@@ -38,6 +39,7 @@ A Conceição é extremamente comprometida com cuidado, mas evita conflitos admi
 Projetos Extras
 Revisão do fluxo de medicação
 Organização documental para VISA
+
 2. CAPS II RENASCER
 Identificação
 Nome: CAPS II Renascer
@@ -55,6 +57,7 @@ Inclui relatório: Sim
 Início: Agosto/2024
 Financeiro
 Fee mensal: R$ 6.200
+Pagamento: Mensal
 Vencimento variável
 Cultura Operacional
 
@@ -63,6 +66,7 @@ Ambiente muito sensível emocionalmente. A equipe trabalha sobrecarregada. Deman
 Projetos Extras
 Revisão do fluxo RAAS
 Organização do acompanhamento dos usuários intensivos
+
 3. CUIDABEM
 Identificação
 Nome: CuidaBem Serviços Domiciliares
@@ -80,6 +84,7 @@ Inclui relatório: Não
 Início: Janeiro/2025
 Financeiro
 Fee mensal: R$ 12.000
+Pagamento: Mensal + Projetos paralelos
 Vencimento: Dia 5
 Cultura Operacional
 
@@ -88,6 +93,7 @@ Cliente extremamente acelerado. Tudo acontece via WhatsApp. Marcela toma decisã
 Projetos Extras
 Estruturação de controle de cuidadores
 Redesenho da escala de plantão
+
 4. REABILITA
 Identificação
 Nome: REABILITA Centro de Reabilitação
@@ -104,6 +110,7 @@ Inclui relatório: Sim
 Início: Março/2025
 Financeiro
 Fee mensal: R$ 7.000
+Pagamento: Mensal
 Vencimento: Dia 15
 Cultura Operacional
 
@@ -112,6 +119,7 @@ Equipe técnica muito boa, mas gestão financeira confusa. A Fernanda muda prior
 Projetos Extras
 Revisão de autorização de convênios
 Controle de sessões e metas terapêuticas
+
 5. CRECHE SONHO DE CRIANÇA
 Identificação
 Nome: Creche Sonho de Criança
@@ -128,6 +136,7 @@ Inclui relatório: Sim
 Início: Junho/2024
 Financeiro
 Fee mensal: R$ 4.500
+Pagamento: Mensal
 Vencimento: Dia 20
 Cultura Operacional
 
@@ -136,6 +145,7 @@ Equipe afetiva e pouco organizada documentalmente. Grande medo de auditoria da p
 Projetos Extras
 Revisão de frequência escolar
 Organização documental de convênio
+
 6. APAE DE BACABAL
 Identificação
 Nome: APAE de Bacabal
@@ -153,6 +163,7 @@ Inclui relatório: Sim
 Início: Abril/2024
 Financeiro
 Fee mensal: R$ 9.000
+Pagamento: Mensal + Projeto
 Vencimento: Dia 30
 Cultura Operacional
 
@@ -161,6 +172,7 @@ Instituição muito dependente do conhecimento informal da Neuza. Equipe pequena
 Projetos Extras
 Revisão dos PIAs
 Organização integrada dos atendimentos
+
 7. FARMAVIDA
 Identificação
 Nome: FarmaVida Farmácia Comunitária
@@ -178,6 +190,7 @@ Inclui relatório: Não
 Início: Setembro/2024
 Financeiro
 Fee mensal: R$ 3.800
+Pagamento: Por visita
 Vencimento: Dia 8
 Cultura Operacional
 

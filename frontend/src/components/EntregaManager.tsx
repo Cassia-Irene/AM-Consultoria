@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react'
 import { EntregasService } from '@/services/entregas.service'
 import { type Entrega } from '@/domain/entrega'
-import { CheckCircle2, Circle, Calendar, Link as LinkIcon, AlertTriangle, ArrowRight } from 'lucide-react'
+import { type EntregaRaw } from '@/types/entrega.raw'
+import { CheckCircle2, Circle, Calendar, Link as LinkIcon, AlertTriangle } from 'lucide-react'
 import { displayDate } from '@/utils/date'
 
 interface EntregaManagerProps {
@@ -14,27 +15,19 @@ interface EntregaManagerProps {
 
 export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps) {
   const [entrega, setEntrega] = useState<Entrega | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!!id)
   const [saving, setSaving] = useState(false)
-  const [editMode, setEditMode] = useState(false)
+  const [editMode, setEditMode] = useState(!id)
 
   // Form states
   const [descricao, setDescricao] = useState('')
   const [dataPrevista, setDataPrevista] = useState('')
   const [referenciaDoc, setReferenciaDoc] = useState('')
 
-  useEffect(() => {
-    if (id) {
-      loadEntrega()
-    } else {
-      setLoading(false)
-      setEditMode(true)
-    }
-  }, [id])
-
-  async function loadEntrega() {
+  const loadEntrega = React.useCallback(async () => {
+    if (!id) return
     setLoading(true)
-    const data = await EntregasService.getById(id!)
+    const data = await EntregasService.getById(id)
     if (data) {
       setEntrega(data)
       setDescricao(data.descricao)
@@ -42,14 +35,18 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
       setReferenciaDoc(data.referencia_doc || '')
     }
     setLoading(false)
-  }
+  }, [id])
+
+  useEffect(() => {
+    Promise.resolve().then(() => loadEntrega())
+  }, [loadEntrega])
 
   async function handleToggleStatus() {
     if (!entrega) return
     setSaving(true)
     try {
       const newStatus = !entrega.entregue
-      const updateData: any = {
+      const updateData: Partial<EntregaRaw> = {
         entregue: newStatus,
         data_entrega_real: newStatus ? new Date().toISOString().split('T')[0] : null
       }
@@ -66,7 +63,7 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
   async function handleSave() {
     setSaving(true)
     try {
-      const payload: any = {
+      const payload: Partial<EntregaRaw> = {
         descricao,
         data_entrega_prevista: dataPrevista,
         referencia_doc: referenciaDoc || null

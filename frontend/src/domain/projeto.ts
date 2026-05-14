@@ -25,5 +25,9 @@ export type Projeto = {
   atrasado?: boolean
   isExtra?: boolean
 
+  score_tensao?: number
+  nivel_tensao?: string
+  count_atrasos?: number
+
   observacoes_gerais?: string
 }

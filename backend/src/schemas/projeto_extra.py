@@ -5,7 +5,7 @@ from typing import Optional
 class ProjetoExtraBase(BaseModel):
     id_projeto: int
     solicitado_por: int
-    aprovado_por: int = None
+    aprovado_por: Optional[int] = None
 
 class ProjetoExtraCreate(ProjetoExtraBase):
     pass

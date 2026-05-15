@@ -32,7 +32,7 @@ export function mapProjeto(raw: ProjetoRaw): Projeto {
     contratoId: String(raw.id_contrato),
 
     titulo: raw.titulo,
-    descricao: raw.descricao ?? undefined,
+    ...processDescription(raw.descricao),
 
     data_inicio: raw.data_inicio,
     data_fim_prevista: raw.data_fim_prevista ?? undefined,
@@ -43,21 +43,38 @@ export function mapProjeto(raw: ProjetoRaw): Projeto {
     status: normalizeStatus(raw.status || 'planejado'),
     atrasado: !!raw.atrasado,
 
+    score_tensao: raw.score_tensao,
+    nivel_tensao: raw.nivel_tensao,
+    count_atrasos: raw.count_atrasos,
+
     observacoes_gerais: raw.observacoes_gerais ?? undefined,
   }
+}
+
+function processDescription(desc: string | null | undefined): { descricao?: string; isExtra?: boolean } {
+  if (!desc) return {}
+  
+  const prefix = "PROJETO EXTRA"
+  if (desc.toUpperCase().includes(prefix)) {
+    // Remove o prefixo e o possível solicitante mencionado para deixar a descrição limpa
+    const cleaned = desc.replace(new RegExp(prefix, "gi"), "").replace(/solicitado por.*?\.\s*/i, "").trim()
+    return {
+      descricao: cleaned || undefined,
+      isExtra: true
+    }
+  }
+  
+  return { descricao: desc }
 }
 
 function normalizeStatus(status: string): StatusProjeto {
   const s = String(status || '').toLowerCase().trim()
   
-  // Mapeamento resiliente para o Domain (Preservando espaços e acentos do Banco)
   if (s === 'em andamento' || s === 'em_andamento') return 'em andamento'
   if (s === 'concluído' || s === 'concluido') return 'concluído'
   if (s === 'cancelado') return 'cancelado'
-  if (s === 'planejado') return 'planejado'
   
-  console.warn('[MAPPER][PROJETO] Status desconhecido:', status)
-  return 'em andamento' // Default resiliente
+  return 'em andamento'
 }
 
 function parseDecimal(value: string | number): number {

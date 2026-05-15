@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 
 from src.database import get_db
@@ -36,12 +36,20 @@ def criar_projeto(projeto: ProjetoCreate, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=List[ProjetoRead])
 def listar_projetos(db: Session = Depends(get_db)):
-    # Busca todos os projetos cadastrados
-    return db.query(Projeto).all()
+    # Busca todos os projetos cadastrados com relações para inteligência
+    return db.query(Projeto).options(
+        joinedload(Projeto.entregas),
+        joinedload(Projeto.contrato).joinedload(Contrato.eventos_criticos)
+    ).all()
+
 @router.get("/{id_projeto}", response_model=ProjetoRead)
 def buscar_projeto(id_projeto: int, db: Session = Depends(get_db)):
     """Busca os detalhes de um projeto específico por ID."""
-    projeto = db.query(Projeto).filter(Projeto.id_projeto == id_projeto).first()
+    projeto = db.query(Projeto).options(
+        joinedload(Projeto.entregas),
+        joinedload(Projeto.contrato).joinedload(Contrato.eventos_criticos)
+    ).filter(Projeto.id_projeto == id_projeto).first()
+    
     if not projeto:
         raise HTTPException(status_code=404, detail="Projeto não encontrado")
     return projeto

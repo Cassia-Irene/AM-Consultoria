@@ -12,12 +12,33 @@ export const EntregasService = {
       return data.map(mapEntrega)
     } catch (error) {
       console.error('[SERVICE][ERROR] Falha ao buscar entregas:', error)
-      return getEntregas()
+      return []
     }
   },
 
-  async getByProjetoId(projetoId: string): Promise<Entrega[]> {
+  async getById(id: string | number): Promise<Entrega | null> {
     const all = await this.getAll()
-    return all.filter(e => e.projetoId === projetoId)
+    return all.find(e => String(e.id) === String(id)) || null
+  },
+
+  async getByProjetoId(projetoId: string | number): Promise<Entrega[]> {
+    const all = await this.getAll()
+    return all.filter(e => String(e.projetoId) === String(projetoId))
+  },
+
+  async create(data: Partial<EntregaRaw>): Promise<Entrega> {
+    const response = await fetchApi<EntregaRaw>('/entregas/', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    })
+    return mapEntrega(response)
+  },
+
+  async update(id: string | number, data: Partial<EntregaRaw>): Promise<Entrega> {
+    const response = await fetchApi<EntregaRaw>(`/entregas/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    })
+    return mapEntrega(response)
   }
 }

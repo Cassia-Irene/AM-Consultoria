@@ -1,12 +1,14 @@
 'use client'
 
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { AnalyticsService, type OperationalInsight, type ClientHealth } from '@/services/analytics.service'
+import { AnalyticsService, type OperationalInsight, type ActiveProject } from '@/services/analytics.service'
 import { OperationalTimeline } from '@/components/OperationalTimeline'
 import { DashboardTabs } from '@/components/DashboardTabs'
 import { OperationalDrawer } from '@/components/OperationalDrawer'
 import { VisitaDetailView } from '@/components/VisitaDetailView'
 import { PendenciaManager } from '@/components/PendenciaManager'
+import { EntregaManager } from '@/components/EntregaManager'
+import { OperationalContractCard } from '@/components/OperationalContractCard'
 
 /* ─────────────────────────────────────────────
    COMPONENTES MODO REFLEXÃO
@@ -38,48 +40,31 @@ function InsightCard({
   )
 }
 
-function ClientHealthRow({ health }: { health: ClientHealth }) {
-  return (
-    <div className="bg-[#0d1117] border border-[#23272F] rounded-2xl px-5 py-4 flex items-center justify-between shadow-sm">
-      <div className="min-w-0 flex-1">
-        <p className="text-white font-bold text-sm truncate">{health.cliente}</p>
-        <div className="flex items-center gap-3 mt-1.5">
-          <div className="flex-1 h-1.5 bg-[#23272F] rounded-full overflow-hidden max-w-[120px]">
-            <div 
-              className={`h-full ${health.indiceDesgaste > 70 ? 'bg-red-500' : 'bg-sky-500'}`} 
-              style={{ width: `${health.indiceDesgaste}%` }} 
-            />
-          </div>
-          <span className={`text-[10px] font-bold ${health.indiceDesgaste > 70 ? 'text-red-400' : 'text-sky-400'}`}>
-            {health.indiceDesgaste}% de esforço
-          </span>
-        </div>
-      </div>
-      <div className="text-right ml-4">
-        <span className="text-[9px] font-black uppercase tracking-widest text-[#7D8597] bg-[#23272F] px-2 py-1 rounded">
-          {health.perfil.replace('_', ' ')}
-        </span>
-      </div>
-    </div>
-  )
-}
-
 
 export default function ModoReflexaoPage() {
   const [data, setData] = useState<OperationalInsight | null>(null)
+  const [projects, setProjects] = useState<ActiveProject[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedItem, setSelectedItem] = useState<{ type: string; id: number | string } | null>(null)
+  const [selectedItem, setSelectedItem] = useState<{ 
+    type: string; 
+    id?: number | string;
+    projetoId?: number | string;
+  } | null>(null)
+  const [refreshSignal, setRefreshSignal] = useState(0)
 
-  const loadData = useCallback(() => {
-    AnalyticsService.getOperationalSnapshot().then(res => {
-      setData(res)
-      setLoading(false)
-    })
+  const loadData = useCallback(async () => {
+    const [snapshot, projectsData] = await Promise.all([
+      AnalyticsService.getOperationalSnapshot(),
+      AnalyticsService.getProjects()
+    ])
+    setData(snapshot)
+    setProjects(projectsData)
+    setLoading(false)
   }, [])
 
   useEffect(() => {
-    loadData()
-  }, [loadData])
+    Promise.resolve().then(() => loadData())
+  }, [loadData, refreshSignal])
 
   const timelineEvents = useMemo(() => {
     if (!data) return []
@@ -93,15 +78,15 @@ export default function ModoReflexaoPage() {
   )
 
   return (
-    <main className="min-h-screen bg-[#07090D] pb-32">
+    <main className="min-h-screen bg-[#07090D] pb-32 overflow-x-hidden">
       <DashboardTabs />
 
-      <div className="px-6 pt-8 space-y-10">
+      <div className="px-4 sm:px-6 pt-6 sm:pt-8 space-y-8 sm:space-y-10">
         
         {/* SEÇÃO 1: OS INVISÍVEIS */}
         <section>
-          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#7D8597] mb-4 px-1">Carga Invisível</p>
-          <div className="grid grid-cols-1 gap-4">
+          <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.3em] text-[#7D8597] mb-4 px-1">Carga Invisível</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <InsightCard 
               label="Esforço Não Faturado" 
               value={`~${Math.round(data.totalHorasInvisiveis / 60)}h`}
@@ -117,14 +102,16 @@ export default function ModoReflexaoPage() {
           </div>
         </section>
 
-        {/* SEÇÃO 2: DIAGNÓSTICO OPERACIONAL */}
+        {/* SEÇÃO 2: DIAGNÓSTICO E SAÚDE OPERACIONAL */}
         <section>
-          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#7D8597] mb-4 px-1">Saúde dos Contratos</p>
+          <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.3em] text-[#7D8597] mb-4 px-1">Saúde dos Contratos</p>
           <div className="space-y-3">
             {data.topDrainingClients.map(health => (
-              <ClientHealthRow 
+              <OperationalContractCard 
                 key={health.idContrato} 
-                health={health} 
+                health={health}
+                allProjects={projects}
+                refreshSignal={refreshSignal}
               />
             ))}
           </div>
@@ -132,13 +119,13 @@ export default function ModoReflexaoPage() {
 
         {/* SEÇÃO 3: TIMELINE VIVA */}
         <section>
-          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#7D8597] mb-4 px-1">Memória Operacional</p>
-          <div className="bg-[#0d1117] border border-[#23272F] rounded-3xl p-6 shadow-xl">
+          <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.3em] text-[#7D8597] mb-4 px-1">Memória Operacional</p>
+          <div className="bg-[#0d1117] border border-[#23272F] rounded-3xl p-4 sm:p-6 shadow-xl">
             <OperationalTimeline 
               events={timelineEvents} 
               onEventClick={(ev) => {
                 if (ev.idReferencia) {
-                  setSelectedItem({ type: ev.type, id: ev.idReferencia })
+                  setSelectedItem({ type: ev.type, id: ev.idReferencia, projetoId: ev.idProjeto })
                 }
               }}
             />
@@ -151,15 +138,29 @@ export default function ModoReflexaoPage() {
       <OperationalDrawer
         isOpen={!!selectedItem}
         onClose={() => setSelectedItem(null)}
-        title={selectedItem?.type === 'visita' ? 'Gestão de Visita' : 'Gestão de Pendência'}
+        title={
+          selectedItem?.type === 'visita' ? 'Gestão de Visita' : 
+          selectedItem?.type === 'pendencia' ? 'Gestão de Pendência' :
+          selectedItem?.type === 'entrega' ? 'Marco de Entrega' :
+          'Alerta Crítico'
+        }
       >
         {selectedItem?.type === 'pendencia' ? (
           <PendenciaManager 
-            id={selectedItem.id} 
+            id={selectedItem.id as string | number} 
             onUpdate={loadData} 
           />
         ) : selectedItem?.type === 'visita' ? (
           <VisitaDetailView id={selectedItem.id as number} />
+        ) : selectedItem?.type === 'entrega' ? (
+          <EntregaManager 
+            id={selectedItem.id} 
+            projetoId={selectedItem.projetoId}
+            onUpdate={() => {
+              setRefreshSignal(prev => prev + 1)
+              setSelectedItem(null)
+            }} 
+          />
         ) : (
           <div className="text-center py-10">
             <p className="text-zinc-600 text-xs italic">Selecione um item para operar.</p>

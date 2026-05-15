@@ -4,7 +4,6 @@
 // Entregas não-recorrentes vinculadas a um contrato.
 
 export type StatusProjeto =
-  | 'planejado'
   | 'em andamento'
   | 'concluído'
   | 'cancelado'
@@ -24,6 +23,11 @@ export type Projeto = {
 
   status: StatusProjeto
   atrasado?: boolean
+  isExtra?: boolean
+
+  score_tensao?: number
+  nivel_tensao?: string
+  count_atrasos?: number
 
   observacoes_gerais?: string
 }

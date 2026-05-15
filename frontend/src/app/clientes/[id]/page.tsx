@@ -102,7 +102,7 @@ export default function ClienteDetalhePage({ params }: PageProps) {
   // Cálculos para KPIs
   const contratosAtivos = contratos.filter(c => c.status === 'ativo')
   const receitaMensal = contratosAtivos.reduce((acc, c) => acc + (c.valor_mensal || 0), 0)
-  const projetosAtivos = projetos.filter(p => p.status === 'em_andamento')
+  const projetosAtivos = projetos.filter(p => p.status === 'em andamento')
 
   return (
     <main className="min-h-screen bg-[#07090D] text-zinc-300 pb-32">
@@ -435,13 +435,12 @@ function ContratoStatusBadge({ status }: { status: string }) {
 
 function ProjetoStatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    planejado: 'text-zinc-400 bg-zinc-800 border-zinc-700/50',
-    em_andamento: 'text-sky-400 bg-sky-900/30 border-sky-800/30',
-    concluido: 'text-emerald-400 bg-emerald-900/30 border-emerald-800/30',
+    'em andamento': 'text-sky-400 bg-sky-900/30 border-sky-800/30',
+    'concluído': 'text-emerald-400 bg-emerald-900/30 border-emerald-800/30',
     cancelado: 'text-red-400 bg-red-900/30 border-red-800/30',
   }
   return (
-    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${colors[status] || colors.planejado}`}>
+    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${colors[status] || colors['em andamento']}`}>
       {status.replace('_', ' ')}
     </span>
   )

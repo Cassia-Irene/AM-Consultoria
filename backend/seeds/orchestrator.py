@@ -18,64 +18,27 @@ from semantic_hydration import hydrate_entities, simulate_history
 
 def clear_all(db: Session):
     """Limpa todo o banco respeitando a ordem de chaves estrangeiras."""
-    print("[SEED] Limpando banco de dados...")
-    
-    # Ordem reversa de dependência
-    db.query(EventoCritico).delete()
-    db.query(Pendencia).delete()
-    db.query(VisitaExtra).delete()
-    db.query(Visita).delete()
-    db.query(Entrega).delete()
-    db.query(ProjetoParcela).delete()
-    db.query(ProjetoExtra).delete()
-    db.query(Projeto).delete()
-    db.query(FaturamentoCliente).delete()
-    db.query(ContratoPagamento).delete()
-    db.query(HistoricoContrato).delete()
-    db.query(Contrato).delete()
-    db.query(Contato).delete()
-    db.query(Cliente).delete()
-    db.query(TipoPagamento).delete()
-    db.commit()
-    print("[SEED] Banco limpo com sucesso.")
+    # Desativado a pedido do usuário para preservar dados existentes e apenas densificar.
+    print("[SEED] Ignorando limpeza de banco (Preservando dados)...")
+    pass
 
 def run_all(db: Session, mode: str = "realistic"):
-    """Orquestrador principal: Executa estrutura e simulação na ordem correta."""
+    """Orquestrador principal: Complementa a hidratação semântica."""
     try:
-        clear_all(db)
+        # clear_all(db) # Preservar dados existentes
 
-        print(f"\n[SEED] >>> INICIANDO MOTOR DE SIMULAÇÃO ({mode.upper()}) <<<\n")
+        print(f"\n[SEED] >>> INICIANDO MOTOR DE DENSIFICAÇÃO ({mode.upper()}) <<<\n")
 
-        scenarios = [
-            ILPIScenario(db),
-            CrecheScenario(db),
-            CAPSScenario(db),
-            HomeCareScenario(db),
-            ReabilitaScenario(db),
-            APAEScenario(db),
-            FarmaciaScenario(db)
-        ]
-
-        # 1. Gerar Estrutura
-        print("[SEED] Fase 1: Gerando Base Estrutural (Clientes/Contratos)...")
-        estruturas = []
-        for scenario in scenarios:
-            cliente, contrato = scenario.generate_structure()
-            estruturas.append((scenario, cliente, contrato))
-
-        # 2. Simular Linha do Tempo
-        print(f"\n[SEED] Fase 2: Simulando Linha do Tempo Dinâmica...")
-        for scenario, cliente, contrato in estruturas:
-            nome_cenario = scenario.__class__.__name__
-            print(f"  -> Simulando {nome_cenario} para {cliente.nome}...")
-            scenario.simulate_timeline(cliente, contrato, mode)
-
+        # Fase 1 e 2 desativadas pois o banco já está populado com a estrutura base.
+        # scenarios = [...]
+        
         # 3. Hidratação Semântica (Vida de 6 meses)
-        print("\n[SEED] Fase 3: Injetando Hidratação Semântica (6 meses de histórico)...")
+        print("\n[SEED] Fase 3: Injetando Hidratação Semântica (Densificação de Entregas e Eventos)...")
+        # hydrate_entities agora retorna {} pois vamos trabalhar sobre o que já existe no DB.
         client_data = hydrate_entities(db)
         simulate_history(db, client_data)
 
-        print("\n[SEED] >>> SIMULAÇÃO OPERACIONAL CONCLUÍDA COM SUCESSO! <<<\n")
+        print("\n[SEED] >>> DENSIFICAÇÃO OPERACIONAL CONCLUÍDA COM SUCESSO! <<<\n")
 
     except Exception as e:
         print(f"\n[SEED][ERRO FATAL] Falha durante a simulação: {str(e)}")

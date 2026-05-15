@@ -2,9 +2,9 @@ from datetime import date
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from src.models.contrato import Contrato
-from src.models.historico_contrato import HistoricoContrato # Certifique-se de importar
+from src.models.historico_contrato import HistoricoContrato
+from src.models.contrato_pagamento import ContratoPagamento
 from src.schemas.contrato import ContratoReplaceRequest
-
 def encerrar_e_criar_novo_contrato(db: Session, data: ContratoReplaceRequest):
     # 1. Buscar contrato atual
     antigo = db.query(Contrato).filter(Contrato.id_contrato == data.contrato_id).first()
@@ -35,12 +35,25 @@ def encerrar_e_criar_novo_contrato(db: Session, data: ContratoReplaceRequest):
         # sem encerrar a transação (commit).
         db.flush() 
 
-        # 5. Agora criamos o histórico com os dois IDs garantidos
+        # 5. Se houver novo valor, cria o pagamento vinculado
+        if data.novo_valor_mensal:
+            tipo_id = 1 # Mensalidade por padrão
+            if antigo.pagamentos:
+                tipo_id = antigo.pagamentos[0].id_tipo_pagamento
+            
+            novo_pagamento = ContratoPagamento(
+                id_contrato=novo.id_contrato,
+                id_tipo_pagamento=tipo_id,
+                valor=data.novo_valor_mensal
+            )
+            db.add(novo_pagamento)
+
+        # 6. Agora criamos o histórico com os dois IDs garantidos
         historico = HistoricoContrato(
             id_contrato_encerrado=antigo.id_contrato,
             id_contrato_novo=novo.id_contrato, # Agora este ID já existe!
             data_alteracao=antigo.data_fim, # Data do encerramento do contrato antigo
-            motivo_alteracao=f"Substituição automática: Visitas alteradas para {data.visitas_previstas_mes}"
+            motivo_alteracao=f"Substituição automática: Visitas {data.visitas_previstas_mes}, Valor R$ {data.novo_valor_mensal or 'mantido'}"
         )
         
         db.add(historico)

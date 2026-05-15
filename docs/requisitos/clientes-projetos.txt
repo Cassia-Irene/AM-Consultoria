@@ -1,0 +1,252 @@
+Olha, isso vai ajudar muito vocês a testar a plataforma de forma realista. Porque a consultoria não vive só de “cliente mensal”. Ela vive de camadas de trabalho acontecendo ao mesmo tempo. Tem o acompanhamento contínuo… e no meio surgem projetos específicos que bagunçam completamente a rotina operacional.
+
+Vou lhe passar como isso está mais próximo da minha realidade hoje.
+
+---
+
+# 1. LAR SÃO FRANCISCO
+
+## Projeto Principal
+
+### Reorganização Operacional Assistencial
+
+Objetivo: melhorar fluxo interno entre enfermagem, medicação, incidentes e comunicação entre profissionais.
+
+Situação atual:
+A Conceição percebeu que cada profissional registra informação em lugares diferentes. Já aconteceu intercorrência grave por falha de comunicação entre plantões.
+
+---
+
+## Projetos Extras
+
+### Revisão do Fluxo de Medicação
+
+Projeto mais crítico hoje.
+Envolve:
+
+* conferência de prescrição,
+* dispensação,
+* administração,
+* rastreabilidade de erro.
+
+Tem muita tensão emocional porque já houve erro sério anteriormente.
+
+### Organização Documental para VISA
+
+Preparação para fiscalização.
+Inclui:
+
+* incidentes,
+* prontuários,
+* relatórios,
+* organização de evidências.
+
+Esse projeto gera muito acionamento de urgência perto de auditoria.
+
+---
+
+# 2. CAPS II RENASCER
+
+## Projeto Principal
+
+### Estruturação do Fluxo Operacional do CAPS
+
+Objetivo:
+organizar acompanhamento dos usuários e melhorar continuidade entre equipe multiprofissional.
+
+Problema:
+muita informação fica “na cabeça” dos profissionais.
+
+---
+
+## Projetos Extras
+
+### Revisão do Fluxo RAAS
+
+Equipe tem dificuldade em registrar produtividade corretamente.
+
+Sempre gera correria no fechamento mensal.
+
+### Organização dos Usuários Intensivos
+
+Projeto delicado.
+Objetivo:
+acompanhar usuários com maior risco de abandono e crise recorrente.
+
+Esse projeto costuma gerar muitas reuniões longas.
+
+---
+
+# 3. CUIDABEM
+
+## Projeto Principal
+
+### Estruturação da Operação de Escalas
+
+Talvez o cliente mais caótico da carteira hoje.
+
+Objetivo:
+dar previsibilidade operacional para cuidadores e famílias.
+
+Problema:
+muita troca emergencial e falta de rastreabilidade.
+
+---
+
+## Projetos Extras
+
+### Reestruturação do Banco de Cuidadores
+
+Mapear:
+
+* disponibilidade,
+* certificações,
+* perfil comportamental,
+* regiões atendidas.
+
+### Padronização de Acionamentos Emergenciais
+
+Hoje cada urgência é resolvida de um jeito diferente.
+
+Marcela quer reduzir tempo de resposta.
+
+### Revisão da Comunicação com Famílias
+
+Projeto recente.
+Muitas reclamações surgiram por desalinhamento de expectativa.
+
+---
+
+# 4. REABILITA
+
+## Projeto Principal
+
+### Organização do Fluxo de Atendimento e Faturamento
+
+Objetivo:
+cruzar sessão realizada com cobrança e autorização de convênio.
+
+Hoje existe muito retrabalho manual.
+
+---
+
+## Projetos Extras
+
+### Controle de Metas Terapêuticas
+
+A Fernanda quer acompanhar evolução dos pacientes de forma mais clara.
+
+### Revisão de Autorizações de Convênio
+
+Problema:
+sessão realizada sem autorização válida gera perda financeira.
+
+### Padronização de Evolução Clínica
+
+Cada profissional registra de um jeito.
+
+---
+
+# 5. CRECHE SONHO DE CRIANÇA
+
+## Projeto Principal
+
+### Organização Administrativa do Convênio Municipal
+
+Objetivo:
+reduzir medo de auditoria e melhorar prestação de contas.
+
+---
+
+## Projetos Extras
+
+### Revisão do Controle de Frequência
+
+Hoje é praticamente manual.
+
+### Organização Documental das Crianças
+
+Vacinação,
+responsáveis,
+documentação pendente,
+histórico escolar.
+
+### Estruturação do Registro de Cardápio
+
+Porque prefeitura exige comprovação contínua.
+
+---
+
+# 6. APAE DE BACABAL
+
+## Projeto Principal
+
+### Integração dos Atendimentos Multiprofissionais
+
+Esse talvez seja o projeto mais complexo intelectualmente da carteira.
+
+Objetivo:
+fazer saúde, educação e assistência conversarem minimamente.
+
+Hoje cada setor funciona isolado.
+
+---
+
+## Projetos Extras
+
+### Revisão dos PIAs
+
+Projeto contínuo.
+Muito trabalho manual.
+
+### Organização das Transições para Vida Adulta
+
+Casos próximos dos 18 anos geram preocupação enorme da equipe.
+
+### Estruturação dos Registros de Oficinas
+
+A Neuza quer conseguir acompanhar evolução de habilidades.
+
+---
+
+# 7. FARMAVIDA
+
+## Projeto Principal
+
+### Organização da Dispensação e Controle Operacional
+
+Objetivo:
+reduzir perda financeira e melhorar rastreabilidade.
+
+---
+
+## Projetos Extras
+
+### Revisão do Fluxo Farmácia Popular
+
+Muito foco em conferência documental.
+
+### Controle de Lotes e Vencimentos
+
+Projeto mais operacional.
+
+### Padronização de Substituição Genérico/Referência
+
+Hoje depende muito da memória do farmacêutico.
+
+---
+
+E vou lhe dar uma sugestão importante para popular isso no sistema:
+não deixem os projetos sempre “bonitos” e ativos ao mesmo tempo.
+
+Criem situações como:
+
+* projeto parado há 22 dias,
+* projeto sem atualização recente,
+* projeto concluído parcialmente,
+* projeto com atraso,
+* projeto que virou urgência,
+* projeto que gerou retrabalho,
+* projeto sem visita há semanas.
+
+Porque é exatamente aí que o sistema de vocês vai mostrar maturidade operacional real.

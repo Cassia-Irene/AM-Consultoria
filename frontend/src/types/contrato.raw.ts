@@ -14,7 +14,16 @@ export interface ContratoRaw {
   data_fim: string | null
   
   observacoes_gerais: string | null
-  valor_mensal?: string | number // Novo campo híbrido (property)
+  valor_mensal?: string | number
+
+  // Fallbacks de transição
+  id?: number
+  clienteId?: number
+
+  // Inteligência (Back-First)
+  indice_urgencia?: number
+  indice_desgaste?: number
+  perfil?: string
 }
 
 export interface HistoricoContratoRaw {

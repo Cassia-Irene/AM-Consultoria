@@ -8,4 +8,6 @@ export interface ProjetoExtraRaw {
 
   solicitado_por: number
   aprovado_por: number | null
+  solicitado_por_nome?: string
+  aprovado_por_nome?: string
 }

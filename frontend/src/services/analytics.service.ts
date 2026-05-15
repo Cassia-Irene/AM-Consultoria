@@ -70,7 +70,7 @@ export interface ClientHealth {
   entregasAtrasadas: number
   progressoMedio: number
   totalMinutosInvisiveis: number
-  statusOperacional: 'emergência' | 'atenção' | 'normal'
+  statusOperacional: string
 }
 
 export interface OperationalInsight {
@@ -104,6 +104,10 @@ export interface ActiveProject {
   idContrato: number
   entregasPendentes: number
   parcelasPendentes: number
+  nivelTensao?: string
+  motivoTensao?: string
+  isEstagnado?: boolean
+  motivoEstagnacao?: string
 }
 
 
@@ -228,6 +232,7 @@ export interface TopPriority {
   dataPrazo?: string
   statusPrazo: string
   scorePrioridade: number
+  motivoPrioridade?: string
 }
 
 export interface AttentionItem {

@@ -13,3 +13,5 @@ class ProjetoExtra(Base):
 
     # 🤝 Relacionamento
     projeto = relationship("Projeto", back_populates="extras")
+    solicitante = relationship("Contato", foreign_keys=[solicitado_por])
+    aprovador = relationship("Contato", foreign_keys=[aprovado_por])

@@ -1,0 +1,1688 @@
+{
+  "projeto_946": {
+    "2026-05-14": {
+      "ritmo_operacional": "retomada",
+      "fase_operacional": "recuperação_gradual",
+      "evidencias": [
+        "2 atrasos geraram acúmulo de backlog.",
+        "2 entregas recentes sustentam o ritmo."
+      ],
+      "evidencias_resumidas": [
+        "2 atrasos geraram acúmulo de backlog.",
+        "2 entregas recentes sustentam o ritmo."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 2 fatores dominantes.",
+      "motivo_auditavel_resumido": "2 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 20,
+      "score_operacional": 70,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 2,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "retomada",
+      "fase_operacional": "recuperação_gradual",
+      "evidencias": [
+        "2 atrasos geraram acúmulo de backlog.",
+        "2 entregas recentes sustentam o ritmo."
+      ],
+      "evidencias_resumidas": [
+        "2 atrasos geraram acúmulo de backlog.",
+        "2 entregas recentes sustentam o ritmo."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 2 fatores dominantes.",
+      "motivo_auditavel_resumido": "2 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 20,
+      "score_operacional": 70,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 2,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_948": {
+    "2026-05-14": {
+      "ritmo_operacional": "em_atrito",
+      "fase_operacional": "crise_operacional",
+      "evidencias": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "3 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": true,
+      "score_tensao": 30,
+      "score_operacional": 55,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 3,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "moderado",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "em_atrito",
+      "fase_operacional": "crise_operacional",
+      "evidencias": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "3 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": true,
+      "score_tensao": 30,
+      "score_operacional": 55,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 3,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "moderado",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_950": {
+    "2026-05-14": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "fluxo_contínuo",
+      "evidencias": [
+        "2 entregas recentes sustentam o ritmo."
+      ],
+      "evidencias_resumidas": [
+        "2 entregas recentes sustentam o ritmo."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "2 entregas recentes sustentam o ritmo.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 0,
+      "score_operacional": 100,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Estável",
+      "count_atrasos": 0,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "fluxo_contínuo",
+      "evidencias": [
+        "1 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "evidencias_resumidas": [
+        "1 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 2 fatores dominantes.",
+      "motivo_auditavel_resumido": "1 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 10,
+      "score_operacional": 85,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 1,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_952": {
+    "2026-05-14": {
+      "ritmo_operacional": "em_atrito",
+      "fase_operacional": "crise_operacional",
+      "evidencias": [
+        "4 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "4 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "4 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": true,
+      "score_tensao": 40,
+      "score_operacional": 40,
+      "nivel_tensao": "crítico",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 4,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "em_atrito",
+      "fase_operacional": "crise_operacional",
+      "evidencias": [
+        "4 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "4 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "4 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": true,
+      "score_tensao": 40,
+      "score_operacional": 40,
+      "nivel_tensao": "crítico",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 4,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_953": {
+    "2026-05-14": {
+      "ritmo_operacional": "em_atrito",
+      "fase_operacional": "crise_operacional",
+      "evidencias": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "3 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": true,
+      "score_tensao": 30,
+      "score_operacional": 55,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 3,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "em_atrito",
+      "fase_operacional": "crise_operacional",
+      "evidencias": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "3 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": true,
+      "score_tensao": 30,
+      "score_operacional": 55,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 3,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_955": {
+    "2026-05-14": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "manutenção",
+      "evidencias": [],
+      "evidencias_resumidas": [],
+      "motivo_auditavel": "Análise factual baseada em 0 fatores dominantes.",
+      "motivo_auditavel_resumido": "Estável",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 0,
+      "score_operacional": 100,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Estável",
+      "count_atrasos": 0,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "manutenção",
+      "evidencias": [],
+      "evidencias_resumidas": [],
+      "motivo_auditavel": "Análise factual baseada em 0 fatores dominantes.",
+      "motivo_auditavel_resumido": "Estável",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 0,
+      "score_operacional": 100,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Estável",
+      "count_atrasos": 0,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_956": {
+    "2026-05-14": {
+      "ritmo_operacional": "em_atrito",
+      "fase_operacional": "crise_operacional",
+      "evidencias": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "3 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": true,
+      "score_tensao": 30,
+      "score_operacional": 55,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 3,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "em_atrito",
+      "fase_operacional": "crise_operacional",
+      "evidencias": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "3 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": true,
+      "score_tensao": 30,
+      "score_operacional": 55,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 3,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_957": {
+    "2026-05-14": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "fluxo_contínuo",
+      "evidencias": [
+        "2 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "evidencias_resumidas": [
+        "2 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 2 fatores dominantes.",
+      "motivo_auditavel_resumido": "2 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 20,
+      "score_operacional": 70,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 2,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "fluxo_contínuo",
+      "evidencias": [
+        "2 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "evidencias_resumidas": [
+        "2 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 2 fatores dominantes.",
+      "motivo_auditavel_resumido": "2 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 20,
+      "score_operacional": 70,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 2,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_971": {
+    "2026-05-14": {
+      "ritmo_operacional": "lento",
+      "fase_operacional": "atraso_pontual",
+      "evidencias": [
+        "1 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "1 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "1 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 10,
+      "score_operacional": 85,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 1,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "lento",
+      "fase_operacional": "atraso_pontual",
+      "evidencias": [
+        "2 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "2 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "2 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 20,
+      "score_operacional": 70,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 2,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_972": {
+    "2026-05-14": {
+      "ritmo_operacional": "lento",
+      "fase_operacional": "atraso_pontual",
+      "evidencias": [
+        "1 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "1 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "1 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 10,
+      "score_operacional": 85,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 1,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "lento",
+      "fase_operacional": "atraso_pontual",
+      "evidencias": [
+        "2 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "2 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "2 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 20,
+      "score_operacional": 70,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 2,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_973": {
+    "2026-05-14": {
+      "ritmo_operacional": "lento",
+      "fase_operacional": "atraso_pontual",
+      "evidencias": [
+        "1 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "1 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "1 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 10,
+      "score_operacional": 85,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 1,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "lento",
+      "fase_operacional": "atraso_pontual",
+      "evidencias": [
+        "2 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "2 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "2 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 20,
+      "score_operacional": 70,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 2,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_974": {
+    "2026-05-14": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "fluxo_contínuo",
+      "evidencias": [
+        "1 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "evidencias_resumidas": [
+        "1 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 2 fatores dominantes.",
+      "motivo_auditavel_resumido": "1 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 10,
+      "score_operacional": 85,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 1,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "fluxo_contínuo",
+      "evidencias": [
+        "2 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "evidencias_resumidas": [
+        "2 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 2 fatores dominantes.",
+      "motivo_auditavel_resumido": "2 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 20,
+      "score_operacional": 70,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 2,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_975": {
+    "2026-05-14": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "fluxo_contínuo",
+      "evidencias": [
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "evidencias_resumidas": [
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "1 entregas recentes sustentam o ritmo.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 0,
+      "score_operacional": 100,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Estável",
+      "count_atrasos": 0,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "fluxo_contínuo",
+      "evidencias": [
+        "1 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "evidencias_resumidas": [
+        "1 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 2 fatores dominantes.",
+      "motivo_auditavel_resumido": "1 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 10,
+      "score_operacional": 85,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 1,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_976": {
+    "2026-05-14": {
+      "ritmo_operacional": "em_atrito",
+      "fase_operacional": "crise_operacional",
+      "evidencias": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "3 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": true,
+      "score_tensao": 30,
+      "score_operacional": 55,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 3,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "em_atrito",
+      "fase_operacional": "crise_operacional",
+      "evidencias": [
+        "4 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "4 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "4 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": true,
+      "score_tensao": 40,
+      "score_operacional": 40,
+      "nivel_tensao": "crítico",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 4,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_959": {
+    "2026-05-14": {
+      "ritmo_operacional": "em_atrito",
+      "fase_operacional": "crise_operacional",
+      "evidencias": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "3 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": true,
+      "score_tensao": 30,
+      "score_operacional": 55,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 3,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "em_atrito",
+      "fase_operacional": "crise_operacional",
+      "evidencias": [
+        "4 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "4 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "4 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": true,
+      "score_tensao": 40,
+      "score_operacional": 40,
+      "nivel_tensao": "crítico",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 4,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_960": {
+    "2026-05-14": {
+      "ritmo_operacional": "lento",
+      "fase_operacional": "atraso_pontual",
+      "evidencias": [
+        "1 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "1 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "1 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 10,
+      "score_operacional": 85,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 1,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "lento",
+      "fase_operacional": "atraso_pontual",
+      "evidencias": [
+        "2 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "2 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "2 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 20,
+      "score_operacional": 70,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 2,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_961": {
+    "2026-05-14": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "fluxo_contínuo",
+      "evidencias": [
+        "1 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "evidencias_resumidas": [
+        "1 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 2 fatores dominantes.",
+      "motivo_auditavel_resumido": "1 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 10,
+      "score_operacional": 85,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 1,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "moderado",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "fluxo_contínuo",
+      "evidencias": [
+        "2 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "evidencias_resumidas": [
+        "2 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 2 fatores dominantes.",
+      "motivo_auditavel_resumido": "2 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 20,
+      "score_operacional": 70,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 2,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "moderado",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_962": {
+    "2026-05-14": {
+      "ritmo_operacional": "lento",
+      "fase_operacional": "atraso_pontual",
+      "evidencias": [
+        "2 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "2 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "2 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 20,
+      "score_operacional": 70,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 2,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "moderado",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "em_atrito",
+      "fase_operacional": "crise_operacional",
+      "evidencias": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "3 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": true,
+      "score_tensao": 30,
+      "score_operacional": 55,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 3,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "moderado",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_963": {
+    "2026-05-14": {
+      "ritmo_operacional": "em_atrito",
+      "fase_operacional": "crise_operacional",
+      "evidencias": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "3 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": true,
+      "score_tensao": 30,
+      "score_operacional": 55,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 3,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "em_atrito",
+      "fase_operacional": "crise_operacional",
+      "evidencias": [
+        "4 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "4 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "4 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": true,
+      "score_tensao": 40,
+      "score_operacional": 40,
+      "nivel_tensao": "crítico",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 4,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_964": {
+    "2026-05-14": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "fluxo_contínuo",
+      "evidencias": [
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "evidencias_resumidas": [
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "1 entregas recentes sustentam o ritmo.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 0,
+      "score_operacional": 100,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Estável",
+      "count_atrasos": 0,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "fluxo_contínuo",
+      "evidencias": [
+        "1 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "evidencias_resumidas": [
+        "1 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 2 fatores dominantes.",
+      "motivo_auditavel_resumido": "1 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 10,
+      "score_operacional": 85,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 1,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_965": {
+    "2026-05-14": {
+      "ritmo_operacional": "lento",
+      "fase_operacional": "atraso_pontual",
+      "evidencias": [
+        "1 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "1 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "1 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 10,
+      "score_operacional": 85,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 1,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "lento",
+      "fase_operacional": "atraso_pontual",
+      "evidencias": [
+        "2 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "2 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "2 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 20,
+      "score_operacional": 70,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 2,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_966": {
+    "2026-05-14": {
+      "ritmo_operacional": "lento",
+      "fase_operacional": "atraso_pontual",
+      "evidencias": [
+        "1 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "1 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "1 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 10,
+      "score_operacional": 85,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 1,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "lento",
+      "fase_operacional": "atraso_pontual",
+      "evidencias": [
+        "2 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "2 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "2 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 20,
+      "score_operacional": 70,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 2,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_967": {
+    "2026-05-14": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "fluxo_contínuo",
+      "evidencias": [
+        "2 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "evidencias_resumidas": [
+        "2 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 2 fatores dominantes.",
+      "motivo_auditavel_resumido": "2 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 20,
+      "score_operacional": 70,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 2,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "fluxo_contínuo",
+      "evidencias": [
+        "3 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "evidencias_resumidas": [
+        "3 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 2 fatores dominantes.",
+      "motivo_auditavel_resumido": "3 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 30,
+      "score_operacional": 55,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 3,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_968": {
+    "2026-05-14": {
+      "ritmo_operacional": "lento",
+      "fase_operacional": "atraso_pontual",
+      "evidencias": [
+        "2 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "2 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "2 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 20,
+      "score_operacional": 70,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 2,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "em_atrito",
+      "fase_operacional": "crise_operacional",
+      "evidencias": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "3 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": true,
+      "score_tensao": 30,
+      "score_operacional": 55,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 3,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_969": {
+    "2026-05-14": {
+      "ritmo_operacional": "lento",
+      "fase_operacional": "atraso_pontual",
+      "evidencias": [
+        "2 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "2 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "2 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 20,
+      "score_operacional": 70,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 2,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "em_atrito",
+      "fase_operacional": "crise_operacional",
+      "evidencias": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "evidencias_resumidas": [
+        "3 atrasos geraram acúmulo de backlog."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 1 fatores dominantes.",
+      "motivo_auditavel_resumido": "3 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": true,
+      "score_tensao": 30,
+      "score_operacional": 55,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 3,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  },
+  "projeto_970": {
+    "2026-05-14": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "fluxo_contínuo",
+      "evidencias": [
+        "1 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "evidencias_resumidas": [
+        "1 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 2 fatores dominantes.",
+      "motivo_auditavel_resumido": "1 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 10,
+      "score_operacional": 85,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 1,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": null
+    },
+    "2026-05-15": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "fluxo_contínuo",
+      "evidencias": [
+        "2 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "evidencias_resumidas": [
+        "2 atrasos geraram acúmulo de backlog.",
+        "1 entregas recentes sustentam o ritmo."
+      ],
+      "motivo_auditavel": "Análise factual baseada em 2 fatores dominantes.",
+      "motivo_auditavel_resumido": "2 atrasos geraram acúmulo de backlog.",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 20,
+      "score_operacional": 70,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 2,
+      "dias_sem_progresso": 0,
+      "dias_sem_movimento": 0,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo em conformidade",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "esforco_vs_resultado": "estável",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "crítico",
+      "snapshot_recente": "2026-05-14"
+    }
+  }
+}

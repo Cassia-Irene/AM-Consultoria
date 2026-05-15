@@ -1,0 +1,143 @@
+[
+  {
+    "timestamp": "2026-05-15T01:35:14.548676",
+    "entity_type": "projeto",
+    "entity_id": 946,
+    "user": "Adriano",
+    "changes": {
+      "titulo": {
+        "de": "Reorganização Operacional Assistencial",
+        "para": ""
+      },
+      "status": {
+        "de": "em andamento",
+        "para": "Pausado"
+      },
+      "data_inicio": {
+        "de": "2026-04-23",
+        "para": "2026-05-15"
+      },
+      "observacoes_gerais": {
+        "de": "None",
+        "para": ""
+      }
+    },
+    "audit_type": "governance_intervention"
+  },
+  {
+    "timestamp": "2026-05-15T01:56:39.771253",
+    "entity_type": "projeto",
+    "entity_id": 946,
+    "user": "Adriano",
+    "changes": {
+      "valor_total": {
+        "de": "3000.00",
+        "para": "3000"
+      }
+    },
+    "audit_type": "factual_update"
+  },
+  {
+    "timestamp": "2026-05-15T01:56:59.825564",
+    "entity_type": "projeto",
+    "entity_id": 946,
+    "user": "Adriano",
+    "changes": {
+      "valor_total": {
+        "de": "3000.00",
+        "para": "3000"
+      }
+    },
+    "audit_type": "factual_update"
+  },
+  {
+    "timestamp": "2026-05-15T02:44:56.535923",
+    "entity_type": "projeto",
+    "entity_id": 948,
+    "user": "Adriano",
+    "changes": {
+      "valor_total": {
+        "de": "1500.00",
+        "para": "1500"
+      }
+    },
+    "audit_type": "factual_update"
+  },
+  {
+    "timestamp": "2026-05-15T04:10:11.842067",
+    "entity_type": "projeto",
+    "entity_id": 948,
+    "user": "Adriano",
+    "changes": {
+      "valor_total": {
+        "de": "1500.00",
+        "para": "1500"
+      },
+      "status": {
+        "de": "em andamento",
+        "para": "Pausado"
+      }
+    },
+    "audit_type": "factual_update"
+  },
+  {
+    "timestamp": "2026-05-15T04:12:06.172428",
+    "entity_type": "projeto",
+    "entity_id": 948,
+    "user": "Adriano",
+    "changes": {
+      "valor_total": {
+        "de": "1500.00",
+        "para": "1500"
+      },
+      "status": {
+        "de": "em andamento",
+        "para": "cancelado"
+      }
+    },
+    "audit_type": "factual_update"
+  },
+  {
+    "timestamp": "2026-05-15T04:12:13.790491",
+    "entity_type": "projeto",
+    "entity_id": 948,
+    "user": "Adriano",
+    "changes": {
+      "valor_total": {
+        "de": "1500.00",
+        "para": "1500"
+      },
+      "status": {
+        "de": "cancelado",
+        "para": "em andamento"
+      }
+    },
+    "audit_type": "factual_update"
+  },
+  {
+    "timestamp": "2026-05-15T05:00:52.698795",
+    "entity_type": "projeto",
+    "entity_id": 948,
+    "user": "Adriano",
+    "changes": {
+      "valor_total": {
+        "de": "1500.00",
+        "para": "1500"
+      }
+    },
+    "audit_type": "factual_update"
+  },
+  {
+    "timestamp": "2026-05-15T05:10:34.162774",
+    "entity_type": "projeto",
+    "entity_id": 948,
+    "user": "Adriano",
+    "changes": {
+      "valor_total": {
+        "de": "1500.00",
+        "para": "1500"
+      }
+    },
+    "audit_type": "factual_update"
+  }
+]

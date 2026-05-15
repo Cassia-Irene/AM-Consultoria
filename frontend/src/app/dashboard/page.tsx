@@ -55,11 +55,18 @@ function DecisaoCard({ item }: { item: TopPriority }) {
           {item.titulo}
         </h3>
         
-        <div className="flex items-center gap-2 mb-6">
-          <div className="size-6 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-            <span className="text-red-500 text-[10px] font-bold">!</span>
+        <div className="flex flex-col gap-2 mb-6">
+          <div className="flex items-center gap-2">
+            <div className="size-6 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+              <span className="text-red-500 text-[10px] font-bold">!</span>
+            </div>
+            <span className="text-zinc-400 text-xs font-medium">{item.cliente}</span>
           </div>
-          <span className="text-zinc-400 text-xs font-medium">{item.cliente}</span>
+          {item.motivoPrioridade && (
+            <p className="text-[10px] text-red-400/80 font-medium italic leading-relaxed pl-1 border-l border-red-900/50">
+              “{item.motivoPrioridade}”
+            </p>
+          )}
         </div>
 
         <Link href={`/pendencias?id=${item.id}`} className="block">

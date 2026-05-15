@@ -29,31 +29,34 @@ class PendenciaRead(PendenciaBase):
 
     @computed_field
     @property
-    def intelligence(self) -> dict:
-        """KPIs de Prioridade calculados pelo PriorityEngine."""
-        from src.services.intelligence.priority_engine import calculate_pendencia_score, get_urgency_label, get_diff_dias
-        if not self.data_prazo:
-            return {"score": 0, "label": "sem prazo", "atraso": 0}
-            
-        return {
-            "score": calculate_pendencia_score(self),
-            "label": get_urgency_label(self.data_prazo),
-            "atraso": get_diff_dias(self.data_prazo)
-        }
+    def queue_logic(self) -> dict:
+        """Read Model de Priorização da Pendência."""
+        from src.read_models.operational_priority_queue import OperationalPriorityQueue
+        # Como o Read Model trabalha com lista, criamos um helper para item único ou usamos a lógica interna
+        engine = OperationalPriorityQueue([self])
+        res = engine.to_list()
+        return res[0] if res else {"score": 0, "motivo": "Resolvida"}
 
     @computed_field
     @property
     def score_prioridade(self) -> int:
-        return self.intelligence["score"]
+        return self.queue_logic["score"]
+
+    @computed_field
+    @property
+    def motivo_prioridade(self) -> str:
+        return self.queue_logic["motivo"]
 
     @computed_field
     @property
     def urgencia_label(self) -> str:
-        return self.intelligence["label"]
+        from src.services.intelligence.priority_engine import get_urgency_label
+        return get_urgency_label(self.data_prazo) if self.data_prazo else "sem prazo"
 
     @computed_field
     @property
     def dias_atraso(self) -> int:
-        # Retorna o valor absoluto de dias se estiver atrasado (negativo em get_diff_dias)
-        diff = self.intelligence["atraso"]
+        from src.services.intelligence.priority_engine import get_diff_dias
+        if not self.data_prazo: return 0
+        diff = get_diff_dias(self.data_prazo)
         return abs(diff) if diff < 0 else 0

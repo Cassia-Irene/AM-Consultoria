@@ -12,32 +12,60 @@ interface ProjectMarcoListProps {
   onAddEntrega?: (projetoId: string | number) => void
   refreshSignal?: number
   readOnly?: boolean
+  data?: Entrega[]
 }
 
-export function ProjectMarcoList({ projetoId, onEntregaClick, onAddEntrega, refreshSignal, readOnly = false }: ProjectMarcoListProps) {
-  const [entregas, setEntregas] = useState<Entrega[]>([])
-  const [loading, setLoading] = useState(true)
+export function ProjectMarcoList({ 
+  projetoId, 
+  onEntregaClick, 
+  onAddEntrega, 
+  refreshSignal, 
+  readOnly = false,
+  data: initialData
+}: ProjectMarcoListProps) {
+  const [entregas, setEntregas] = useState<Entrega[]>(initialData || [])
+  const [loading, setLoading] = useState(!initialData)
+  
+  // Sincronização de Estado durante o render (Evita cascading renders do useEffect)
+  const [prevInitialData, setPrevInitialData] = useState<Entrega[] | undefined>(initialData)
+  if (initialData !== prevInitialData) {
+    setPrevInitialData(initialData)
+    setEntregas(initialData || [])
+    if (initialData) setLoading(false)
+  }
 
   const loadEntregas = React.useCallback(async (showLoading = false) => {
     if (showLoading) setLoading(true)
     try {
       const data = await EntregasService.getByProjetoId(String(projetoId))
-      setEntregas(data.sort((a, b) => new Date(a.data_entrega_prevista).getTime() - new Date(b.data_entrega_prevista).getTime()))
+      const mapped: Entrega[] = data.map(raw => ({
+        id: String(raw.id_entrega),
+        projetoId: String(raw.id_projeto),
+        descricao: raw.descricao,
+        data_entrega_prevista: raw.data_entrega_prevista,
+        data_entrega_real: raw.data_entrega_real || undefined,
+        entregue: raw.entregue,
+        referencia_doc: raw.referencia_doc || undefined
+      }))
+      setEntregas(mapped.sort((a, b) => new Date(a.data_entrega_prevista).getTime() - new Date(b.data_entrega_prevista).getTime()))
     } finally {
       setLoading(false)
     }
   }, [projetoId])
 
+
   useEffect(() => {
-    // No mount inicial, loading já é true. Para sinais de refresh, mostramos loading.
+    // Se temos dados iniciais e não há sinal de refresh, não buscamos
+    if (initialData && (!refreshSignal || refreshSignal === 0)) return
+
     const shouldShowLoading = refreshSignal !== undefined && refreshSignal > 0
     Promise.resolve().then(() => loadEntregas(shouldShowLoading))
-  }, [loadEntregas, refreshSignal])
+  }, [loadEntregas, refreshSignal, initialData])
 
   async function handleQuickToggle(e: React.MouseEvent, entrega: Entrega) {
     e.stopPropagation()
     const newStatus = !entrega.entregue
-    await EntregasService.update(entrega.id, {
+    await EntregasService.update(Number(entrega.id), {
       entregue: newStatus,
       data_entrega_real: newStatus ? new Date().toISOString().split('T')[0] : null
     })

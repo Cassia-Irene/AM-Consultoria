@@ -43,6 +43,18 @@ export function mapContrato(raw: ContratoRaw): Contrato {
     indice_urgencia: raw.indice_urgencia,
     indice_desgaste: raw.indice_desgaste,
     perfil: raw.perfil,
+    motivo_saude: raw.motivo_saude,
+    intensidade_operacional: raw.intensidade_operacional,
+    desgaste_acumulado: raw.desgaste_acumulado,
+    personalidade: raw.personalidade,
+    tendencia_relacionamento: raw.tendencia_relacionamento,
+    evidencias: raw.evidencias,
+    motivo_auditavel: raw.motivo_auditavel,
+    desgaste_longitudinal: raw.desgaste_longitudinal,
+    dependencia_operacional: raw.dependencia_operacional,
+    capacidade_recuperacao: raw.capacidade_recuperacao,
+    perfil_pragmatico: raw.perfil_pragmatico,
+    override_ativo: !!raw.override_ativo,
   }
 }
 
@@ -52,6 +64,6 @@ export function mapHistorico(raw: HistoricoContratoRaw): HistoricoContrato {
     contratoId: String(raw.id_contrato_encerrado),
     data_alteracao: raw.data_alteracao,
     evento: raw.motivo_alteracao,
-    // Note: Campos de valor não estão no Raw atual, mas deixamos o shape pronto
+    // Note: Campos de valor não estão no Raw actual, mas deixamos o shape pronto
   }
 }

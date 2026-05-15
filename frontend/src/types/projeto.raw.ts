@@ -17,4 +17,9 @@ export interface ProjetoRaw {
   status: string
   atrasado?: boolean
   observacoes_gerais: string | null
+
+  // Inteligência (Back-First)
+  score_tensao?: number
+  nivel_tensao?: string
+  count_atrasos?: number
 }

@@ -31,6 +31,7 @@ export interface TimelineEvent {
   pendenciasContagem?: number
   ultimaVisitaResultados?: string
   pendenciasLista?: { id: number; descricao: string; dataPrazo?: string }[]
+  idProjeto?: number
 }
 
 export interface OpenPendency {
@@ -48,7 +49,8 @@ export interface CaosScore {
   idContrato: number
   visitasUrgentes: number
   pendenciasAtrasadas: number
-  caosScore: number
+  eventosAtivos: number
+  totalAlertas: number
 }
 
 export interface FinancialMonth {
@@ -64,9 +66,11 @@ export interface ClientHealth {
   idContrato: number
   visitasUrgentes: number
   pendenciasAtrasadas: number
+  eventosAtivos: number
+  entregasAtrasadas: number
+  progressoMedio: number
   totalMinutosInvisiveis: number
-  indiceDesgaste: number
-  perfil: 'drenante' | 'urgente' | 'equilibrado'
+  statusOperacional: 'emergência' | 'atenção' | 'normal'
 }
 
 export interface OperationalInsight {
@@ -92,10 +96,12 @@ export interface TodayVisit {
 }
 
 export interface ActiveProject {
+  id: number
   cliente: string
   projeto: string
   status: string
   valorTotal: number
+  idContrato: number
   entregasPendentes: number
   parcelasPendentes: number
 }
@@ -175,7 +181,7 @@ export const AnalyticsService = {
     return {
       totalHorasInvisiveis: totalMinutosInvisiveis,
       urgenciasNoMes,
-      topDrainingClients: healthData.sort((a, b) => b.indiceDesgaste - a.indiceDesgaste),
+      topDrainingClients: healthData.sort((a, b) => b.eventosAtivos - a.eventosAtivos || b.visitasUrgentes - a.visitasUrgentes),
       clientes: healthData.map(c => ({ id: String(c.idContrato), nome_instituicao: c.cliente })),
       timeline
     }
@@ -193,6 +199,7 @@ export const AnalyticsService = {
       title: event.titulo,
       subtitle: event.cliente,
       critical: event.criticidade === 'critica' || event.criticidade === 'alta',
+      idProjeto: event.idProjeto,
       pendencias: event.pendenciasLista?.map(p => ({
         id: String(p.id),
         descricao: p.descricao,
@@ -221,4 +228,17 @@ export interface TopPriority {
   dataPrazo?: string
   statusPrazo: string
   scorePrioridade: number
+}
+
+export interface AttentionItem {
+  idContrato: number
+  cliente: string
+  progressoReal: number
+  eventosAtivos: number
+  state: 'emergência' | 'atenção' | 'normal'
+  stagnationRisk: boolean
+  lastDeliveryDays: number
+  summary: string
+  valueNarrative: string
+  statusOperacional: string
 }

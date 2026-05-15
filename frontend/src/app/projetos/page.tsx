@@ -12,7 +12,7 @@ import type { Projeto, StatusProjeto } from '@/domain/projeto'
 import { OperationalTabs, type TabOption } from '@/components/OperationalTabs'
 import { AlertTriangle } from 'lucide-react'
 
-type FiltroProjeto = 'todos' | StatusProjeto | 'atrasados'
+type FiltroProjeto = 'todos' | StatusProjeto | 'atrasados' | 'extras'
 
 function ProjetosList() {
   const router = useRouter()
@@ -52,6 +52,7 @@ function ProjetosList() {
   const filteredItems = useMemo(() => {
     if (filtro === 'todos') return projetos
     if (filtro === 'atrasados') return projetos.filter(p => p.atrasado)
+    if (filtro === 'extras') return projetos.filter(p => p.isExtra)
     
     const normalize = (s: string) => s.toLowerCase()
       .normalize("NFD")
@@ -70,8 +71,8 @@ function ProjetosList() {
   const tabOptions: TabOption<FiltroProjeto>[] = [
     { value: 'todos', label: 'Todos', count: projetos.length },
     { value: 'atrasados', label: 'Atrasados', count: projetos.filter(p => p.atrasado).length },
+    { value: 'extras', label: 'Extras', count: projetos.filter(p => p.isExtra).length },
     { value: 'em andamento', label: 'Em Andamento', count: projetos.filter(p => normalize(p.status) === 'em_andamento').length },
-    { value: 'planejado', label: 'Planejados', count: projetos.filter(p => normalize(p.status) === 'planejado').length },
     { value: 'concluído', label: 'Concluídos', count: projetos.filter(p => normalize(p.status) === 'concluido').length },
   ]
 
@@ -140,7 +141,15 @@ function ProjetoCard({ projeto: p }: { projeto: Projeto }) {
             </div>
           )}
         </div>
-        <StatusBadge status={p.status} />
+
+        <div className="flex items-center gap-2">
+          {p.isExtra && (
+            <span className="bg-amber-500/10 text-amber-500 text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded border border-amber-500/20">
+              Projeto Extra
+            </span>
+          )}
+          <StatusBadge status={p.status} />
+        </div>
       </div>
 
       {/* Linha 2: descrição */}
@@ -205,7 +214,6 @@ function MetaItem({ label, value }: { label: string; value: string }) {
 
 function StatusBadge({ status }: { status: StatusProjeto }) {
   const config: Record<string, { label: string; className: string }> = {
-    planejado:      { label: 'Planejado',    className: 'bg-zinc-800 text-zinc-400 border-zinc-700/30' },
     'em andamento': { label: 'Em andamento', className: 'bg-sky-900/40 text-sky-400 border-sky-800/30' },
     'em_andamento': { label: 'Em andamento', className: 'bg-sky-900/40 text-sky-400 border-sky-800/30' },
     'concluído':    { label: 'Concluído',    className: 'bg-emerald-900/40 text-emerald-400 border-emerald-800/30' },

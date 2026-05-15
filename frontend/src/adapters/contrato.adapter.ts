@@ -9,6 +9,7 @@
 
 export interface ReplaceContratoInput {
   contratoId: string
+  novoValorMensal?: number
   visitas: number
   motivo: string
 }
@@ -21,6 +22,7 @@ export interface ReplaceContratoInput {
 export interface ContratoReplaceDTO {
   contrato_id: number
   visitas_previstas_mes: number
+  novo_valor_mensal?: number
 }
 
 // ─── Conversão ────────────────────────────────────────────────────────────────
@@ -29,5 +31,6 @@ export function toReplacePayload(input: ReplaceContratoInput): ContratoReplaceDT
   return {
     contrato_id: Number(input.contratoId),
     visitas_previstas_mes: input.visitas,
+    novo_valor_mensal: input.novoValorMensal,
   }
 }

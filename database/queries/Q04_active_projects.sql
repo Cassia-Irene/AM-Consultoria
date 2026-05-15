@@ -10,6 +10,7 @@ SELECT
     p.titulo AS projeto,
     p.status,
     p.valor_total,
+    con.id_contrato,
     (SELECT COUNT(*) FROM entregas e WHERE e.id_projeto = p.id_projeto AND e.entregue = false) as entregas_pendentes,
     (SELECT COUNT(*) FROM projeto_parcelas pp WHERE pp.id_projeto = p.id_projeto AND pp.pago = false) as parcelas_pendentes
 FROM projetos p

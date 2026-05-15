@@ -108,3 +108,13 @@ adicionar informação sem função clara
 
 Mudar a cor da barra: Quando o projeto entra em atraso, a barra de progresso (que é azul/sky) deveria ficar vermelha ou amarela vibrante, indicando que aquele progresso "estourou".
 Progresso Real: No futuro, podemos calcular esse progresso baseando-se na quantidade de Entregas (Tasks) concluídas dentro do projeto, em vez de olhar apenas para o calendário.
+
+O que eu ainda refinaria depois (sem urgência):
+
+pequenas assimetrias temporais (mais fins de semana mortos);
+contratos que entram em recuperação e recaem;
+algumas entregas parcialmente concluídas visualmente;
+visitas sem consequência às vezes (porque nem toda visita gera avanço);
+pequenas contradições humanas (cliente melhora e piora logo depois).
+
+Mas isso já é camada de refinamento fino.

@@ -31,9 +31,31 @@ class ProjetoRead(ProjetoBase):
         if not self.status or not self.data_fim_prevista:
             return False
             
-        # Normalização para comparação robusta
         status_limpo = self.status.lower().strip()
         return status_limpo == 'em andamento' and self.data_fim_prevista < date.today()
+
+    @computed_field
+    @property
+    def intelligence(self) -> dict:
+        """Centraliza todos os KPIs calculados pelo TensionEngine."""
+        from src.services.intelligence.tension_engine import calculate_project_tension
+        # self aqui é o objeto ORM (se model_config from_attributes=True)
+        return calculate_project_tension(self)
+
+    @computed_field
+    @property
+    def score_tensao(self) -> int:
+        return self.intelligence["score"]
+
+    @computed_field
+    @property
+    def count_atrasos(self) -> int:
+        return self.intelligence["count_atrasos"]
+
+    @computed_field
+    @property
+    def nivel_tensao(self) -> str:
+        return self.intelligence["nivel"]
 
 class ProjetoUpdate(BaseModel):
     titulo: str | None = None

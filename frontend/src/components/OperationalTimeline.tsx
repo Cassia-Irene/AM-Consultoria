@@ -10,6 +10,7 @@ export interface TimelinePendencia {
 export interface TimelineEvent {
   id: string
   idReferencia?: number // ID original do banco para abrir detalhes
+  idProjeto?: number | string // ID do projeto associado
   date: string
   type: string
   title: string
@@ -35,14 +36,14 @@ export function OperationalTimeline({ events, onEventClick }: OperationalTimelin
   }
 
   return (
-    <div className="space-y-8 relative before:absolute before:inset-y-0 before:left-[15px] before:w-0.5 before:bg-[#23272F]">
+    <div className="space-y-8 relative before:absolute before:inset-y-0 before:left-[13px] sm:before:left-[15px] before:w-0.5 before:bg-[#23272F]">
       {events.map((event) => {
         const { color, icon: Icon } = getTypeStyles(event.type, event.critical)
         return (
-          <div key={event.id} className="relative pl-12">
+          <div key={event.id} className="relative pl-10 sm:pl-12">
             {/* Dot/Icon - Optical Center Alignment */}
-            <div className={`absolute left-0 top-1 size-[32px] rounded-full border-4 border-[#07090D] flex items-center justify-center shadow-lg transition-transform hover:scale-110 ${color}`}>
-              <Icon size={14} strokeWidth={3} className="text-white" />
+            <div className={`absolute left-0 top-1 size-[28px] sm:size-[32px] rounded-full border-4 border-[#07090D] flex items-center justify-center shadow-lg transition-transform hover:scale-110 ${color}`}>
+              <Icon size={12} strokeWidth={3} className="text-white sm:scale-110" />
             </div>
             
             {/* Content Card - Design System Spacing (Gap-4) */}
@@ -52,13 +53,13 @@ export function OperationalTimeline({ events, onEventClick }: OperationalTimelin
                 onEventClick ? 'cursor-pointer hover:border-[#0466C8]/40 hover:bg-[#0d1117]/80' : ''
               }`}
             >
-              <div className="flex justify-between items-start mb-3">
-                <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
+                <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md inline-block w-fit max-w-full truncate ${
                   event.critical ? 'bg-red-900/40 text-red-400 border border-red-500/20' : 'bg-[#23272F] text-[#7D8597]'
                 }`}>
                   {event.subtitle}
                 </span>
-                <span className="text-[10px] font-bold tabular-nums text-[#4A5568]">
+                <span className="text-[10px] font-bold tabular-nums text-[#4A5568] shrink-0">
                   {new Date(event.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                 </span>
               </div>

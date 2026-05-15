@@ -1,7 +1,6 @@
 import { StatusBadge, StatusVariant } from './StatusBadge'
 import type { Pendencia } from '@/domain/pendencia'
 import { getPendenciaSeveridade, getPendenciaStatus, SeveridadePendencia } from '@/utils/pendencia'
-import { getDiffDias, displayDate } from '@/utils/date'
 import { truncateText } from '@/utils/text'
 
 
@@ -24,22 +23,23 @@ const OPACITY = {
   atrasada: '',
 }
 
-function prazoLabel(prazo?: string): { text: string; color: string } {
-  if (!prazo) return { text: 'sem prazo', color: 'text-gray-400' }
-  const diff = getDiffDias(prazo)
+function prazoLabel(p: Pendencia): { text: string; color: string } {
+  if (!p.data_prazo) return { text: 'sem prazo', color: 'text-gray-400' }
+  const label = p.urgencia_label || 'vencendo'
+  const isAtrasado = (p.dias_atraso || 0) > 0
   
-  if (diff < 0)
-    return { text: `${Math.abs(diff)}d em atraso`, color: 'text-red-600 font-medium' }
-  if (diff === 0) return { text: 'vence hoje', color: 'text-amber-600 font-medium' }
-  if (diff === 1) return { text: 'vence amanhã', color: 'text-amber-500' }
-  return { text: `prazo: ${displayDate(prazo)}`, color: 'text-gray-400' }
+  if (isAtrasado)
+    return { text: label, color: 'text-red-600 font-medium' }
+  if (label === 'hoje') return { text: 'vence hoje', color: 'text-amber-600 font-medium' }
+  if (label === 'amanhã') return { text: 'vence amanhã', color: 'text-amber-500' }
+  return { text: `prazo: ${label}`, color: 'text-gray-400' }
 
 }
 
 export function PendenciaCard({ pendencia, clienteNome, onResolve, onClick }: Props) {
   const severidade = getPendenciaSeveridade(pendencia)
   const status = getPendenciaStatus(pendencia)
-  const { text: prazoText, color: prazoColor } = prazoLabel(pendencia.data_prazo)
+  const { text: prazoText, color: prazoColor } = prazoLabel(pendencia)
   
   // StatusVariant espera certas strings específicas
   let statusVisual: StatusVariant = 'andamento'

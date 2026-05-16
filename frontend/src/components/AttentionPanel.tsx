@@ -42,8 +42,11 @@ export const AttentionPanel: React.FC<AttentionPanelProps> = ({ items, onItemCli
                       <span className="shrink-0 size-1.5 rounded-full bg-amber-500 animate-pulse" />
                     )}
                   </div>
-                  <p className="text-rose-400 text-[11px] font-medium leading-tight mb-3">
+                  <p className="text-rose-400 text-[11px] font-medium leading-tight mb-1">
                     {item.summary}
+                  </p>
+                  <p className="text-[9px] text-zinc-500 italic mb-3">
+                    {item.statusOperacional}
                   </p>
                   
                   <div className="flex items-center gap-4">

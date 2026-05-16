@@ -10,11 +10,24 @@ export type Contrato = {
   
   valor_mensal: number
   observacoes_gerais: string
+  status?: 'ativo' | 'suspenso' | 'inativo'
 
   // Inteligência (Back-First)
   indice_urgencia?: number
   indice_desgaste?: number
   perfil?: string
+  motivo_saude?: string
+  intensidade_operacional?: string
+  desgaste_acumulado?: number
+  personalidade?: string
+  tendencia_relacionamento?: string
+  evidencias?: string[]
+  motivo_auditavel?: string
+  desgaste_longitudinal?: number
+  dependencia_operacional?: string
+  capacidade_recuperacao?: string
+  perfil_pragmatico?: string
+  override_ativo?: boolean
 }
 
 export type HistoricoContrato = {

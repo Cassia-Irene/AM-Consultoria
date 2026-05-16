@@ -9,7 +9,6 @@ interface OperationalContractCardProps {
   health: ClientHealth
   allProjects: ActiveProject[]
   onEntregaClick?: (id: string | number) => void
-  onAddEntrega?: (projetoId: string | number) => void
   refreshSignal?: number
 }
 
@@ -17,20 +16,19 @@ export function OperationalContractCard({
   health, 
   allProjects, 
   onEntregaClick, 
-  onAddEntrega,
   refreshSignal 
 }: OperationalContractCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   
   const contractProjects = allProjects.filter(p => p.idContrato === health.idContrato)
 
-  const statusColors = {
+  const statusColors: Record<string, string> = {
     'emergência': 'text-rose-500',
     'atenção': 'text-amber-500',
     'normal': 'text-emerald-500'
   }
   
-  const barColors = {
+  const barColors: Record<string, string> = {
     'emergência': 'bg-rose-500',
     'atenção': 'bg-amber-500',
     'normal': 'bg-emerald-500'
@@ -97,7 +95,6 @@ export function OperationalContractCard({
                     projetoId={proj.id}
                     refreshSignal={refreshSignal}
                     onEntregaClick={onEntregaClick}
-                    onAddEntrega={onAddEntrega}
                   />
                 </div>
               ))}

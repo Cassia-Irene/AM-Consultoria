@@ -17,7 +17,7 @@ export function mapPendencia(raw: PendenciaRaw): Pendencia {
   }
   if (!contratoIdResolved) {
     warnInvalidShape('Pendencia:CONTRATO_ID_MISSING', raw)
-    throw new Error('[MAPPER][PENDENCIA] Campo obrigatório ausente: id_contrato/contratoId')
+    throw new Error('[MAPPER][PENDENCIA] Campo obrigatório ausente: id_contrato/id_contrato')
   }
 
   validateShape<PendenciaRaw>('PendenciaRaw', raw, [
@@ -40,6 +40,7 @@ export function mapPendencia(raw: PendenciaRaw): Pendencia {
 
     // Inteligência vinda do Backend (Backend Semântico)
     score_prioridade: raw.score_prioridade,
+    motivo_prioridade: raw.motivo_prioridade,
     urgencia_label: raw.urgencia_label,
     dias_atraso: raw.dias_atraso,
   }

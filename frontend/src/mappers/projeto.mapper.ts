@@ -2,6 +2,12 @@ import type { Projeto, StatusProjeto } from '@/domain/projeto'
 import type { ProjetoRaw } from '@/types/projeto.raw'
 import { validateShape, warnInvalidShape } from '@/utils/schemaGuard'
 import { IntegrationError } from '@/utils/errors'
+import { mapEntrega } from './entrega.mapper'
+import { mapVisita } from './visita.mapper'
+import { mapParcela } from './projetoParcela.mapper'
+import { mapExtra } from './projetoExtra.mapper'
+import { mapPendencia } from './pendencia.mapper'
+import { mapEventoCritico } from './eventoCritico.mapper'
 
 export function mapProjeto(raw: ProjetoRaw): Projeto {
   // Validação Estrita (Back-First)
@@ -30,6 +36,7 @@ export function mapProjeto(raw: ProjetoRaw): Projeto {
   return {
     id: String(raw.id_projeto),
     contratoId: String(raw.id_contrato),
+    clienteId: raw.id_cliente ? String(raw.id_cliente) : undefined,
 
     titulo: raw.titulo,
     ...processDescription(raw.descricao),
@@ -43,11 +50,49 @@ export function mapProjeto(raw: ProjetoRaw): Projeto {
     status: normalizeStatus(raw.status || 'planejado'),
     atrasado: !!raw.atrasado,
 
+    // Mapeamento de Relacionados (Consolidação de Dados)
+    entregas: raw.entregas?.map(mapEntrega),
+    visitas: raw.visitas?.map(mapVisita),
+    parcelas: raw.parcelas?.map(mapParcela),
+    extras: raw.extras?.map(mapExtra),
+    pendencias: raw.pendencias?.map(mapPendencia),
+    eventos: raw.eventos_criticos?.map(mapEventoCritico),
+
     score_tensao: raw.score_tensao,
     nivel_tensao: raw.nivel_tensao,
+    motivo_tensao: raw.motivo_tensao,
     count_atrasos: raw.count_atrasos,
+    is_estagnado: raw.is_estagnado,
+    dias_sem_progresso: raw.dias_sem_progresso,
+    motivo_estagnacao: raw.motivo_estagnacao,
+    ritmo_operacional: raw.ritmo_operacional,
+    motivo_ritmo: raw.motivo_ritmo,
+    tendencia_tensao: raw.tendencia_tensao,
+    reincidencia: raw.reincidencia ?? undefined,
+    fase_operacional: raw.fase_operacional,
+    evidencias: raw.evidencias,
+    motivo_auditavel: raw.motivo_auditavel,
+    esforco_vs_resultado: raw.esforco_vs_resultado,
+    falso_movimento: !!raw.falso_movimento,
+    override_ativo: !!raw.override_ativo,
 
     observacoes_gerais: raw.observacoes_gerais ?? undefined,
+
+    // Mapeamento dos novos campos consolidados
+    score_operacional: raw.score_operacional,
+    tendencia: raw.tendencia,
+    dias_sem_movimento: raw.dias_sem_movimento,
+    desgaste_longitudinal: raw.desgaste_longitudinal,
+    interpretacao_manual_ativa: !!raw.interpretacao_manual_ativa,
+    snapshot_recente: raw.snapshot_recente,
+    motivo_auditavel_resumido: raw.motivo_auditavel_resumido,
+    evidencias_resumidas: raw.evidencias_resumidas,
+    timeline: raw.timeline,
+    backlog_meta: raw.backlog_meta,
+    cadeia_causal: raw.cadeia_causal,
+    impacto_do_override: raw.impacto_do_override,
+    audit_history_resumo: raw.audit_history_resumo,
+    percentual_conclusao: raw.percentual_conclusao,
   }
 }
 

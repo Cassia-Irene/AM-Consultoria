@@ -10,7 +10,8 @@ import { ProjetosService } from '@/services/projetos.service'
 import Link from 'next/link'
 import type { Projeto, StatusProjeto } from '@/domain/projeto'
 import { OperationalTabs, type TabOption } from '@/components/OperationalTabs'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Plus } from 'lucide-react'
+import { ProjectCreationDrawer } from '@/components/ProjectCreationDrawer'
 
 type FiltroProjeto = 'todos' | StatusProjeto | 'atrasados' | 'extras'
 
@@ -20,6 +21,7 @@ function ProjetosList() {
   const [projetos, setProjetos] = useState<Projeto[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
   const filtro = (searchParams.get('status') as FiltroProjeto) || 'todos'
 
@@ -51,7 +53,7 @@ function ProjetosList() {
 
   const filteredItems = useMemo(() => {
     if (filtro === 'todos') return projetos
-    if (filtro === 'atrasados') return projetos.filter(p => p.atrasado)
+    if (filtro === 'atrasados') return projetos.filter(p => (p.count_atrasos ?? 0) > 0 || p.nivel_tensao === 'crítico')
     if (filtro === 'extras') return projetos.filter(p => p.isExtra)
     
     const normalize = (s: string) => s.toLowerCase()
@@ -70,7 +72,7 @@ function ProjetosList() {
 
   const tabOptions: TabOption<FiltroProjeto>[] = [
     { value: 'todos', label: 'Todos', count: projetos.length },
-    { value: 'atrasados', label: 'Atrasados', count: projetos.filter(p => p.atrasado).length },
+    { value: 'atrasados', label: 'Críticos/Atrasados', count: projetos.filter(p => (p.count_atrasos ?? 0) > 0 || p.nivel_tensao === 'crítico').length },
     { value: 'extras', label: 'Extras', count: projetos.filter(p => p.isExtra).length },
     { value: 'em andamento', label: 'Em Andamento', count: projetos.filter(p => normalize(p.status) === 'em_andamento').length },
     { value: 'concluído', label: 'Concluídos', count: projetos.filter(p => normalize(p.status) === 'concluido').length },
@@ -82,9 +84,18 @@ function ProjetosList() {
   return (
     <main className="min-h-screen bg-[#07090D] text-zinc-300 pb-32">
       <header className="px-5 pt-12 pb-4">
-        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-2">
-          AM Consultoria
-        </p>
+        <div className="flex items-start justify-between mb-2">
+          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600">
+            AM Consultoria
+          </p>
+          <button 
+            onClick={() => setIsDrawerOpen(true)}
+            className="flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all shadow-lg shadow-sky-900/20"
+          >
+            <Plus size={14} />
+            Novo Projeto
+          </button>
+        </div>
         <h1 className="text-white text-3xl font-black tracking-tight">Projetos</h1>
         <p className="text-zinc-500 text-sm mt-1">Entregas e iniciativas vinculadas a contratos</p>
       </header>
@@ -108,6 +119,12 @@ function ProjetosList() {
           ))
         )}
       </section>
+
+      <ProjectCreationDrawer 
+        isOpen={isDrawerOpen} 
+        onClose={() => setIsDrawerOpen(false)}
+        onSuccess={(id) => router.push(`/projetos/${id}`)}
+      />
     </main>
   )
 }
@@ -124,21 +141,23 @@ export default function ProjetosPage() {
 /* ── COMPONENTES ── */
 
 function ProjetoCard({ projeto: p }: { projeto: Projeto }) {
-  const pctConcluido = calcPct(p)
 
   return (
-    <div className="rounded-2xl bg-zinc-900/60 border border-zinc-800 p-5 hover:border-zinc-700 transition-colors group">
+    <div className="rounded-2xl bg-zinc-900/60 border border-zinc-800 p-4 sm:p-5 hover:border-zinc-700 transition-colors group">
       {/* Linha 1: título + badge */}
-      <div className="flex items-start justify-between gap-3 mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
         <div className="flex flex-col gap-1">
           <h2 className="text-white font-bold text-base leading-tight">{p.titulo}</h2>
-          {p.atrasado && (
+          {p.nivel_tensao === 'crítico' && (
             <div className="flex items-center gap-1.5 text-red-500">
               <AlertTriangle size={12} strokeWidth={3} />
               <span className="text-[10px] font-black uppercase tracking-tighter">
-                Prazo excedido
+                Operação Crítica
               </span>
             </div>
+          )}
+          {p.tendencia === 'subindo' && (
+             <span className="text-[9px] font-black uppercase tracking-widest text-amber-500">↑ Tensão em Elevação</span>
           )}
         </div>
 
@@ -159,21 +178,22 @@ function ProjetoCard({ projeto: p }: { projeto: Projeto }) {
         </p>
       )}
 
-      {/* Barra de progresso (apenas se em andamento) */}
-      {p.status === 'em andamento' && pctConcluido !== null && (
-        <div className="mb-4">
-          <div className="flex justify-between items-center mb-1.5">
-            <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600">Progresso (estimado)</span>
-            <span className="text-[10px] font-bold text-sky-400">{pctConcluido}%</span>
-          </div>
-          <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all ${p.atrasado ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]' : 'bg-sky-500'}`}
-              style={{ width: `${pctConcluido}%` }}
-            />
-          </div>
+      {/* Avanço Factual (Progresso Determinístico) */}
+      <div className="mb-4">
+        <div className="flex justify-between items-center mb-1.5">
+          <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Avanço Factual</span>
+          <span className="text-[10px] font-black text-white">
+            {p.percentual_conclusao || 0}%
+          </span>
         </div>
-      )}
+        <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-sky-500 transition-all shadow-[0_0_8px_rgba(14,165,233,0.3)]"
+            style={{ width: `${p.percentual_conclusao || 0}%` }}
+          />
+        </div>
+      </div>
+
 
       {/* Linha 3: grid de metadados */}
       <div className="grid grid-cols-2 gap-3 pt-4 border-t border-zinc-800/50">
@@ -192,11 +212,24 @@ function ProjetoCard({ projeto: p }: { projeto: Projeto }) {
         />
       </div>
 
-      {/* Observações */}
-      {p.observacoes_gerais && (
+      {/* Explicabilidade Interpretativa (Substitui Observações Brutas) */}
+      {(p.motivo_auditavel_resumido || p.observacoes_gerais) && (
         <div className="mt-4 bg-zinc-900/40 border border-zinc-800/40 rounded-xl px-4 py-3">
-          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1">Observações</p>
-          <p className="text-zinc-500 text-xs italic">&quot;{p.observacoes_gerais}&quot;</p>
+          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1">
+            {p.override_ativo ? 'Governança Humana' : 'Leitura Operacional'}
+          </p>
+          <p className="text-zinc-400 text-xs font-medium italic leading-relaxed">
+            &quot;{p.motivo_auditavel_resumido || p.observacoes_gerais}&quot;
+          </p>
+          {p.evidencias_resumidas && p.evidencias_resumidas.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {p.evidencias_resumidas.map((ev, i) => (
+                <span key={i} className="text-[8px] font-bold text-zinc-500 uppercase tracking-tighter">
+                  • {ev}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -261,15 +294,4 @@ function EmptyState() {
       <p className="text-zinc-600 text-sm font-medium">Nenhum projeto encontrado.</p>
     </div>
   )
-}
-
-/** Calcula progresso estimado com base nas datas */
-function calcPct(p: Projeto): number | null {
-  if (!p.data_fim_prevista) return null
-  const inicio = new Date(p.data_inicio).getTime()
-  const fim = new Date(p.data_fim_prevista).getTime()
-  const hoje = Date.now()
-  if (fim <= inicio) return null
-  const pct = Math.round(((hoje - inicio) / (fim - inicio)) * 100)
-  return Math.min(Math.max(pct, 0), 100)
 }

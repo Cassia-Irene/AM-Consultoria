@@ -1,7 +1,7 @@
 import requests
 
 try:
-    response = requests.get("http://127.0.0.1:8000/projetos/")
+    response = requests.get("http://127.0.0.1:8000/pendencias/")
     print(f"Status: {response.status_code}")
     print(f"Body: {response.text[:200]}...")
 except Exception as e:

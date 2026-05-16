@@ -33,5 +33,7 @@ export function mapExtra(raw: ProjetoExtraRaw): ProjetoExtra {
     aprovado_por: raw.aprovado_por != null
       ? String(raw.aprovado_por)
       : undefined,
+    solicitado_por_nome: raw.solicitado_por_nome,
+    aprovado_por_nome: raw.aprovado_por_nome,
   }
 }

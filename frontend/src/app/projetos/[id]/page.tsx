@@ -3,24 +3,15 @@
 import { use, useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { ProjetosService } from '@/services/projetos.service'
-import { EntregasService } from '@/services/entregas.service'
-import { ParcelasService } from '@/services/parcelas.service'
-import { ExtrasService } from '@/services/extras.service'
-import { ContratoService } from '@/services/contrato.service'
-import { ContatosService } from '@/services/contatos.service'
-import { EventosService, type EventoCritico } from '@/services/eventos.service'
 import { formatCurrency } from '@/utils/finance'
 import { displayDate } from '@/utils/date'
 import type { Projeto } from '@/domain/projeto'
-import type { Entrega } from '@/domain/entrega'
-import type { ProjetoParcela } from '@/domain/projetoParcela'
-import type { ProjetoExtra } from '@/domain/projetoExtra'
-import type { Contrato } from '@/domain/contrato'
-import type { Contato } from '@/domain/contato'
 import { OperationalDrawer } from '@/components/OperationalDrawer'
 import { EntregaManager } from '@/components/EntregaManager'
 import { ProjectMarcoList } from '@/components/ProjectMarcoList'
-import { TrendingUp, Zap, FileText, AlertCircle, History, DollarSign, Package } from 'lucide-react'
+import { ProjectOperationalOverrides } from '@/components/ProjectOperationalOverrides'
+import { ProjectTimeline } from '@/components/ProjectTimeline'
+import { ArrowUpRight, Zap, FileText, AlertCircle, DollarSign, Package, Edit3, CheckCircle2, History, TrendingUp, Plus } from 'lucide-react'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -30,12 +21,6 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
   const { id } = use(params)
   
   const [projeto, setProjeto] = useState<Projeto | null>(null)
-  const [contrato, setContrato] = useState<Contrato | null>(null)
-  const [contatos, setContatos] = useState<Contato[]>([])
-  const [entregas, setEntregas] = useState<Entrega[]>([])
-  const [parcelas, setParcelas] = useState<ProjetoParcela[]>([])
-  const [extras, setExtras] = useState<ProjetoExtra[]>([])
-  const [eventos, setEventos] = useState<EventoCritico[]>([])
   
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -50,29 +35,13 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
   const loadData = useCallback(async () => {
     try {
       const foundProjeto = await ProjetosService.getById(id)
+
       if (!foundProjeto) {
         setError('Projeto não encontrado.')
         return
       }
 
-      const [allEntregas, allParcelas, allExtras, allEventos, allContratos, allContatos] = await Promise.all([
-        EntregasService.getByProjetoId(id),
-        ParcelasService.getByProjetoId(id),
-        ExtrasService.getByProjetoId(id),
-        EventosService.getByContratoId(foundProjeto.contratoId),
-        ContratoService.getAll(),
-        ContatosService.getAll()
-      ])
-
-      const currentContrato = allContratos.find(c => String(c.id) === String(foundProjeto.contratoId))
-      
       setProjeto(foundProjeto)
-      setEntregas(allEntregas)
-      setParcelas(allParcelas)
-      setExtras(allExtras)
-      setEventos(allEventos.sort((a, b) => new Date(b.data_evento).getTime() - new Date(a.data_evento).getTime()))
-      setContrato(currentContrato || null)
-      setContatos(allContatos)
     } catch (err) {
       console.error('[ERROR][PROJETO_DETAIL]', err)
       setError('Erro ao carregar detalhes do projeto.')
@@ -82,18 +51,68 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
   }, [id])
 
   useEffect(() => {
+    // Evita cascading renders síncronos
     Promise.resolve().then(() => loadData())
   }, [loadData, refreshSignal])
 
-  const getContactName = (cid: string | number) => {
-    const found = contatos.find(c => String(c.id) === String(cid))
-    return found ? found.nome : `Contato #${cid}`
+
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [isEditingFactual, setIsEditingFactual] = useState(false)
+  const [fTitle, setFTitle] = useState('')
+  const [fValor, setFValor] = useState(0)
+  const [fStatus, setFStatus] = useState('')
+  const [fInicio, setFInicio] = useState('')
+  const [fFim, setFFim] = useState('')
+
+  useEffect(() => {
+    if (projeto) {
+      Promise.resolve().then(() => {
+        setFTitle(projeto.titulo)
+        setFValor(projeto.valor_total)
+        setFStatus(projeto.status)
+        setFInicio(projeto.data_inicio)
+        setFFim(projeto.data_fim_prevista || '')
+      })
+    }
+  }, [projeto])
+
+  const handleTitleSave = async () => {
+    if (!projeto) return
+    try {
+      await ProjetosService.update(id, { titulo: fTitle })
+      setRefreshSignal(prev => prev + 1)
+      setIsEditingTitle(false)
+    } catch (err) {
+      console.error('Erro ao atualizar título:', err)
+    }
+  }
+
+  const handleFactualSave = async () => {
+    if (!projeto) return
+    try {
+      await ProjetosService.update(id, {
+        valor_total: fValor,
+        status: fStatus,
+        data_inicio: fInicio,
+        data_fim_prevista: fFim || null
+      })
+      setRefreshSignal(prev => prev + 1)
+      setIsEditingFactual(false)
+    } catch (err) {
+      console.error('Erro ao atualizar dados fatuais:', err)
+    }
   }
 
   if (loading) return <LoadingSkeleton />
   if (error || !projeto) return <ErrorState message={error || 'Projeto inexistente'} />
 
-  // Tensão e Atrasos agora vêm interpretados do Backend (Single Source of Truth)
+  // Operação Factual Consolidada (Single Payload)
+  const entregas = projeto.entregas || []
+  const parcelas = projeto.parcelas || []
+  const extras = projeto.extras || []
+  const pendencias = projeto.pendencias || []
+  const eventos = projeto.eventos || []
+
   const tensionLevel = projeto.nivel_tensao || 'Baixa'
   const tensionColor = tensionLevel === 'Crítica' ? 'text-rose-500' : tensionLevel === 'Moderada' ? 'text-amber-500' : 'text-emerald-500'
   const lateCount = projeto.count_atrasos || 0
@@ -102,18 +121,18 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
     .filter(e => !e.entregue && new Date(e.data_entrega_prevista) >= new Date())
     .sort((a, b) => new Date(a.data_entrega_prevista).getTime() - new Date(b.data_entrega_prevista).getTime())[0]
   
-  const completedCount = entregas.filter(e => e.entregue).length
-  const totalCount = entregas.length
-  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+  const progressPercent = projeto.percentual_conclusao || 0
 
   return (
     <main className="min-h-screen bg-[#07090D] text-zinc-300 pb-32 overflow-x-hidden">
-      {/* ── HEADER & CONTEXTO ── */}
+
       <header className="px-4 sm:px-6 pt-8 sm:pt-12 pb-6 sm:pb-8">
+
+        {/* Nav Context */}
         <div className="flex items-center justify-between mb-6">
           <Link 
             href="/projetos" 
-            className="text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:text-sky-500 transition-colors"
+            className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-sky-500 transition-colors"
           >
             ← Voltar para projetos
           </Link>
@@ -127,221 +146,361 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-1">
-            <p className="text-sky-500 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em]">Operação de Campo</p>
-            <h1 className="text-white text-3xl sm:text-4xl font-black tracking-tight leading-tight sm:leading-none">{projeto.titulo}</h1>
-            <div className="flex items-center gap-3 mt-3">
-               <p className="text-zinc-500 text-[10px] sm:text-xs font-bold uppercase tracking-widest">ID: #{projeto.id} · Contrato Ativo</p>
-               {extras.length > 0 && (
-                  <p className="text-amber-500/60 text-[10px] font-bold uppercase tracking-widest border-l border-zinc-800 pl-3">
-                    Solicitado por: {getContactName(extras[0].solicitado_por)}
-                  </p>
-               )}
-            </div>
-          </div>
-          
-          <div className="flex gap-4">
-             <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl px-5 py-3 text-right">
-                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1">Tensão Operacional</p>
-                <div className="flex items-center gap-2 justify-end">
-                   <Zap size={16} className={tensionColor} />
-                   <span className={`text-xl font-black uppercase ${tensionColor}`}>
-                      {tensionLevel}
-                   </span>
-                </div>
-             </div>
-             <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl px-5 py-3 text-right">
-                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1">Avanço Real</p>
-                <p className="text-white text-xl font-black">{progressPercent}%</p>
-             </div>
-          </div>
+        {/* Título */}
+        <div className="mb-5">
+          {isEditingTitle ? (
+            <input autoFocus value={fTitle} onChange={(e) => setFTitle(e.target.value)} onBlur={handleTitleSave} onKeyDown={(e) => e.key === 'Enter' && handleTitleSave()}
+              className="bg-zinc-900 border border-sky-500/50 text-white text-2xl sm:text-3xl font-black tracking-tight px-4 py-2 rounded-2xl w-full max-w-2xl focus:outline-none" />
+          ) : (
+            <h1 onClick={() => setIsEditingTitle(true)} className="text-white text-2xl sm:text-3xl font-black tracking-tight cursor-text hover:text-sky-400 transition-colors group inline-flex items-center gap-3">
+              {projeto.titulo}
+              <Edit3 size={14} className="opacity-0 group-hover:opacity-20 transition-opacity" />
+            </h1>
+          )}
         </div>
 
-        {/* Card de Contexto Operacional */}
-        <div className="mt-8 sm:mt-10 grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10">
-          <div className="lg:col-span-8 bg-zinc-900/60 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
-             <div className="absolute top-0 right-0 p-8 opacity-5">
-                <TrendingUp size={120} />
+        {/* ── SINAIS VITAIS ── */}
+        <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-6 py-5 px-8 bg-zinc-900/40 border border-zinc-800/60 rounded-3xl mb-8">
+           
+           {/* Avanço */}
+           <div className="flex flex-col gap-1.5 min-w-[140px]">
+             <span className="text-[10px] font-black uppercase tracking-widest text-zinc-200">Avanço Factual</span>
+             <div className="flex items-center gap-3">
+               <span className="text-white text-3xl font-black tabular-nums leading-none">{progressPercent}%</span>
+               <div className="hidden sm:flex flex-col gap-1">
+                 <div className="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                   <div className="h-full bg-sky-500 transition-all" style={{ width: `${progressPercent}%` }} />
+                 </div>
+                 <span className="text-sky-500 text-[9px] font-bold tracking-widest uppercase">
+                   {entregas.filter(e => e.entregue).length}/{entregas.length} marcos
+                 </span>
+               </div>
              </div>
-             
-             <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-4">
-                   <div className="flex items-center gap-2">
-                      <FileText size={14} className="text-sky-500" />
-                      <h3 className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Diretriz Estratégica</h3>
-                   </div>
-                </div>
-                <p className="text-zinc-300 text-base sm:text-lg leading-relaxed max-w-3xl">
-                   {projeto.descricao || 'Nenhuma descrição operacional definida para este projeto.'}
-                </p>
+           </div>
+           
+           <div className="w-px h-12 bg-zinc-800 hidden md:block"></div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-zinc-800/50">
-                   <MetaItem label="Investimento" value={formatCurrency(projeto.valor_total)} highlight />
-                   <MetaItem label="Início" value={displayDate(projeto.data_inicio)} />
-                   <MetaItem label="Entrega Prevista" value={projeto.data_fim_prevista ? displayDate(projeto.data_fim_prevista) : 'A definir'} />
-                   <MetaItem label="Status" value={projeto.status} color="sky" />
-                </div>
+           {/* Tensão */}
+           <div className="flex flex-col gap-1.5">
+             <span className="text-[10px] font-black uppercase tracking-widest text-zinc-200">Tensão</span>
+             <div className="flex items-center gap-2">
+               <Zap size={18} className={tensionColor} />
+               <span className={`text-lg font-black uppercase tracking-widest ${tensionColor}`}>{tensionLevel}</span>
              </div>
+           </div>
+
+           <div className="w-px h-12 bg-zinc-800 hidden md:block"></div>
+
+           {/* Backlog */}
+           <div className="flex flex-col gap-1.5">
+             <span className="text-[10px] font-black uppercase tracking-widest text-zinc-200">Atrasos Ativos</span>
+             {lateCount > 0 ? (
+               <div className="flex items-center gap-2">
+                 <AlertCircle size={18} className="text-rose-500" />
+                 <span className="text-rose-500 text-xl font-black tabular-nums leading-none">{lateCount}</span>
+                 {projeto.backlog_meta && projeto.backlog_meta.aging_medio > 0 && (
+                   <span className="text-rose-600 text-[10px] font-bold uppercase tracking-widest ml-1">{projeto.backlog_meta.aging_medio}d parado</span>
+                 )}
+               </div>
+             ) : (
+               <div className="flex items-center gap-2">
+                 <CheckCircle2 size={18} className="text-emerald-500/50" />
+                 <span className="text-zinc-500 text-sm font-bold uppercase tracking-widest">Zero</span>
+               </div>
+             )}
+           </div>
+
+           <div className="w-px h-12 bg-zinc-800 hidden md:block"></div>
+
+           {/* Próximo Marco / Estagnação */}
+           <div className="flex flex-col gap-1.5 flex-1 min-w-[200px]">
+             <span className={`text-[10px] font-black uppercase tracking-widest ${projeto.is_estagnado ? 'text-rose-500' : 'text-sky-500'}`}>
+
+               {projeto.is_estagnado ? 'Atenção Crítica' : 'Próximo Foco'}
+             </span>
+             {projeto.is_estagnado ? (
+               <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                  <span className="text-amber-500 text-sm font-black uppercase tracking-widest">Operação Estagnada</span>
+               </div>
+             ) : nextDelivery ? (
+               <div className="flex flex-col gap-0.5">
+                 <div className="flex items-center gap-2">
+                   <Package size={14} className="text-zinc-200 shrink-0" />
+                   <span className="text-zinc-200 text-sm font-bold truncate max-w-[220px]">{nextDelivery.descricao}</span>
+                 </div>
+                 <span className="text-sky-600 text-[10px] font-black tracking-widest uppercase pl-6">
+                   Vence em {displayDate(nextDelivery.data_entrega_prevista)}
+                 </span>
+               </div>
+             ) : (
+               <span className="text-zinc-200 text-sm font-bold italic">Nenhuma entrega mapeada</span>
+             )}
+           </div>
+        </div>
+
+        {/* ── CONTEXTO ESTRATÉGICO ── */}
+        <div className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-6 sm:p-8 relative overflow-hidden group">
+          <div className="absolute top-[-20] md:top-8 right-0 p-8 opacity-8 pointer-events-none">
+            <TrendingUp className="hidden md:block md:w-20 md:h-20" />
           </div>
+          <div className="relative z-10">
 
-          <div className="lg:col-span-4 space-y-6">
-             <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-3xl p-6">
-                <div className="flex items-center gap-2 mb-3">
-                   <Package size={14} className="text-emerald-500" />
-                   <p className="text-[9px] font-black uppercase tracking-widest text-emerald-500/60">Próximo Marco</p>
-                </div>
-                {nextDelivery ? (
-                  <>
-                    <p className="text-white font-bold text-sm mb-1">{nextDelivery.descricao}</p>
-                    <p className="text-emerald-500 text-xs font-black uppercase tracking-tighter">{displayDate(nextDelivery.data_entrega_prevista)}</p>
-                  </>
-                ) : (
-                  <p className="text-zinc-600 text-xs italic">Nenhuma entrega futura.</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+              <div className="flex items-center gap-2">
+                <FileText size={16} className="text-sky-500" />
+                <span className="text-[12px] font-black uppercase tracking-[0.2em] text-zinc-200">Diretriz Estratégica</span>
+                {projeto.override_ativo && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 rounded border border-amber-500/20 ml-1">
+                    <span className="w-1 h-1 rounded-full bg-amber-500 animate-pulse block" />
+                    <span className="text-[8px] font-black uppercase text-amber-400">Override</span>
+                  </span>
                 )}
-             </div>
-             
-             <div className={`rounded-3xl p-6 border ${lateCount > 0 ? 'bg-rose-500/10 border-rose-500/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
-                <div className="flex items-center gap-2 mb-3">
-                   <AlertCircle size={14} className={lateCount > 0 ? 'text-rose-500' : 'text-zinc-500'} />
-                   <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Backlog Acumulado</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => isEditingFactual ? handleFactualSave() : setIsEditingFactual(true)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all text-[9px] font-black uppercase tracking-widest ${isEditingFactual ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-zinc-800/50 border-zinc-700 text-zinc-200 hover:text-white hover:border-zinc-500'}`}
+                >
+                  {isEditingFactual ? <CheckCircle2 size={10} /> : <Edit3 size={10} />}
+                  {isEditingFactual ? 'Salvar' : 'Editar'}
+                </button>
+
+                <Link 
+                  href={`/clientes/${projeto.clienteId}`} 
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700 hover:border-sky-500/30 transition-all group/link"
+                >
+                  <span className="text-[9px] font-black uppercase tracking-widest text-zinc-200 group-hover/link:text-sky-500 transition-colors">Cliente</span>
+                  <ArrowUpRight size={10} className="text-zinc-200 group-hover/link:text-sky-500" />
+                </Link>
+                <Link 
+                  href={`/contratos/${projeto.contratoId}`} 
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700 hover:border-sky-500/30 transition-all group/link"
+                >
+                  <span className="text-[9px] font-black uppercase tracking-widest text-zinc-200 group-hover/link:text-sky-500 transition-colors">Contrato</span>
+                  <History size={10} className="text-zinc-200 group-hover/link:text-sky-500" />
+                </Link>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-white text-base font-bold leading-snug mb-1">{projeto.motivo_auditavel}</p>
+              {(!projeto.isExtra && extras.length === 0) && (
+                 <p className="text-zinc-200 text-sm leading-relaxed max-w-3xl">{projeto.descricao || 'Nenhuma diretriz definida.'}</p>
+              )}
+            </div>
+
+                   {/* Demandas Extraordinárias Integradas ou Projetos Extras */}
+                   {(extras.length > 0 || projeto.isExtra) && (
+                      <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-500/3 border border-amber-500/20 max-w-3xl mb-5">
+                         <Zap size={14} className="text-amber-500 mt-0.5 shrink-0" />
+                         <div className="space-y-2">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-amber-500">Alerta de Projeto Extra</p>
+                            
+                            {projeto.descricao && (
+                               <p className="text-amber-500/90 text-sm leading-relaxed font-medium">
+                                  {projeto.descricao}
+                               </p>
+                            )}
+
+                            <p className="text-zinc-300 text-xs">
+                               {extras.length > 0 
+                                ? <>Frentes paralelas solicitadas por <span className="text-white font-bold">{extras[0].solicitado_por_nome}</span> expandem a diretriz original.</>
+                                : (!projeto.descricao && "Este é um projeto de escopo extra que corre em paralelo para atender demandas urgentes ou solicitações atípicas.")}
+                            </p>
+                         </div>
+                      </div>
+                   )}
+
+            {projeto.cadeia_causal && projeto.cadeia_causal.length > 0 && (
+              <div className="bg-rose-500/5 border border-rose-500/10 rounded-xl px-4 py-3.5 mb-6 max-w-3xl">
+                <div className="flex flex-col gap-2">
+                  {projeto.cadeia_causal.map((item, idx) => {
+                    const isWarning = item.toLowerCase().includes('tensão') || item.toLowerCase().includes('atraso');
+                    return (
+                      <div key={idx} className="flex items-start gap-2">
+                        <AlertCircle size={14} className={`shrink-0 mt-0.5 ${isWarning ? 'text-rose-500' : 'text-zinc-500'}`} />
+                        <p className={`text-sm ${isWarning ? 'text-rose-400 font-medium' : 'text-zinc-300'}`}>{item}</p>
+                      </div>
+                    )
+                  })}
                 </div>
-                <div className="flex items-end gap-2">
-                   <p className={`text-3xl font-black ${lateCount > 0 ? 'text-rose-500' : 'text-white'}`}>
-                      {lateCount}
-                   </p>
-                   <p className="text-[10px] font-bold text-zinc-600 uppercase mb-1.5">Atrasos</p>
-                </div>
-             </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-zinc-700">
+              {isEditingFactual ? (
+                <>
+                  <EditableMetaItem label="Investimento" value={String(fValor)} onChange={(v) => setFValor(Number(v))} type="number" />
+                  <EditableMetaItem label="Início" value={fInicio} onChange={setFInicio} type="date" />
+                  <EditableMetaItem label="Entrega Prevista" value={fFim} onChange={setFFim} type="date" />
+                  <EditableMetaItem label="Status" value={fStatus} onChange={setFStatus} type="select" options={['em andamento', 'concluído', 'cancelado']} />
+                </>
+              ) : (
+                <>
+                  <MetaItem label="Investimento" value={formatCurrency(projeto.valor_total)} highlight />
+                  <MetaItem label="Início" value={displayDate(projeto.data_inicio)} />
+                  <MetaItem label="Entrega Prevista" value={projeto.data_fim_prevista ? displayDate(projeto.data_fim_prevista) : 'A definir'} />
+                  <MetaItem label="Status" value={projeto.status} color="sky" />
+                </>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
-      {/* ── CONTEÚDO OPERACIONAL ── */}
-      <div className="px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10">
-        
-        {/* COLUNA ESQUERDA: ENTREGAS (CENTRO OPERACIONAL) */}
-        <div className="lg:col-span-8 space-y-8 sm:space-y-10">
-          <section>
-            <SectionHeader label="Gestão de Marcos e Backlog" />
-            
-            <div className="mt-6 bg-zinc-900/30 border border-zinc-800/50 rounded-3xl sm:rounded-[40px] p-6 sm:p-8 shadow-2xl">
-              <ProjectMarcoList 
-                projetoId={id}
-                refreshSignal={refreshSignal}
-                onEntregaClick={(eid) => setSelectedItem({ type: 'entrega', id: eid })}
-                onAddEntrega={() => setSelectedItem({ type: 'entrega', projetoId: id })}
-              />
-            </div>
-          </section>
 
-          {/* Histórico de Crises/Eventos */}
-          <section>
-            <SectionHeader label="Tensões Institucionais Recentes" />
-            <div className="mt-6 space-y-4">
-              {eventos.length > 0 ? (
-                eventos.slice(0, 5).map(ev => (
-                  <div key={ev.id_evento} className="bg-zinc-900/40 border-l-2 border-rose-500/50 p-5 rounded-r-3xl">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-rose-500">Crise Operacional</p>
-                      <p className="text-[10px] text-zinc-500 font-bold">{displayDate(ev.data_evento)}</p>
-                    </div>
-                    <p className="text-zinc-200 text-sm font-bold mb-2">{ev.descricao}</p>
-                    {ev.acao_tomada && (
-                      <div className="bg-black/20 p-3 rounded-xl border border-zinc-800/50 mt-3">
-                        <p className="text-[9px] font-black uppercase text-zinc-500 mb-1">Resposta do Adriano</p>
-                        <p className="text-zinc-400 text-xs italic">{ev.acao_tomada}</p>
-                      </div>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <EmptyBox message="Nenhum evento crítico recente vinculado a este contrato." />
-              )}
-            </div>
-          </section>
-        </div>
+       {/* ── CONTEÚDO OPERACIONAL ── */}
+       <div className="px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10">
+         
+         {/* COLUNA PRINCIPAL (EXECUÇÃO OPERACIONAL) */}
+         <div className="lg:col-span-8 space-y-8 sm:space-y-10">
 
-        {/* COLUNA DIREITA: FINANCEIRO & EXTRAS */}
-        <div className="lg:col-span-4 space-y-10">
-          {/* Ciclo Financeiro */}
-          <section>
-            <SectionHeader label="Fluxo de Pagamentos" />
-            <div className="mt-6 bg-zinc-900/30 border border-zinc-800/50 rounded-3xl overflow-hidden shadow-lg">
-              <div className="bg-zinc-800/20 p-4 border-b border-zinc-800/50 flex items-center gap-2">
-                 <DollarSign size={14} className="text-sky-500" />
-                 <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Cronograma de Recebíveis</p>
-              </div>
-              {parcelas.length > 0 ? (
-                <div className="divide-y divide-zinc-800/50">
-                  {parcelas.map(p => (
-                    <div key={p.id} className="p-4 flex items-center justify-between hover:bg-zinc-800/20 transition-colors">
-                      <div>
-                        <p className="text-white text-sm font-bold">Parcela {p.numero_parcela}</p>
-                        <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest">{displayDate(p.data_pagamento_prevista)}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-zinc-200 font-black text-sm">{formatCurrency(p.valor_parcela)}</p>
-                        <p className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${p.pago ? 'text-emerald-500' : 'text-rose-500'}`}>
-                          {p.pago ? 'Pago' : 'Pendente'}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+           {/* Gestão de Marcos e Backlog */}
+           <section>
+             <div className="flex items-center gap-4 mb-6">
+                <div className="flex-1">
+                   <SectionHeader label="Backlog & Marcos" />
                 </div>
-              ) : (
-                <EmptyBox message="Sem parcelas registradas." />
-              )}
-            </div>
-          </section>
-
-          {/* Projetos Extras Vinculados */}
-          {extras.length > 0 && !projeto.isExtra && (
-            <section>
-              <SectionHeader label="Demandas Extraordinárias" />
-              <div className="mt-6 space-y-3">
-                {extras.map(ex => (
-                  <div key={ex.id} className="bg-zinc-900/40 border border-zinc-800 p-5 rounded-3xl group hover:border-sky-500/30 transition-all">
-                    <div className="flex items-start justify-between mb-3">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600">Contexto Extra</p>
-                      <Zap size={10} className="text-amber-500" />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-zinc-200 text-xs font-bold leading-relaxed">
-                        Este contrato possui frentes paralelas de expansão de escopo.
-                      </p>
-                      <p className="text-zinc-500 text-[10px] pt-1 italic">
-                        Solicitante: {getContactName(ex.solicitado_por)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Atalhos Rápidos */}
-          <section className="bg-zinc-900/20 border border-zinc-800/50 rounded-3xl p-6">
-             <SectionHeader label="Navegação 360" />
-             <div className="mt-4 flex flex-col gap-2">
-                <Link 
-                  href={`/clientes/${contrato?.clienteId}`} 
-                  className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/50 hover:bg-zinc-800 text-xs font-bold transition-all group"
+                <button 
+                  onClick={() => setSelectedItem({ type: 'entrega', projetoId: id })}
+                  className="flex items-center gap-1.5 px-3 py-1.5 md:py-2 border border-sky-500/30 bg-sky-500/5 rounded-lg text-sky-500 hover:text-sky-400 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all shadow-sm group"
                 >
-                  <span>Ver Cliente</span>
-                  <TrendingUp size={12} className="text-zinc-700 group-hover:text-sky-500" />
-                </Link>
-                <Link 
-                  href={`/contratos/${projeto.contratoId}`} 
-                  className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/50 hover:bg-zinc-800 text-xs font-bold transition-all group"
-                >
-                  <span>Ver Contrato</span>
-                  <History size={12} className="text-zinc-700 group-hover:text-sky-500" />
-                </Link>
+                  <Plus size={14} className="group-hover:scale-110 transition-transform" />
+                  <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest mt-0.5">Novo Marco</span>
+                </button>
              </div>
-          </section>
-        </div>
-      </div>
+
+             <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-3xl sm:rounded-[40px] p-6 sm:p-8 shadow-2xl">
+               <ProjectMarcoList 
+                 projetoId={id}
+                 data={entregas}
+                 refreshSignal={refreshSignal}
+                 onEntregaClick={(eid) => setSelectedItem({ type: 'entrega', id: eid })}
+                 onToggleSuccess={() => setRefreshSignal(prev => prev + 1)}
+               />
+             </div>
+           </section>
+
+           {/* Contexto de Risco (Pendências e Crises Log) */}
+           <section className="space-y-8 pt-4">
+              {/* Pendências */}
+              <div>
+                 <SectionHeader label="Log de Pendências" />
+                 <div className="mt-6 space-y-4">
+                   {pendencias.length > 0 ? (
+                     <>
+                       {pendencias.slice(0, 3).map(p => (
+                         <div key={p.id} className="bg-zinc-900/40 border-l-2 border-amber-500/50 p-5 rounded-r-3xl">
+                           <div className="flex items-center justify-between mb-2">
+                             <p className="text-[10px] font-black uppercase tracking-widest text-amber-500">Pendência Ativa</p>
+                             <p className="text-[10px] text-zinc-500 font-bold">Prazo: {displayDate(p.data_prazo)}</p>
+                           </div>
+                           <p className="text-zinc-200 text-sm font-bold mb-1">{p.descricao}</p>
+                           <p className="text-zinc-500 text-[10px] uppercase font-black tracking-tighter">Responsável: {p.responsavel}</p>
+                         </div>
+                       ))}
+                       {pendencias.length > 3 && (
+                         <p className="text-zinc-500 text-[10px] uppercase font-black tracking-widest pl-2 mt-4">
+                            + {pendencias.length - 3} pendências arquivadas
+                         </p>
+                       )}
+                     </>
+                   ) : (
+                     <EmptyBox message="Nenhuma pendência ativa" />
+                   )}
+                 </div>
+              </div>
+
+              {/* Eventos Críticos */}
+              <div>
+                 <SectionHeader label="Crises Institucionais" />
+                 <div className="mt-6 space-y-4">
+                   {eventos.length > 0 ? (
+                     <>
+                       {eventos.slice(0, 2).map(ev => (
+                         <div key={ev.id} className="bg-zinc-900/40 border-l-2 border-rose-500/50 p-5 rounded-r-3xl">
+                           <div className="flex items-center justify-between mb-2">
+                             <p className="text-[10px] font-black uppercase tracking-widest text-rose-500">Evento Crítico</p>
+                             <p className="text-[10px] text-zinc-500 font-bold">{displayDate(ev.data_evento)}</p>
+                           </div>
+                           <p className="text-zinc-200 text-sm font-bold mb-2">{ev.descricao}</p>
+                           {ev.acao_tomada && (
+                             <div className="bg-black/20 p-3 rounded-xl border border-zinc-800/50 mt-3">
+                               <p className="text-[9px] font-black uppercase text-zinc-500 mb-1">Resposta do Adriano</p>
+                               <p className="text-zinc-400 text-xs italic">{ev.acao_tomada}</p>
+                             </div>
+                           )}
+                         </div>
+                       ))}
+                       {eventos.length > 2 && (
+                         <p className="text-zinc-500 text-[10px] uppercase font-black tracking-widest pl-2 mt-4">
+                            + {eventos.length - 2} crises documentadas
+                         </p>
+                       )}
+                     </>
+                   ) : (
+                     <EmptyBox message="Sem crises registradas" />
+                   )}
+                 </div>
+              </div>
+           </section>
+         </div>
+
+         {/* COLUNA SECUNDÁRIA: MEMÓRIA & GOVERNANÇA */}
+         <div className="lg:col-span-4 space-y-10">
+           
+           {/* Governança Humana */}
+           <section>
+              <ProjectOperationalOverrides 
+                 projetoId={id}
+                 observacoes={projeto.observacoes_gerais || ''}
+                 historyResumo={projeto.audit_history_resumo}
+                 onUpdate={() => setRefreshSignal(prev => prev + 1)}
+              />
+           </section>
+
+           {/* Timeline Operacional (Colapsada e Controlada) */}
+           <section>
+              <SectionHeader label="Timeline Factual" />
+              <div className="mt-6 bg-zinc-900/20 border border-zinc-800/40 rounded-3xl p-6 shadow-inner max-h-[450px] overflow-y-auto custom-scrollbar">
+                <ProjectTimeline events={projeto.timeline || []} />
+              </div>
+           </section>
+
+           {/* Ciclo Financeiro */}
+           <section>
+             <SectionHeader label="Fluxo Financeiro" />
+             <div className="mt-6 bg-zinc-900/30 border border-zinc-800/50 rounded-3xl overflow-hidden shadow-lg">
+               <div className="bg-zinc-800/20 p-4 border-b border-zinc-800/50 flex items-center gap-2">
+                  <DollarSign size={14} className="text-sky-500" />
+                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Cronograma de Recebíveis</p>
+               </div>
+               {parcelas.length > 0 ? (
+                 <div className="divide-y divide-zinc-800/50">
+                   {parcelas.map(p => (
+                     <div key={p.id} className="p-4 flex items-center justify-between hover:bg-zinc-800/20 transition-colors">
+                       <div>
+                         <p className="text-white text-sm font-bold">Parcela {p.numero_parcela}</p>
+                         <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest">{displayDate(p.data_pagamento_prevista)}</p>
+                       </div>
+                       <div className="text-right">
+                         <p className="text-zinc-200 font-black text-sm">{formatCurrency(p.valor_parcela)}</p>
+                         <p className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${p.pago ? 'text-emerald-500' : 'text-rose-500'}`}>
+                           {p.pago ? 'Pago' : 'Pendente'}
+                         </p>
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+               ) : (
+                 <EmptyBox message="Sem parcelas registradas." />
+               )}
+             </div>
+           </section>
+
+         </div>
+       </div>
 
       {/* OPERATIONAL DRAWER */}
       <OperationalDrawer
@@ -376,10 +535,40 @@ function MetaItem({ label, value, highlight, color }: { label: string; value: st
   }
   return (
     <div>
-      <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1">{label}</p>
-      <p className={`font-bold ${highlight ? 'text-white text-lg sm:text-xl' : 'text-zinc-300 text-sm'} ${color ? colorMap[color] : ''}`}>
+      <p className="text-[9px] font-black uppercase tracking-widest text-zinc-300 mb-1">{label}</p>
+      <p className={`font-bold ${highlight ? 'text-white text-lg sm:text-xl' : 'text-zinc-200 text-sm'} ${color ? colorMap[color] : ''}`}>
         {value}
       </p>
+    </div>
+  )
+}
+
+function EditableMetaItem({ label, value, onChange, type, options }: { 
+  label: string; 
+  value: string; 
+  onChange: (v: string) => void; 
+  type: 'text' | 'number' | 'date' | 'select';
+  options?: string[]
+}) {
+  return (
+    <div className="animate-in zoom-in-95 duration-200">
+      <p className="text-[9px] font-black uppercase tracking-widest text-zinc-300 mb-1.5">{label}</p>
+      {type === 'select' ? (
+        <select 
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="bg-zinc-800/80 border border-zinc-700/50 text-white text-xs font-bold rounded-lg px-2 py-1 w-full focus:outline-none focus:border-emerald-500/50"
+        >
+          {options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+        </select>
+      ) : (
+        <input 
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="bg-zinc-800/80 border border-zinc-700/50 text-white text-xs font-bold rounded-lg px-2 py-1 w-full focus:outline-none focus:border-emerald-500/50"
+        />
+      )}
     </div>
   )
 }
@@ -387,8 +576,8 @@ function MetaItem({ label, value, highlight, color }: { label: string; value: st
 function SectionHeader({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-4 w-full">
-      <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600 shrink-0">{label}</h2>
-      <div className="h-px bg-zinc-800/40 flex-1" />
+      <h2 className="text-[12px] font-black uppercase tracking-[0.2em] md:tracking-[0.4em] text-zinc-200 shrink-0">{label}</h2>
+      <div className="h-px bg-zinc-700 flex-1" />
     </div>
   )
 }

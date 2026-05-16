@@ -1,44 +1,46 @@
 import { fetchApi } from './api'
-import { mapEntrega, getEntregas } from '@/mappers/entrega.mapper'
-import type { Entrega } from '@/domain/entrega'
-import type { EntregaRaw } from '@/types/entrega.raw'
-import { USE_MOCKS } from '@/config/env'
+
+export interface EntregaRaw {
+  id_entrega: number
+  id_projeto: number
+  descricao: string
+  data_entrega_prevista: string
+  data_entrega_real?: string | null
+  entregue: boolean
+  referencia_doc?: string | null
+}
 
 export const EntregasService = {
-  async getAll(): Promise<Entrega[]> {
-    if (USE_MOCKS) return getEntregas()
-    try {
-      const data = await fetchApi<EntregaRaw[]>('/entregas/')
-      return data.map(mapEntrega)
-    } catch (error) {
-      console.error('[SERVICE][ERROR] Falha ao buscar entregas:', error)
-      return []
-    }
+  async getAll(): Promise<EntregaRaw[]> {
+    return await fetchApi<EntregaRaw[]>('/entregas/')
+  },
+  
+  async getById(id: number | string): Promise<EntregaRaw> {
+    return await fetchApi<EntregaRaw>(`/entregas/${id}`)
   },
 
-  async getById(id: string | number): Promise<Entrega | null> {
+  async getByProjetoId(projetoId: string | number): Promise<EntregaRaw[]> {
     const all = await this.getAll()
-    return all.find(e => String(e.id) === String(id)) || null
+    return all.filter(e => String(e.id_projeto) === String(projetoId))
   },
 
-  async getByProjetoId(projetoId: string | number): Promise<Entrega[]> {
-    const all = await this.getAll()
-    return all.filter(e => String(e.projetoId) === String(projetoId))
-  },
-
-  async create(data: Partial<EntregaRaw>): Promise<Entrega> {
-    const response = await fetchApi<EntregaRaw>('/entregas/', {
+  async create(entrega: Partial<EntregaRaw>): Promise<EntregaRaw> {
+    return await fetchApi<EntregaRaw>('/entregas/', {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: JSON.stringify(entrega)
     })
-    return mapEntrega(response)
   },
 
-  async update(id: string | number, data: Partial<EntregaRaw>): Promise<Entrega> {
-    const response = await fetchApi<EntregaRaw>(`/entregas/${id}`, {
+  async update(id: number, updates: Partial<EntregaRaw>): Promise<EntregaRaw> {
+    return await fetchApi<EntregaRaw>(`/entregas/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify(data)
+      body: JSON.stringify(updates)
     })
-    return mapEntrega(response)
+  },
+
+  async delete(id: number): Promise<void> {
+    await fetchApi(`/entregas/${id}`, {
+      method: 'DELETE'
+    })
   }
 }

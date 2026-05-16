@@ -31,6 +31,13 @@ def criar_entrega(entrega: EntregaCreate, db: Session = Depends(get_db)):
 def listar_entregas(db: Session = Depends(get_db)):
     return db.query(Entrega).all()
 
+@router.get("/{id_entrega}", response_model=EntregaRead)
+def buscar_entrega(id_entrega: int, db: Session = Depends(get_db)):
+    db_entrega = db.query(Entrega).filter(Entrega.id_entrega == id_entrega).first()
+    if not db_entrega:
+        raise HTTPException(status_code=404, detail="Entrega não encontrada")
+    return db_entrega
+
 @router.patch("/{id_entrega}", response_model=EntregaRead)
 def atualizar_entrega(
     id_entrega: int, 
@@ -57,3 +64,17 @@ def atualizar_entrega(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erro ao atualizar entrega: {str(e)}")
+
+@router.delete("/{id_entrega}")
+def excluir_entrega(id_entrega: int, db: Session = Depends(get_db)):
+    db_entrega = db.query(Entrega).filter(Entrega.id_entrega == id_entrega).first()
+    if not db_entrega:
+        raise HTTPException(status_code=404, detail="Entrega não encontrada")
+    
+    try:
+        db.delete(db_entrega)
+        db.commit()
+        return {"message": "Entrega excluída com sucesso"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Erro ao excluir entrega: {str(e)}")

@@ -41,9 +41,9 @@ export function ProjectTimeline({ events }: Props) {
           
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-0.5">
-              <p className="text-[11px] text-zinc-300 font-bold group-hover:text-white transition-colors">{event.label}</p>
+              <p className="text-[11px] md:text-[12px] xl:text-[14px] text-zinc-200 font-bold group-hover:text-white transition-colors">{event.label}</p>
               <div className="flex items-center gap-2">
-                <span className="text-[8px] text-zinc-600 font-black uppercase tracking-widest">
+                <span className="text-[8px] md:text-[9px] xl:text-[10px] text-zinc-400 font-black uppercase tracking-widest">
                   {new Date(event.data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                 </span>
                 <div className={`w-1 h-1 rounded-full ${

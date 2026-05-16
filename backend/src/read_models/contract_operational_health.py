@@ -50,9 +50,9 @@ class ContractOperationalHealth:
             self._calculated_data = self.fallback_dict()
 
     def _calculate(self):
-        visitas = self.contrato.visitas
+        visitas = getattr(self.contrato, "visitas", [])
         eventos = getattr(self.contrato, "eventos_criticos", [])
-        pendencias = self.contrato.pendencias
+        pendencias = getattr(self.contrato, "pendencias", [])
         
         # 1. Estabilidade Longitudinal
         threshold_45d = self.hoje - timedelta(days=45)

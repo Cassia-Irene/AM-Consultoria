@@ -58,5 +58,15 @@ export const ProjetosService = {
       console.error(`[SERVICE][ERROR] Falha ao buscar auditoria do projeto ${id}:`, error)
       return []
     }
+  },
+
+  async deleteAuditoria(id: string, timestamp: string): Promise<boolean> {
+    try {
+      await fetchApi(`/projetos/${id}/auditoria/${encodeURIComponent(timestamp)}`, { method: 'DELETE' })
+      return true
+    } catch (error) {
+      console.error(`[SERVICE][ERROR] Falha ao deletar registro de auditoria do projeto ${id}:`, error)
+      return false
+    }
   }
 }

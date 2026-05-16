@@ -1,6 +1,5 @@
-// src/services/clientes.service.ts
 import { fetchApi } from './api'
-import { mapCliente } from '@/mappers/cliente.mapper'
+import { mapCliente, mapClienteToRaw } from '@/mappers/cliente.mapper'
 import type { Cliente } from '@/domain/cliente'
 import type { ClienteRaw } from '@/types/cliente.raw'
 
@@ -26,17 +25,19 @@ export const ClientesService = {
   },
 
   async create(data: Partial<Cliente>): Promise<Cliente> {
+    const rawInput = mapClienteToRaw(data)
     const raw = await fetchApi<ClienteRaw>('/clientes/', {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: JSON.stringify(rawInput)
     })
     return mapCliente(raw)
   },
 
   async update(id: string, data: Partial<Cliente>): Promise<Cliente> {
+    const rawInput = mapClienteToRaw(data)
     const raw = await fetchApi<ClienteRaw>(`/clientes/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify(data)
+      body: JSON.stringify(rawInput)
     })
     return mapCliente(raw)
   }

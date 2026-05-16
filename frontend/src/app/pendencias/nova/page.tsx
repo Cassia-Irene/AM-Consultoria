@@ -133,14 +133,16 @@ export default function NovaPendenciaPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-semibold text-zinc-300 mb-2">Responsável *</label>
-              <input
-                type="text"
+              <select
                 required
-                placeholder="Ex: João Silva"
                 value={form.responsavel}
                 onChange={e => setForm({ ...form, responsavel: e.target.value })}
-                className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors"
-              />
+                className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-zinc-600 transition-colors"
+              >
+                <option value="" disabled>Selecione o responsável...</option>
+                <option value="Equipe Cliente">Equipe Cliente</option>
+                <option value="AM Consultoria">AM Consultoria</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-semibold text-zinc-300 mb-2">Data Limite (Prazo)</label>

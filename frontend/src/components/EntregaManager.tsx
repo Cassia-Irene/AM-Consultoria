@@ -125,7 +125,7 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
               <p className="text-white font-bold text-sm">
                 {entrega.entregue ? 'Marco Concluído' : 'Aguardando Entrega'}
               </p>
-              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
+              <p className="text-[10px] text-zinc-300 font-bold uppercase tracking-widest">
                 {entrega.entregue ? `Entregue em ${displayDate(entrega.data_entrega_real!)}` : 'Operação Pendente'}
               </p>
             </div>
@@ -204,7 +204,7 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
               </div>
               <button 
                 onClick={() => setEditMode(true)}
-                className="text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:text-white transition-colors"
+                className="text-[10px] font-black uppercase tracking-widest text-sky-500 hover:text-white transition-colors"
               >
                 Editar
               </button>
@@ -212,14 +212,14 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
 
             <div className="grid grid-cols-2 gap-4 pt-4">
               <div className="bg-zinc-900/30 p-4 rounded-2xl border border-zinc-800/50">
-                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1">Previsão Original</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-200 mb-1">Previsão Original</p>
                 <div className="flex items-center gap-2 text-zinc-300 text-xs font-bold">
                   <Calendar size={12} className="text-emerald-500" />
                   {displayDate(entrega.data_entrega_prevista)}
                 </div>
               </div>
               <div className="bg-zinc-900/30 p-4 rounded-2xl border border-zinc-800/50">
-                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1">Documentação</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-200 mb-1">Documentação</p>
                 <div className="flex items-center gap-2 text-zinc-300 text-xs font-bold truncate">
                   <LinkIcon size={12} className="text-emerald-500 shrink-0" />
                   <span className="truncate">{entrega.referencia_doc || 'Sem referência'}</span>
@@ -245,7 +245,7 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
 
       {/* FOOTER / TIPS */}
       <div className="px-2">
-        <p className="text-zinc-600 text-[10px] leading-relaxed italic">
+        <p className="text-zinc-300 text-[10px] leading-relaxed italic">
           As entregas são marcos contratuais. Concluir um marco atualiza automaticamente o progresso do projeto e a saúde operacional do cliente.
         </p>
       </div>

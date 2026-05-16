@@ -234,7 +234,7 @@ function sugerirPendencias(resumo: string): PendenciaSugerida[] {
       id: uid(),
       descricao: regra.descricao,
       data_prazo: prazoEmDiasISO(diasFinal),
-      responsavel: 'Equipe Técnica', // Padrão
+      responsavel: 'Equipe Cliente', // Padrão
       gatilho: regra.gatilho,
       estado: 'pendente',
       // score utilizado pelo chamador para separar opt-out vs opt-in
@@ -262,7 +262,7 @@ function uid() {
 function AdicionarPendenciaInline({ onAdd, variant = 'dashed' }: { onAdd: (p: PendenciaGerada) => void, variant?: 'dashed' | 'primary' }) {
   const [descricao, setDescricao] = useState('')
   const [dataPrazo, setDataPrazo] = useState(prazoEmDiasISO(5))
-  const [responsavel, setResponsavel] = useState('Equipe Técnica')
+  const [responsavel, setResponsavel] = useState('Equipe Cliente')
   const [aberto, setAberto] = useState(false)
 
   function submeter() {
@@ -275,7 +275,7 @@ function AdicionarPendenciaInline({ onAdd, variant = 'dashed' }: { onAdd: (p: Pe
     })
     setDescricao('')
     setDataPrazo(prazoEmDiasISO(5))
-    setResponsavel('Equipe Técnica')
+    setResponsavel('Equipe Cliente')
     setAberto(false)
   }
 
@@ -331,12 +331,14 @@ function AdicionarPendenciaInline({ onAdd, variant = 'dashed' }: { onAdd: (p: Pe
       {/* Responsável */}
       <div className="flex items-center gap-2">
         <span className="text-[10px] text-[#7D8597] shrink-0">Resp:</span>
-        <input
-          type="text"
+        <select
           value={responsavel}
           onChange={e => setResponsavel(e.target.value)}
           className="flex-1 bg-[#23272F] text-white text-xs rounded-lg px-3 py-1.5 placeholder-[#7D8597] focus:outline-none focus:ring-1 focus:ring-[#0466C8]"
-        />
+        >
+          <option value="Equipe Cliente">Equipe Cliente</option>
+          <option value="AM Consultoria">AM Consultoria</option>
+        </select>
       </div>
 
       <div className="flex gap-2 pt-1">
@@ -418,12 +420,14 @@ function PendenciaEditavel({
       {/* Responsável */}
       <div className="flex items-center gap-2 mt-2">
         <span className="text-[10px] text-[#7D8597] shrink-0">Resp:</span>
-        <input
-          type="text"
+        <select
           value={p.responsavel}
           onChange={e => onChange({ responsavel: e.target.value })}
           className="flex-1 bg-[#23272F] text-white text-xs rounded-lg px-3 py-1.5 placeholder-[#7D8597] focus:outline-none focus:ring-1 focus:ring-[#0466C8]"
-        />
+        >
+          <option value="Equipe Cliente">Equipe Cliente</option>
+          <option value="AM Consultoria">AM Consultoria</option>
+        </select>
       </div>
 
       {/* Ações */}

@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation'
 import { ClientesService } from '@/services/clientes.service'
 import { ContratoService } from '@/services/contrato.service'
 import { VisitasService } from '@/services/visitas.service'
+import { RotateCcw, X } from 'lucide-react'
 import type { Cliente } from '@/domain/cliente'
 import type { Contrato } from '@/domain/contrato'
 import type { StatusVisita, ModalidadeVisita, TipoVisita } from '@/domain/visita'
@@ -511,6 +512,22 @@ interface FormState {
   pendencias: PendenciaGerada[]
 }
 
+const DRAFT_KEY = 'am_consultoria_visita_draft_v1'
+
+const INITIAL_FORM: FormState = {
+  clienteId: '',
+  contratoId: '',
+  projetoId: '',
+  status: 'realizada',
+  tipo_visita: 'rotineira',
+  modalidade: 'presencial',
+  duracao_minutos: 60,
+  data_hora: new Date().toISOString().slice(0, 16),
+  descricao: '',
+  resultados: '',
+  pendencias: [],
+}
+
 export default function NovaVisitaPage() {
   const router = useRouter()
 
@@ -525,22 +542,51 @@ export default function NovaVisitaPage() {
    * Remove quando pendencia.py estiver implementado no backend.
    */
 
+  console.log('>>> [DRAFT] ARQUIVO NOVA VISITA EXECUTADO NO BROWSER <<<')
   const [errorSubmit, setErrorSubmit] = useState<string | null>(null)
-
-  const [form, setForm] = useState<FormState>({
-    clienteId: '',
-    contratoId: '',
-    projetoId: '',
-    status: 'realizada',
-    
-    tipo_visita: 'rotineira',
-    modalidade: 'presencial',
-    duracao_minutos: 60,
-    data_hora: new Date().toISOString().slice(0, 16),
-    descricao: '',
-    resultados: '',
-    pendencias: [],
+  const [showDraftNotice, setShowDraftNotice] = useState(() => {
+    if (typeof window === 'undefined') return false
+    const saved = localStorage.getItem(DRAFT_KEY)
+    if (!saved) return false
+    try {
+      const draft = JSON.parse(saved)
+      const hasContent = !!(draft.clienteId || draft.descricao || draft.resultados)
+      // Se não tiver timestamp, assume que é novo (para rascunhos antigos na transição)
+      const timestamp = draft.draftTimestamp || Date.now()
+      const isOld = Date.now() - timestamp > 48 * 60 * 60 * 1000
+      return !isOld && hasContent
+    } catch {
+      return false
+    }
   })
+
+  const [form, setForm] = useState<FormState>(() => {
+    if (typeof window === 'undefined') return INITIAL_FORM
+    const saved = localStorage.getItem(DRAFT_KEY)
+    if (!saved) return INITIAL_FORM
+    try {
+      const draft = JSON.parse(saved)
+      const hasContent = !!(draft.clienteId || draft.descricao || draft.resultados)
+      const timestamp = draft.draftTimestamp || Date.now()
+      const isOld = Date.now() - timestamp > 48 * 60 * 60 * 1000
+      if (!isOld && hasContent) {
+        console.info('[DRAFT] Recuperando dados do rascunho...', draft)
+        return draft
+      }
+    } catch (err) {
+      console.error('[DRAFT] Erro ao carregar rascunho:', err)
+      localStorage.removeItem(DRAFT_KEY)
+    }
+    return INITIAL_FORM
+  })
+
+  // Log para diagnóstico no console do usuário
+  useEffect(() => {
+    console.info('[DRAFT] Status do aviso:', showDraftNotice)
+    const raw = localStorage.getItem(DRAFT_KEY)
+    if (raw) console.info('[DRAFT] Conteúdo no localStorage:', JSON.parse(raw))
+    else console.info('[DRAFT] LocalStorage vazio')
+  }, [showDraftNotice])
 
 
   const [allClientes, setAllClientes] = useState<Cliente[]>([])
@@ -566,6 +612,30 @@ export default function NovaVisitaPage() {
     loadData()
     return () => { isMounted = false }
   }, [])
+
+  // 1. Recuperação Automática do Draft (Removido daqui e movido para a inicialização do useState)
+
+  // 2. Auto-save Silencioso (Debounced)
+  useEffect(() => {
+    // Só salva se houver algum conteúdo preenchido
+    if (!form.clienteId && !form.descricao && !form.resultados) return
+
+    const timer = setTimeout(() => {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        ...form,
+        draftTimestamp: Date.now()
+      }))
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [form])
+
+  const descartarDraft = () => {
+    localStorage.removeItem(DRAFT_KEY)
+    setForm(INITIAL_FORM)
+    setShowDraftNotice(false)
+    setEtapa(1)
+  }
 
   /* ── navegação entre etapas ── */
   function avancarEtapa1() {
@@ -656,6 +726,7 @@ export default function NovaVisitaPage() {
 
       setSaving(false)
       setSaved(true)
+      localStorage.removeItem(DRAFT_KEY)
       // Redirecionamento automático removido para dar controle ao usuário na tela de sucesso.
     } catch (error: unknown) {
       console.error('[ERROR][API] Erro ao submeter visita:', error)
@@ -730,20 +801,9 @@ export default function NovaVisitaPage() {
             onClick={() => {
               setSaved(false)
               setEtapa(1)
-              setForm({
-                clienteId: '',
-                contratoId: '',
-                projetoId: '',
-                status: 'realizada',
-                tipo_visita: 'rotineira',
-                modalidade: 'presencial',
-                duracao_minutos: 60,
-                data_hora: new Date().toISOString().slice(0, 16),
-                descricao: '',
-                resultados: '',
-                pendencias: [],
-              })
+              setForm(INITIAL_FORM)
               setSugestoes([])
+              localStorage.removeItem(DRAFT_KEY)
             }}
             className="w-full text-[#4A5568] text-xs font-bold uppercase tracking-widest py-4"
           >
@@ -756,7 +816,7 @@ export default function NovaVisitaPage() {
 
   /* ────────── LAYOUT BASE ────────── */
   return (
-    <main className="min-h-screen bg-[#07090D]">
+    <main className="min-h-screen bg-[#07090D] flex flex-col">
 
       {/* HEADER */}
       <div className="bg-[#07090D] border-b border-[#23272F] px-4 pt-10 pb-0">
@@ -775,8 +835,30 @@ export default function NovaVisitaPage() {
           </div>
         </div>
         <EtapaIndicador atual={etapa} />
-        
       </div>
+
+      {/* ── AVISO DE DRAFT RECUPERADO ── */}
+      {showDraftNotice && etapa === 1 && (
+        <div className="mx-6 mt-4 bg-[#0466C8]/20 border border-[#0466C8]/40 rounded-xl p-4 flex items-center justify-between shadow-lg backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <div className="size-8 rounded-full bg-[#0466C8] flex items-center justify-center shrink-0">
+              <RotateCcw size={16} className="text-white" />
+            </div>
+            <div>
+              <p className="text-white text-sm font-bold">Rascunho recuperado</p>
+              <p className="text-blue-200/70 text-[10px]">Você tem um preenchimento não finalizado.</p>
+            </div>
+          </div>
+          <button 
+            onClick={descartarDraft}
+            className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-[10px] uppercase tracking-wider font-black text-blue-300 transition-colors flex items-center gap-2"
+          >
+            <X size={12} /> Descartar
+          </button>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto px-6 py-6">
 
       {/* Toggle removido conforme nova orientação de fluxo separado */}
       
@@ -1128,6 +1210,7 @@ export default function NovaVisitaPage() {
           )}
         </div>
       )}
+      </div>
 
       {/* ════════════════════════════
           BOTÃO FIXO NO RODAPÉ

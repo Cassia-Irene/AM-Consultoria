@@ -6,6 +6,7 @@ import { ClientesService } from '@/services/clientes.service'
 import { ContratoService } from '@/services/contrato.service'
 import { VisitasService, type NovaVisitaInput } from '@/services/visitas.service'
 import { useLocalDraft } from '@/hooks/useLocalDraft'
+import { RotateCcw, X } from 'lucide-react'
 import type { Cliente } from '@/domain/cliente'
 import type { Contrato } from '@/domain/contrato'
 import type { TipoVisita } from '@/domain/visita'
@@ -19,6 +20,17 @@ export default function RegistroRapidoPage() {
 
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [contratos, setContratos] = useState<Contrato[]>([])
+  const [showDraftNotice, setShowDraftNotice] = useState(() => {
+    if (typeof window === 'undefined') return false
+    const saved = localStorage.getItem('draft_visita_rapida')
+    if (!saved) return false
+    try {
+      const draft = JSON.parse(saved)
+      return !!(draft.clienteId || draft.descricao || draft.pendenciaRapida)
+    } catch {
+      return false
+    }
+  })
 
   // Form State via Local Draft
   const [form, setForm, clearDraft] = useLocalDraft('visita_rapida', {
@@ -27,6 +39,11 @@ export default function RegistroRapidoPage() {
     descricao: '',
     pendenciaRapida: ''
   })
+
+  const descartarDraft = () => {
+    clearDraft()
+    setShowDraftNotice(false)
+  }
 
   useEffect(() => {
     async function loadData() {
@@ -159,6 +176,27 @@ export default function RegistroRapidoPage() {
         </button>
         <h1 className="text-white text-base font-bold">Relato Rápido</h1>
       </div>
+
+      {/* ── AVISO DE DRAFT RECUPERADO ── */}
+      {showDraftNotice && (
+        <div className="bg-[#0466C8]/20 border border-[#0466C8]/40 rounded-xl p-4 flex items-center justify-between shadow-lg backdrop-blur-md mb-6">
+          <div className="flex items-center gap-3">
+            <div className="size-8 rounded-full bg-[#0466C8] flex items-center justify-center shrink-0">
+              <RotateCcw size={16} className="text-white" />
+            </div>
+            <div>
+              <p className="text-white text-sm font-bold">Rascunho recuperado</p>
+              <p className="text-blue-200/70 text-[10px]">Você tem um relato não finalizado.</p>
+            </div>
+          </div>
+          <button 
+            onClick={descartarDraft}
+            className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-[10px] uppercase tracking-wider font-black text-blue-300 transition-colors flex items-center gap-2"
+          >
+            <X size={12} /> Descartar
+          </button>
+        </div>
+      )}
 
       {/* Toggle removido conforme nova orientação de fluxo separado */}
 

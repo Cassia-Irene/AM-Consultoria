@@ -12,8 +12,6 @@ import {
 
 import { DashboardTabs } from '@/components/DashboardTabs'
 import { VisitaRotinaCard } from '@/components/VisitaRotinaCard'
-import { AttentionPanel } from '@/components/AttentionPanel'
-import { type AttentionItem } from '@/services/analytics.service'
 
 // --- Componentes Locais ---
 
@@ -147,25 +145,22 @@ export default function DashboardPage() {
   const [visitsToday, setVisitsToday] = useState<TodayVisit[]>([])
   const [priorities, setPriorities] = useState<TopPriority[]>([])
   const [caosScores, setCaosScores] = useState<CaosScore[]>([])
-  const [attentionItems, setAttentionItems] = useState<AttentionItem[]>([])
 
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [s, today, p, cs, attention] = await Promise.all([
+        const [s, today, p, cs] = await Promise.all([
           AnalyticsService.getSummary(),
           AnalyticsService.getTodayAgenda(),
           AnalyticsService.getPriorities(),
-          AnalyticsService.getCaosScore(),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/intelligence/attention`).then(r => r.json())
+          AnalyticsService.getCaosScore()
         ])
         setSummary(s)
         setVisitsToday(today)
         setPriorities(p)
         setCaosScores(cs.filter(c => c.totalAlertas > 3)) // Apenas os críticos
-        setAttentionItems(attention)
       } catch (err) {
         console.error('Erro ao carregar dashboard:', err)
       } finally {
@@ -243,16 +238,6 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
-
-      {/* 🆕 CAMADA DE ATENÇÃO GLOBAL */}
-      {!loading && attentionItems.length > 0 && (
-        <AttentionPanel 
-          items={attentionItems} 
-          onItemClick={(id: number) => {
-            console.log('Click no contrato:', id)
-          }}
-        />
-      )}
 
       {/* Floating Action Bar */}
       <div className="fixed bottom-6 left-0 right-0 px-4 z-50">

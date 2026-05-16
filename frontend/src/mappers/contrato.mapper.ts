@@ -38,6 +38,7 @@ export function mapContrato(raw: ContratoRaw): Contrato {
     
     valor_mensal: Number(raw.valor_mensal || 0),
     observacoes_gerais: raw.observacoes_gerais || '',
+    status: (raw.data_fim && new Date(raw.data_fim) < new Date()) ? 'inativo' : 'ativo',
 
     // Inteligência (Back-First)
     indice_urgencia: raw.indice_urgencia,

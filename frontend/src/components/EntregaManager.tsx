@@ -29,7 +29,15 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
     setLoading(true)
     const data = await EntregasService.getById(id)
     if (data) {
-      setEntrega(data)
+      setEntrega({
+        id: String(data.id_entrega),
+        projetoId: String(data.id_projeto),
+        descricao: data.descricao,
+        data_entrega_prevista: data.data_entrega_prevista,
+        data_entrega_real: data.data_entrega_real || undefined,
+        entregue: data.entregue,
+        referencia_doc: data.referencia_doc || undefined
+      })
       setDescricao(data.descricao)
       setDataPrevista(data.data_entrega_prevista.split('T')[0])
       setReferenciaDoc(data.referencia_doc || '')
@@ -50,7 +58,7 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
         entregue: newStatus,
         data_entrega_real: newStatus ? new Date().toISOString().split('T')[0] : null
       }
-      await EntregasService.update(entrega.id, updateData)
+      await EntregasService.update(Number(entrega.id), updateData)
       await loadEntrega()
       onUpdate?.()
     } catch (err) {
@@ -70,7 +78,7 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
       }
 
       if (id) {
-        await EntregasService.update(id, payload)
+        await EntregasService.update(Number(id), payload)
         setEditMode(false)
         await loadEntrega()
       } else if (projetoId) {

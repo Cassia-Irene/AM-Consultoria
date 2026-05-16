@@ -194,22 +194,6 @@ function ProjetoCard({ projeto: p }: { projeto: Projeto }) {
         </div>
       </div>
 
-      {/* Radar de Saúde Operacional (Estado de Tensão/Atrito) */}
-      {p.status === 'em andamento' && p.score_operacional !== undefined && (
-        <div className="mb-4 bg-white/5 rounded-xl p-2 border border-white/5">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">Saúde Operacional</span>
-              {p.fase_operacional && (
-                <span className="text-[8px] font-black uppercase tracking-tighter text-zinc-500">• {p.fase_operacional}</span>
-              )}
-            </div>
-            <span className={`text-[9px] font-black uppercase ${p.score_operacional < 50 ? 'text-rose-500' : p.score_operacional < 80 ? 'text-amber-500' : 'text-emerald-400'}`}>
-              Score: {p.score_operacional}
-            </span>
-          </div>
-        </div>
-      )}
 
       {/* Linha 3: grid de metadados */}
       <div className="grid grid-cols-2 gap-3 pt-4 border-t border-zinc-800/50">

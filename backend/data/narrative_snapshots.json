@@ -1684,5 +1684,152 @@
       "desgaste_longitudinal": "crítico",
       "snapshot_recente": "2026-05-14"
     }
+  },
+  "contrato_301": {
+    "2026-05-15": {
+      "perfil_pragmatico": "operação_de_alto_atrito",
+      "desgaste_longitudinal": 100,
+      "evidencias": [
+        "Análise de eventos críticos e interações de campo"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": false,
+      "indice_urgencia": 100,
+      "indice_desgaste": 100,
+      "perfil": "operação_de_alto_atrito",
+      "motivo_saude": "Em conformidade",
+      "intensidade_operacional": "alta",
+      "desgaste_acumulado": 100,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
+    }
+  },
+  "contrato_295": {
+    "2026-05-15": {
+      "perfil_pragmatico": "operação_de_alto_atrito",
+      "desgaste_longitudinal": 100,
+      "evidencias": [
+        "Análise de eventos críticos e interações de campo"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": false,
+      "indice_urgencia": 100,
+      "indice_desgaste": 100,
+      "perfil": "operação_de_alto_atrito",
+      "motivo_saude": "Em conformidade",
+      "intensidade_operacional": "alta",
+      "desgaste_acumulado": 100,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
+    }
+  },
+  "contrato_300": {
+    "2026-05-15": {
+      "perfil_pragmatico": "operação_de_alto_atrito",
+      "desgaste_longitudinal": 100,
+      "evidencias": [
+        "Análise de eventos críticos e interações de campo"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": false,
+      "indice_urgencia": 100,
+      "indice_desgaste": 100,
+      "perfil": "operação_de_alto_atrito",
+      "motivo_saude": "Em conformidade",
+      "intensidade_operacional": "alta",
+      "desgaste_acumulado": 100,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
+    }
+  },
+  "contrato_297": {
+    "2026-05-15": {
+      "perfil_pragmatico": "operação_de_alto_atrito",
+      "desgaste_longitudinal": 100,
+      "evidencias": [
+        "Análise de eventos críticos e interações de campo"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": false,
+      "indice_urgencia": 100,
+      "indice_desgaste": 100,
+      "perfil": "operação_de_alto_atrito",
+      "motivo_saude": "Em conformidade",
+      "intensidade_operacional": "alta",
+      "desgaste_acumulado": 100,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
+    }
+  },
+  "contrato_298": {
+    "2026-05-15": {
+      "perfil_pragmatico": "operação_de_alto_atrito",
+      "desgaste_longitudinal": 100,
+      "evidencias": [
+        "Análise de eventos críticos e interações de campo"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": false,
+      "indice_urgencia": 100,
+      "indice_desgaste": 100,
+      "perfil": "operação_de_alto_atrito",
+      "motivo_saude": "Em conformidade",
+      "intensidade_operacional": "alta",
+      "desgaste_acumulado": 100,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
+    }
+  },
+  "contrato_299": {
+    "2026-05-15": {
+      "perfil_pragmatico": "operação_de_alto_atrito",
+      "desgaste_longitudinal": 100,
+      "evidencias": [
+        "Análise de eventos críticos e interações de campo"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": false,
+      "indice_urgencia": 100,
+      "indice_desgaste": 100,
+      "perfil": "operação_de_alto_atrito",
+      "motivo_saude": "Em conformidade",
+      "intensidade_operacional": "alta",
+      "desgaste_acumulado": 100,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
+    }
+  },
+  "contrato_296": {
+    "2026-05-15": {
+      "perfil_pragmatico": "operação_de_alto_atrito",
+      "desgaste_longitudinal": 100,
+      "evidencias": [
+        "Análise de eventos críticos e interações de campo"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": false,
+      "indice_urgencia": 100,
+      "indice_desgaste": 100,
+      "perfil": "operação_de_alto_atrito",
+      "motivo_saude": "Em conformidade",
+      "intensidade_operacional": "alta",
+      "desgaste_acumulado": 100,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
+    }
   }
 }

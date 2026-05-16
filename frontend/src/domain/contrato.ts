@@ -10,6 +10,7 @@ export type Contrato = {
   
   valor_mensal: number
   observacoes_gerais: string
+  status?: 'ativo' | 'suspenso' | 'inativo'
 
   // Inteligência (Back-First)
   indice_urgencia?: number

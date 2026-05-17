@@ -65,6 +65,167 @@
       "falso_movimento": false,
       "desgaste_longitudinal": "crítico",
       "snapshot_recente": "2026-05-14"
+    },
+    "2026-05-17": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "fluxo_ativo",
+      "evidencias": [
+        "Backlog envelhecido (+19d média)."
+      ],
+      "evidencias_resumidas": [
+        "Backlog envelhecido (+19d média)."
+      ],
+      "cadeia_causal": [
+        "2 atrasos acumulados elevaram a tensão operacional."
+      ],
+      "impacto_do_override": "Processamento analítico puro",
+      "audit_history_resumo": [
+        {
+          "timestamp": "2026-05-15T01:35:14.548676",
+          "entity_type": "projeto",
+          "entity_id": 946,
+          "user": "Adriano",
+          "changes": {
+            "titulo": {
+              "de": "Reorganização Operacional Assistencial",
+              "para": ""
+            },
+            "status": {
+              "de": "em andamento",
+              "para": "Pausado"
+            },
+            "data_inicio": {
+              "de": "2026-04-23",
+              "para": "2026-05-15"
+            },
+            "observacoes_gerais": {
+              "de": "None",
+              "para": ""
+            }
+          },
+          "audit_type": "governance_intervention"
+        },
+        {
+          "timestamp": "2026-05-15T01:56:39.771253",
+          "entity_type": "projeto",
+          "entity_id": 946,
+          "user": "Adriano",
+          "changes": {
+            "valor_total": {
+              "de": "3000.00",
+              "para": "3000"
+            }
+          },
+          "audit_type": "factual_update"
+        },
+        {
+          "timestamp": "2026-05-15T01:56:59.825564",
+          "entity_type": "projeto",
+          "entity_id": 946,
+          "user": "Adriano",
+          "changes": {
+            "valor_total": {
+              "de": "3000.00",
+              "para": "3000"
+            }
+          },
+          "audit_type": "factual_update"
+        }
+      ],
+      "motivo_auditavel": "Backlog envelhecido (+19d média).",
+      "motivo_auditavel_resumido": "Backlog envelhecido (+19d média).",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 24,
+      "score_operacional": 61,
+      "percentual_conclusao": 50,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 2,
+      "dias_sem_progresso": 19,
+      "dias_sem_movimento": 2,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo condicionado a atrasos",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "backlog_meta": {
+        "aging_medio": 19,
+        "itens_criticos": 1
+      },
+      "timeline": [
+        {
+          "data": "2026-05-15T01:56:59.825564",
+          "tipo": "governança",
+          "label": "Gov: Adriano",
+          "impacto": "neutro"
+        },
+        {
+          "data": "2026-05-15T01:56:39.771253",
+          "tipo": "governança",
+          "label": "Gov: Adriano",
+          "impacto": "neutro"
+        },
+        {
+          "data": "2026-05-15T01:35:14.548676",
+          "tipo": "governança",
+          "label": "Gov: Adriano",
+          "impacto": "neutro"
+        },
+        {
+          "data": "2026-05-15",
+          "tipo": "entrega_concluida",
+          "label": "Entrega: Protocolo de medicação validado",
+          "impacto": "positivo"
+        },
+        {
+          "data": "2026-05-14",
+          "tipo": "entrega_concluida",
+          "label": "Entrega: Mapeamento de riscos concluído",
+          "impacto": "positivo"
+        },
+        {
+          "data": "2026-05-04",
+          "tipo": "evento_critico",
+          "label": "Crise: Instabilidade: Alta rotatividade na enfermagem prejudicando processos",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-05-01",
+          "tipo": "evento_critico",
+          "label": "Crise: Tensão institucional: Direção relutante em validar protocolos",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-04-28",
+          "tipo": "evento_critico",
+          "label": "Crise: Tensão institucional: Direção relutante em validar protocolos",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-04-13",
+          "tipo": "atraso_critico",
+          "label": "Atraso Crítico: Dossiê técnico para VISA finalizado (+34d)",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-04-01",
+          "tipo": "evento_critico",
+          "label": "Crise: Crise: Familiares questionando conduta técnica",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-03-26",
+          "tipo": "evento_critico",
+          "label": "Crise: Incidente: Queda de residente sem registro imediato",
+          "impacto": "negativo"
+        }
+      ],
+      "esforco_vs_resultado": "equilibrado",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "alto",
+      "snapshot_recente": "2026-05-15"
     }
   },
   "projeto_948": {
@@ -324,6 +485,201 @@
       "falso_movimento": false,
       "desgaste_longitudinal": "alto",
       "snapshot_recente": "2026-05-15"
+    },
+    "2026-05-17": {
+      "ritmo_operacional": "em_atrito",
+      "fase_operacional": "crise_operacional",
+      "evidencias": [
+        "Backlog envelhecido (+19d média).",
+        "Inércia operacional: zero entregas nos últimos 15 dias."
+      ],
+      "evidencias_resumidas": [
+        "Backlog envelhecido (+19d média).",
+        "Inércia operacional: zero entregas nos últimos 15 dias."
+      ],
+      "cadeia_causal": [
+        "3 atrasos acumulados elevaram a tensão operacional."
+      ],
+      "impacto_do_override": "Processamento analítico puro",
+      "audit_history_resumo": [
+        {
+          "timestamp": "2026-05-15T04:10:11.842067",
+          "entity_type": "projeto",
+          "entity_id": 948,
+          "user": "Adriano",
+          "changes": {
+            "valor_total": {
+              "de": "1500.00",
+              "para": "1500"
+            },
+            "status": {
+              "de": "em andamento",
+              "para": "Pausado"
+            }
+          },
+          "audit_type": "factual_update"
+        },
+        {
+          "timestamp": "2026-05-15T04:12:06.172428",
+          "entity_type": "projeto",
+          "entity_id": 948,
+          "user": "Adriano",
+          "changes": {
+            "valor_total": {
+              "de": "1500.00",
+              "para": "1500"
+            },
+            "status": {
+              "de": "em andamento",
+              "para": "cancelado"
+            }
+          },
+          "audit_type": "factual_update"
+        },
+        {
+          "timestamp": "2026-05-15T04:12:13.790491",
+          "entity_type": "projeto",
+          "entity_id": 948,
+          "user": "Adriano",
+          "changes": {
+            "valor_total": {
+              "de": "1500.00",
+              "para": "1500"
+            },
+            "status": {
+              "de": "cancelado",
+              "para": "em andamento"
+            }
+          },
+          "audit_type": "factual_update"
+        },
+        {
+          "timestamp": "2026-05-15T05:00:52.698795",
+          "entity_type": "projeto",
+          "entity_id": 948,
+          "user": "Adriano",
+          "changes": {
+            "valor_total": {
+              "de": "1500.00",
+              "para": "1500"
+            }
+          },
+          "audit_type": "factual_update"
+        },
+        {
+          "timestamp": "2026-05-15T05:10:34.162774",
+          "entity_type": "projeto",
+          "entity_id": 948,
+          "user": "Adriano",
+          "changes": {
+            "valor_total": {
+              "de": "1500.00",
+              "para": "1500"
+            }
+          },
+          "audit_type": "factual_update"
+        }
+      ],
+      "motivo_auditavel": "Backlog envelhecido (+19d média).",
+      "motivo_auditavel_resumido": "Backlog envelhecido (+19d média).",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": true,
+      "score_tensao": 36,
+      "score_operacional": 51,
+      "percentual_conclusao": 0,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 3,
+      "dias_sem_progresso": 19,
+      "dias_sem_movimento": 19,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo condicionado a atrasos",
+      "tendencia_tensao": "alta",
+      "tendencia": "estável",
+      "reincidencia": "Atrasos recorrentes detectados",
+      "backlog_meta": {
+        "aging_medio": 19,
+        "itens_criticos": 2
+      },
+      "timeline": [
+        {
+          "data": "2026-05-15T05:10:34.162774",
+          "tipo": "governança",
+          "label": "Gov: Adriano",
+          "impacto": "neutro"
+        },
+        {
+          "data": "2026-05-15T05:00:52.698795",
+          "tipo": "governança",
+          "label": "Gov: Adriano",
+          "impacto": "neutro"
+        },
+        {
+          "data": "2026-05-15T04:12:13.790491",
+          "tipo": "governança",
+          "label": "Gov: Adriano",
+          "impacto": "neutro"
+        },
+        {
+          "data": "2026-05-15T04:12:06.172428",
+          "tipo": "governança",
+          "label": "Gov: Adriano",
+          "impacto": "neutro"
+        },
+        {
+          "data": "2026-05-15T04:10:11.842067",
+          "tipo": "governança",
+          "label": "Gov: Adriano",
+          "impacto": "neutro"
+        },
+        {
+          "data": "2026-05-11",
+          "tipo": "evento_critico",
+          "label": "Crise: Colapso no projeto Revisão do fluxo RAAS: Tensão institucional: Direção relutante em validar protocolos",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-05-11",
+          "tipo": "evento_critico",
+          "label": "Crise: Colapso no projeto Organização do acompanhamento de usuários intensivos: Tensão institucional: Direção relutante em validar protocolos",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-05-09",
+          "tipo": "evento_critico",
+          "label": "Crise: Tensão no Projeto: Revisão do fluxo RAAS. Instabilidade: Alta rotatividade na enfermagem prejudicando processos",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-05-03",
+          "tipo": "atraso_critico",
+          "label": "Atraso Crítico: !!! Mapeamento de riscos concluído (+14d)",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-05-01",
+          "tipo": "evento_critico",
+          "label": "Crise: Gargalo documental: Prontuários sem assinatura técnica acumulados",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-04-28",
+          "tipo": "atraso_critico",
+          "label": "Atraso Crítico: !!! Protocolo de medicação validado (+19d)",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-04-23",
+          "tipo": "atraso_critico",
+          "label": "Atraso Crítico: !!! Dossiê técnico para VISA finalizado (+24d)",
+          "impacto": "negativo"
+        }
+      ],
+      "esforco_vs_resultado": "equilibrado",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "alto",
+      "snapshot_recente": "2026-05-16"
     }
   },
   "projeto_950": {
@@ -2348,6 +2704,25 @@
       "tendencia_relacionamento": "estável",
       "dependencia_operacional": "nominal",
       "capacidade_recuperacao": "estável"
+    },
+    "2026-05-17": {
+      "perfil_pragmatico": "operação_de_alto_atrito",
+      "desgaste_longitudinal": 100,
+      "evidencias": [
+        "Análise de eventos críticos e interações de campo"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": false,
+      "indice_urgencia": 100,
+      "indice_desgaste": 100,
+      "perfil": "operação_de_alto_atrito",
+      "motivo_saude": "Em conformidade",
+      "intensidade_operacional": "alta",
+      "desgaste_acumulado": 100,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
     }
   },
   "contrato_295": {
@@ -2371,6 +2746,25 @@
       "capacidade_recuperacao": "estável"
     },
     "2026-05-16": {
+      "perfil_pragmatico": "operação_de_alto_atrito",
+      "desgaste_longitudinal": 100,
+      "evidencias": [
+        "Análise de eventos críticos e interações de campo"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": false,
+      "indice_urgencia": 100,
+      "indice_desgaste": 100,
+      "perfil": "operação_de_alto_atrito",
+      "motivo_saude": "Em conformidade",
+      "intensidade_operacional": "alta",
+      "desgaste_acumulado": 100,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
+    },
+    "2026-05-17": {
       "perfil_pragmatico": "operação_de_alto_atrito",
       "desgaste_longitudinal": 100,
       "evidencias": [
@@ -2428,6 +2822,25 @@
       "tendencia_relacionamento": "estável",
       "dependencia_operacional": "nominal",
       "capacidade_recuperacao": "estável"
+    },
+    "2026-05-17": {
+      "perfil_pragmatico": "operação_de_alto_atrito",
+      "desgaste_longitudinal": 100,
+      "evidencias": [
+        "Análise de eventos críticos e interações de campo"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": false,
+      "indice_urgencia": 100,
+      "indice_desgaste": 100,
+      "perfil": "operação_de_alto_atrito",
+      "motivo_saude": "Em conformidade",
+      "intensidade_operacional": "alta",
+      "desgaste_acumulado": 100,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
     }
   },
   "contrato_297": {
@@ -2451,6 +2864,25 @@
       "capacidade_recuperacao": "estável"
     },
     "2026-05-16": {
+      "perfil_pragmatico": "operação_de_alto_atrito",
+      "desgaste_longitudinal": 100,
+      "evidencias": [
+        "Análise de eventos críticos e interações de campo"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": false,
+      "indice_urgencia": 100,
+      "indice_desgaste": 100,
+      "perfil": "operação_de_alto_atrito",
+      "motivo_saude": "Em conformidade",
+      "intensidade_operacional": "alta",
+      "desgaste_acumulado": 100,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
+    },
+    "2026-05-17": {
       "perfil_pragmatico": "operação_de_alto_atrito",
       "desgaste_longitudinal": 100,
       "evidencias": [
@@ -2508,6 +2940,25 @@
       "tendencia_relacionamento": "estável",
       "dependencia_operacional": "nominal",
       "capacidade_recuperacao": "estável"
+    },
+    "2026-05-17": {
+      "perfil_pragmatico": "operação_de_alto_atrito",
+      "desgaste_longitudinal": 100,
+      "evidencias": [
+        "Análise de eventos críticos e interações de campo"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": false,
+      "indice_urgencia": 100,
+      "indice_desgaste": 100,
+      "perfil": "operação_de_alto_atrito",
+      "motivo_saude": "Em conformidade",
+      "intensidade_operacional": "alta",
+      "desgaste_acumulado": 100,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
     }
   },
   "contrato_299": {
@@ -2548,6 +2999,25 @@
       "tendencia_relacionamento": "estável",
       "dependencia_operacional": "nominal",
       "capacidade_recuperacao": "estável"
+    },
+    "2026-05-17": {
+      "perfil_pragmatico": "operação_de_alto_atrito",
+      "desgaste_longitudinal": 100,
+      "evidencias": [
+        "Análise de eventos críticos e interações de campo"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": false,
+      "indice_urgencia": 100,
+      "indice_desgaste": 100,
+      "perfil": "operação_de_alto_atrito",
+      "motivo_saude": "Em conformidade",
+      "intensidade_operacional": "alta",
+      "desgaste_acumulado": 100,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
     }
   },
   "contrato_296": {
@@ -2571,6 +3041,25 @@
       "capacidade_recuperacao": "estável"
     },
     "2026-05-16": {
+      "perfil_pragmatico": "operação_de_alto_atrito",
+      "desgaste_longitudinal": 100,
+      "evidencias": [
+        "Análise de eventos críticos e interações de campo"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": false,
+      "indice_urgencia": 100,
+      "indice_desgaste": 100,
+      "perfil": "operação_de_alto_atrito",
+      "motivo_saude": "Em conformidade",
+      "intensidade_operacional": "alta",
+      "desgaste_acumulado": 100,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
+    },
+    "2026-05-17": {
       "perfil_pragmatico": "operação_de_alto_atrito",
       "desgaste_longitudinal": 100,
       "evidencias": [

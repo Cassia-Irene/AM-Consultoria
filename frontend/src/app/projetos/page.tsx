@@ -83,6 +83,7 @@ function ProjetosList() {
 
   return (
     <main className="min-h-screen bg-[#07090D] text-zinc-300 pb-32">
+      {/* ── HEADER ── */}
       <header className="px-5 pt-12 pb-4">
         <div className="flex items-end justify-end mb-2">
           <button 

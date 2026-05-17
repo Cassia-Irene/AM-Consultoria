@@ -11,7 +11,7 @@ import { EntregaManager } from '@/components/EntregaManager'
 import { ProjectMarcoList } from '@/components/ProjectMarcoList'
 import { ProjectOperationalOverrides } from '@/components/ProjectOperationalOverrides'
 import { ProjectTimeline } from '@/components/ProjectTimeline'
-import { ArrowUpRight, Zap, FileText, AlertCircle, DollarSign, Package, Edit3, CheckCircle2, History, TrendingUp, Plus, Target } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Zap, FileText, AlertCircle, DollarSign, Package, Edit3, CheckCircle2, History, TrendingUp, Plus, Target } from 'lucide-react'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -151,9 +151,10 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
         <div className="flex items-center justify-between mb-6">
           <Link 
             href="/projetos" 
-            className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-sky-500 transition-colors"
+            className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-sky-500 transition-colors inline-flex items-center gap-1.5"
           >
-            ← Voltar para projetos
+            <ArrowLeft size={10} strokeWidth={3} />
+            Voltar para projetos
           </Link>
           <div className="flex items-center gap-3">
              {(projeto.isExtra || extras.length > 0) && (

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { VisitasService } from '@/services/visitas.service'
 import type { Visita } from '@/domain/visita'
+import { ArrowLeft } from 'lucide-react'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -43,9 +44,10 @@ export default function VisitaDetalhePage({ params }: PageProps) {
       <header className="px-6 pt-12 pb-6 border-b border-zinc-800/50 bg-zinc-900/20 sticky top-0 z-10 backdrop-blur-md">
         <button 
           onClick={() => router.back()}
-          className="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-sky-500 transition-colors mb-4 flex items-center gap-2"
+          className="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-sky-500 transition-colors mb-4 flex items-center gap-1.5"
         >
-          ← Voltar
+          <ArrowLeft size={10} strokeWidth={3} />
+          Voltar
         </button>
         <div className="flex items-center justify-between">
           <div>

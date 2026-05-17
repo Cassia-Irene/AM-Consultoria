@@ -3076,5 +3076,26 @@
       "dependencia_operacional": "nominal",
       "capacidade_recuperacao": "estável"
     }
+  },
+  "contrato_8": {
+    "2026-05-16": {
+      "perfil_pragmatico": "nominal",
+      "desgaste_longitudinal": 0,
+      "evidencias": [
+        "Análise de eventos críticos e interações de campo"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": false,
+      "indice_urgencia": 0,
+      "indice_desgaste": 0,
+      "perfil": "nominal",
+      "motivo_saude": "Em conformidade",
+      "intensidade_operacional": "normal",
+      "desgaste_acumulado": 0,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
+    }
   }
 }

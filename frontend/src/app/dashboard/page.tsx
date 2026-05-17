@@ -12,8 +12,6 @@ import {
 
 import { DashboardTabs } from '@/components/DashboardTabs'
 import { VisitaRotinaCard } from '@/components/VisitaRotinaCard'
-import { AttentionPanel } from '@/components/AttentionPanel'
-import { type AttentionItem } from '@/services/analytics.service'
 
 // --- Componentes Locais ---
 
@@ -147,25 +145,23 @@ export default function DashboardPage() {
   const [visitsToday, setVisitsToday] = useState<TodayVisit[]>([])
   const [priorities, setPriorities] = useState<TopPriority[]>([])
   const [caosScores, setCaosScores] = useState<CaosScore[]>([])
-  const [attentionItems, setAttentionItems] = useState<AttentionItem[]>([])
 
   const [loading, setLoading] = useState(true)
+  const [showAllPriorities, setShowAllPriorities] = useState(false)
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [s, today, p, cs, attention] = await Promise.all([
+        const [s, today, p, cs] = await Promise.all([
           AnalyticsService.getSummary(),
           AnalyticsService.getTodayAgenda(),
           AnalyticsService.getPriorities(),
-          AnalyticsService.getCaosScore(),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/intelligence/attention`).then(r => r.json())
+          AnalyticsService.getCaosScore()
         ])
         setSummary(s)
         setVisitsToday(today)
         setPriorities(p)
         setCaosScores(cs.filter(c => c.totalAlertas > 3)) // Apenas os críticos
-        setAttentionItems(attention)
       } catch (err) {
         console.error('Erro ao carregar dashboard:', err)
       } finally {
@@ -195,6 +191,10 @@ export default function DashboardPage() {
     return acc
   }, new Map<string, TopPriority[]>())
 
+  const allClientGroups = Array.from(prioritiesByClient.entries())
+  const visibleGroups = showAllPriorities ? allClientGroups : allClientGroups.slice(0, 3)
+  const hiddenGroupsCount = allClientGroups.length - 3
+
 
   return (
     <main className="min-h-screen bg-[#07090D] pb-32">
@@ -216,10 +216,18 @@ export default function DashboardPage() {
           <section>
             <SectionHeader label="Ações Imediatas" count={otherPriorities.length} cor="red" href="/pendencias" />
             <div className="space-y-4">
-              {Array.from(prioritiesByClient.entries()).map(([cliente, items]) => (
+              {visibleGroups.map(([cliente, items]) => (
                 <GrupoCliente key={cliente} clienteNome={cliente} items={items} />
               ))}
             </div>
+            {!showAllPriorities && hiddenGroupsCount > 0 && (
+              <button
+                onClick={() => setShowAllPriorities(true)}
+                className="mt-3 w-full py-3 text-[11px] font-black uppercase tracking-widest text-[#7D8597] border border-dashed border-[#23272F] rounded-2xl active:bg-[#0d1117] transition-colors"
+              >
+                + {hiddenGroupsCount} cliente{hiddenGroupsCount > 1 ? 's' : ''} com pendências
+              </button>
+            )}
           </section>
         )}
 
@@ -243,16 +251,6 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
-
-      {/* 🆕 CAMADA DE ATENÇÃO GLOBAL */}
-      {!loading && attentionItems.length > 0 && (
-        <AttentionPanel 
-          items={attentionItems} 
-          onItemClick={(id: number) => {
-            console.log('Click no contrato:', id)
-          }}
-        />
-      )}
 
       {/* Floating Action Bar */}
       <div className="fixed bottom-6 left-0 right-0 px-4 z-50">

@@ -108,8 +108,8 @@ function ContratoDiff({ antigo, novo }: { antigo: Contrato; novo: Contrato }) {
         <p className="text-[9px] font-black uppercase tracking-widest text-sky-500">Nova Versão ({novo.id})</p>
       </div>
       {fields.map(f => {
-        const valDe = (antigo as Record<string, string | number | boolean | undefined | null>)[f.key]
-        const valPara = (novo as Record<string, string | number | boolean | undefined | null>)[f.key]
+        const valDe = (antigo as unknown as Record<string, string | number | boolean | undefined | null>)[f.key]
+        const valPara = (novo as unknown as Record<string, string | number | boolean | undefined | null>)[f.key]
         const mudou = valDe !== valPara
         
         if (!mudou) return null

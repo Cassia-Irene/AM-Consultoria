@@ -32,18 +32,18 @@ export function OperationalTabs<T extends string>({
             key={option.value}
             onClick={() => onChange(option.value)}
             className={`
-              shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-2
+              shrink-0 px-4 py-2 rounded-xl text-xs md:text-[12px] font-bold transition-all border flex items-center gap-2
               ${isActive 
                 ? 'bg-zinc-800 text-white border-zinc-700 shadow-md' 
-                : 'bg-zinc-900/40 text-zinc-500 border-zinc-800 hover:bg-zinc-800/80 hover:text-zinc-300'
+                : 'bg-zinc-900/40 text-zinc-400 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-300'
               }
             `}
           >
             {option.label}
             {option.count !== undefined && (
               <span className={`
-                text-[10px] px-1.5 py-0.5 rounded-md font-black
-                ${isActive ? 'bg-zinc-700 text-zinc-400' : 'bg-zinc-800/50 text-zinc-700'}
+                text-[10px] md:text-[11px] px-1.5 py-0.5 rounded-md font-bold
+                ${isActive ? 'bg-zinc-700 text-zinc-200' : 'bg-zinc-800 text-zinc-400'}
               `}>
                 {option.count}
               </span>

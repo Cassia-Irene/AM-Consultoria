@@ -64,7 +64,7 @@ export function OperationalDrawer({
                 <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-700 bg-zinc-900 px-2 py-1 rounded">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-600 bg-zinc-900 px-2 py-1 rounded">
               Detalhe Contextual
             </span>
           </div>

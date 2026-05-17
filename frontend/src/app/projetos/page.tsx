@@ -84,20 +84,17 @@ function ProjetosList() {
   return (
     <main className="min-h-screen bg-[#07090D] text-zinc-300 pb-32">
       <header className="px-5 pt-12 pb-4">
-        <div className="flex items-start justify-between mb-2">
-          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600">
-            AM Consultoria
-          </p>
+        <div className="flex items-end justify-end mb-2">
           <button 
             onClick={() => setIsDrawerOpen(true)}
             className="flex items-center gap-2 bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all shadow-lg shadow-sky-900/20"
           >
-            <Plus size={14} />
+            <Plus className="w-5 h-5 color-white" />
             Novo Projeto
           </button>
         </div>
         <h1 className="text-white text-3xl font-black tracking-tight">Projetos</h1>
-        <p className="text-zinc-500 text-sm mt-1">Entregas e iniciativas vinculadas a contratos</p>
+        <p className="text-zinc-400 text-sm mt-2">Entregas e iniciativas vinculadas a contratos</p>
       </header>
 
       <div className="px-5 mb-4">
@@ -149,9 +146,9 @@ function ProjetoCard({ projeto: p }: { projeto: Projeto }) {
         <div className="flex flex-col gap-1">
           <h2 className="text-white font-bold text-base leading-tight">{p.titulo}</h2>
           {p.nivel_tensao === 'crítico' && (
-            <div className="flex items-center gap-1.5 text-red-500">
+            <div className="mt-4 flex items-center gap-1.5 text-red-500">
               <AlertTriangle size={12} strokeWidth={3} />
-              <span className="text-[10px] font-black uppercase tracking-tighter">
+              <span className="text-[10px] font-black uppercase">
                 Operação Crítica
               </span>
             </div>
@@ -173,7 +170,7 @@ function ProjetoCard({ projeto: p }: { projeto: Projeto }) {
 
       {/* Linha 2: descrição */}
       {p.descricao && (
-        <p className="text-zinc-500 text-sm leading-relaxed mb-4 line-clamp-2">
+        <p className="text-white/80 text-sm leading-relaxed mb-4 line-clamp-2">
           {p.descricao}
         </p>
       )}
@@ -181,7 +178,7 @@ function ProjetoCard({ projeto: p }: { projeto: Projeto }) {
       {/* Avanço Factual (Progresso Determinístico) */}
       <div className="mb-4">
         <div className="flex justify-between items-center mb-1.5">
-          <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Avanço Factual</span>
+          <span className="text-[9px] font-black uppercase tracking-widest text-zinc-300">Avanço Factual</span>
           <span className="text-[10px] font-black text-white">
             {p.percentual_conclusao || 0}%
           </span>
@@ -193,7 +190,6 @@ function ProjetoCard({ projeto: p }: { projeto: Projeto }) {
           />
         </div>
       </div>
-
 
       {/* Linha 3: grid de metadados */}
       <div className="grid grid-cols-2 gap-3 pt-4 border-t border-zinc-800/50">
@@ -215,16 +211,16 @@ function ProjetoCard({ projeto: p }: { projeto: Projeto }) {
       {/* Explicabilidade Interpretativa (Substitui Observações Brutas) */}
       {(p.motivo_auditavel_resumido || p.observacoes_gerais) && (
         <div className="mt-4 bg-zinc-900/40 border border-zinc-800/40 rounded-xl px-4 py-3">
-          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1">
+          <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-200 mb-1">
             {p.override_ativo ? 'Governança Humana' : 'Leitura Operacional'}
           </p>
-          <p className="text-zinc-400 text-xs font-medium italic leading-relaxed">
+          <p className="text-sky-500 text-xs md:text-sm font-medium italic leading-relaxed">
             &quot;{p.motivo_auditavel_resumido || p.observacoes_gerais}&quot;
           </p>
           {p.evidencias_resumidas && p.evidencias_resumidas.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-2">
               {p.evidencias_resumidas.map((ev, i) => (
-                <span key={i} className="text-[8px] font-bold text-zinc-500 uppercase tracking-tighter">
+                <span key={i} className="text-[8px] md:text-[10px] font-bold text-zinc-300 uppercase">
                   • {ev}
                 </span>
               ))}
@@ -239,8 +235,8 @@ function ProjetoCard({ projeto: p }: { projeto: Projeto }) {
 function MetaItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-0.5">{label}</p>
-      <p className="text-zinc-300 text-sm font-bold">{value}</p>
+      <p className="text-[9px] font-black uppercase tracking-widest text-sky-600 mb-0.5">{label}</p>
+      <p className="text-zinc-200 text-sm font-bold">{value}</p>
     </div>
   )
 }
@@ -291,7 +287,7 @@ function ErrorBanner({ message }: { message: string }) {
 function EmptyState() {
   return (
     <div className="py-20 text-center">
-      <p className="text-zinc-600 text-sm font-medium">Nenhum projeto encontrado.</p>
+      <p className="text-zinc-300 text-sm font-medium">Nenhum projeto encontrado.</p>
     </div>
   )
 }

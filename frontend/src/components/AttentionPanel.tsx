@@ -7,14 +7,19 @@ import { type AttentionItem } from '@/services/analytics.service'
 interface AttentionPanelProps {
   items: AttentionItem[]
   onItemClick?: (id: number) => void
+  isInline?: boolean
 }
 
-export const AttentionPanel: React.FC<AttentionPanelProps> = ({ items, onItemClick }) => {
+export const AttentionPanel: React.FC<AttentionPanelProps> = ({ items, onItemClick, isInline }) => {
   if (!items || items.length === 0) return null
 
+  const containerClasses = isInline
+    ? "w-full mb-8"
+    : "fixed bottom-32 left-4 right-4 z-40 max-w-md mx-auto"
+
   return (
-    <div className="fixed bottom-32 left-4 right-4 z-40 max-w-md mx-auto">
-      <div className="bg-[#0D1117]/95 backdrop-blur-md border border-rose-500/30 rounded-3xl shadow-2xl shadow-rose-950/20 overflow-hidden">
+    <div className={containerClasses}>
+      <div className={`bg-[#0D1117]/95 border border-rose-500/30 rounded-3xl shadow-2xl shadow-rose-950/20 overflow-hidden ${!isInline ? 'backdrop-blur-md' : ''}`}>
         {/* Header */}
         <div className="px-5 py-3 border-b border-rose-500/10 flex items-center justify-between bg-rose-500/5">
           <div className="flex items-center gap-2">
@@ -27,7 +32,7 @@ export const AttentionPanel: React.FC<AttentionPanelProps> = ({ items, onItemCli
         </div>
 
         {/* List */}
-        <div className="max-h-[320px] overflow-y-auto scrollbar-hide">
+        <div className={`${isInline ? 'max-h-[500px]' : 'max-h-[320px]'} overflow-y-auto scrollbar-hide`}>
           {items.map((item) => (
             <div 
               key={item.idContrato}
@@ -79,7 +84,7 @@ export const AttentionPanel: React.FC<AttentionPanelProps> = ({ items, onItemCli
         {/* Footer */}
         <div className="p-3 bg-zinc-900/50 text-center">
           <p className="text-[9px] text-zinc-500 font-medium italic">
-            Arraste para cima para ver detalhes profundos
+            {isInline ? 'Clique em um contrato para analisar detalhes' : 'Arraste para cima para ver detalhes profundos'}
           </p>
         </div>
       </div>

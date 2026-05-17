@@ -115,3 +115,14 @@ def obter_auditoria_projeto(id_projeto: int):
     Retorna o histórico de governança e intervenções humanas do projeto.
     """
     return AuditManager.get_history("projeto", id_projeto)
+
+@router.delete("/{id_projeto}/auditoria/{timestamp}")
+def deletar_auditoria_projeto(id_projeto: int, timestamp: str):
+    """
+    Remove um registro específico de governança/auditoria pelo timestamp.
+    """
+    # Em um sistema real, decodificaria a URL, mas FastAPI já trata isso
+    success = AuditManager.delete_log(timestamp)
+    if not success:
+        raise HTTPException(status_code=404, detail="Registro de auditoria não encontrado")
+    return {"message": "Registro removido com sucesso"}

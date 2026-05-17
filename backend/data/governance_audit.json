@@ -208,5 +208,82 @@
       }
     },
     "audit_type": "factual_update"
+  },
+  {
+    "timestamp": "2026-05-15T22:19:28.075875",
+    "entity_type": "projeto",
+    "entity_id": 971,
+    "user": "Adriano",
+    "changes": {
+      "valor_total": {
+        "de": "8500.00",
+        "para": "8500"
+      },
+      "status": {
+        "de": "em andamento",
+        "para": "concluído"
+      }
+    },
+    "audit_type": "factual_update"
+  },
+  {
+    "timestamp": "2026-05-15T22:19:42.349313",
+    "entity_type": "projeto",
+    "entity_id": 971,
+    "user": "Adriano",
+    "changes": {
+      "valor_total": {
+        "de": "8500.00",
+        "para": "8500"
+      },
+      "status": {
+        "de": "concluído",
+        "para": "em andamento"
+      }
+    },
+    "audit_type": "factual_update"
+  },
+  {
+    "timestamp": "2026-05-15T23:27:39.564188",
+    "entity_type": "projeto",
+    "entity_id": 971,
+    "user": "Adriano",
+    "changes": {
+      "observacoes_gerais": {
+        "de": "None",
+        "para": "Teste de adição (governança operacional)\n[OVERRIDE_FASE:recuperação]"
+      }
+    },
+    "audit_type": "governance_intervention"
+  },
+  {
+    "timestamp": "2026-05-15T23:40:00.352474",
+    "entity_type": "projeto",
+    "entity_id": 971,
+    "user": "Adriano",
+    "changes": {
+      "observacoes_gerais": {
+        "de": "Teste de adição (governança operacional)\n[OVERRIDE_FASE:recuperação]",
+        "para": ""
+      }
+    },
+    "audit_type": "governance_intervention"
+  },
+  {
+    "timestamp": "2026-05-16T01:35:24.418256",
+    "entity_type": "projeto",
+    "entity_id": 977,
+    "user": "Adriano",
+    "changes": {
+      "valor_total": {
+        "de": "10200.00",
+        "para": "10200"
+      },
+      "status": {
+        "de": "em andamento",
+        "para": "concluído"
+      }
+    },
+    "audit_type": "factual_update"
   }
 ]

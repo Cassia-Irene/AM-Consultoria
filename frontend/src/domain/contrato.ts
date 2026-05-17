@@ -37,4 +37,9 @@ export type HistoricoContrato = {
   evento: string
   valor_anterior?: number
   valor_novo?: number
+
+  idContratoEncerrado: string
+  idContratoNovo: string
+  dataAlteracao: string
+  motivo: string
 }

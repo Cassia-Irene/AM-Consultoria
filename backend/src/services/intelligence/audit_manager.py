@@ -59,3 +59,24 @@ class AuditManager:
             return [h for h in history if h["entity_type"] == entity_type and h["entity_id"] == entity_id]
         except:
             return []
+
+    @classmethod
+    def delete_log(cls, timestamp: str) -> bool:
+        """
+        Remove um registro de auditoria específico pelo timestamp.
+        """
+        cls._ensure_dir()
+        try:
+            with open(cls.AUDIT_FILE, "r", encoding="utf-8") as f:
+                history = json.load(f)
+            
+            initial_len = len(history)
+            history = [h for h in history if h["timestamp"] != timestamp]
+            
+            if len(history) < initial_len:
+                with open(cls.AUDIT_FILE, "w", encoding="utf-8") as f:
+                    json.dump(history, f, indent=2, ensure_ascii=False)
+                return True
+            return False
+        except:
+            return False

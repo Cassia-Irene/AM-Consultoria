@@ -11,7 +11,7 @@ import { EntregaManager } from '@/components/EntregaManager'
 import { ProjectMarcoList } from '@/components/ProjectMarcoList'
 import { ProjectOperationalOverrides } from '@/components/ProjectOperationalOverrides'
 import { ProjectTimeline } from '@/components/ProjectTimeline'
-import { ArrowUpRight, Zap, FileText, AlertCircle, DollarSign, Package, Edit3, CheckCircle2, History, TrendingUp, Plus } from 'lucide-react'
+import { ArrowUpRight, Zap, FileText, AlertCircle, DollarSign, Package, Edit3, CheckCircle2, History, TrendingUp, Plus, Target } from 'lucide-react'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -152,9 +152,9 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
             <input autoFocus value={fTitle} onChange={(e) => setFTitle(e.target.value)} onBlur={handleTitleSave} onKeyDown={(e) => e.key === 'Enter' && handleTitleSave()}
               className="bg-zinc-900 border border-sky-500/50 text-white text-2xl sm:text-3xl font-black tracking-tight px-4 py-2 rounded-2xl w-full max-w-2xl focus:outline-none" />
           ) : (
-            <h1 onClick={() => setIsEditingTitle(true)} className="text-white text-2xl sm:text-3xl font-black tracking-tight cursor-text hover:text-sky-400 transition-colors group inline-flex items-center gap-3">
+            <h1 onClick={() => setIsEditingTitle(true)} className="text-white text-2xl sm:text-3xl font-black tracking-tight cursor-pointer hover:text-sky-400 transition-colors group inline-flex items-center gap-3">
               {projeto.titulo}
-              <Edit3 size={14} className="opacity-0 group-hover:opacity-20 transition-opacity" />
+              <Edit3 size={16} className="opacity-60 group-hover:opacity-100 transition-all" />
             </h1>
           )}
         </div>
@@ -285,13 +285,10 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
 
             <div className="mb-4">
               <p className="text-white text-base font-bold leading-snug mb-1">{projeto.motivo_auditavel}</p>
-              {(!projeto.isExtra && extras.length === 0) && (
-                 <p className="text-zinc-200 text-sm leading-relaxed max-w-3xl">{projeto.descricao || 'Nenhuma diretriz definida.'}</p>
-              )}
             </div>
 
                    {/* Demandas Extraordinárias Integradas ou Projetos Extras */}
-                   {(extras.length > 0 || projeto.isExtra) && (
+                   {(extras.length > 0 || projeto.isExtra) ? (
                       <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-500/3 border border-amber-500/20 max-w-3xl mb-5">
                          <Zap size={14} className="text-amber-500 mt-0.5 shrink-0" />
                          <div className="space-y-2">
@@ -307,6 +304,23 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
                                {extras.length > 0 
                                 ? <>Frentes paralelas solicitadas por <span className="text-white font-bold">{extras[0].solicitado_por_nome}</span> expandem a diretriz original.</>
                                 : (!projeto.descricao && "Este é um projeto de escopo extra que corre em paralelo para atender demandas urgentes ou solicitações atípicas.")}
+                            </p>
+                         </div>
+                      </div>
+                   ) : (
+                      <div className="flex items-start gap-3 p-4 rounded-2xl bg-sky-500/3 border border-sky-500/20 max-w-3xl mb-5">
+                         <Target size={14} className="text-sky-500 mt-0.5 shrink-0" />
+                         <div className="space-y-2">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-sky-500">Escopo Principal</p>
+                            
+                            {projeto.descricao && (
+                               <p className="text-sky-500/90 text-sm leading-relaxed font-medium">
+                                  {projeto.descricao}
+                               </p>
+                            )}
+
+                            <p className="text-zinc-300 text-xs">
+                               Projeto base ativo. Todas as entregas previstas estão estritamente alinhadas com a diretriz estratégica e contrato original.
                             </p>
                          </div>
                       </div>
@@ -354,7 +368,7 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
        <div className="px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10">
          
          {/* COLUNA PRINCIPAL (EXECUÇÃO OPERACIONAL) */}
-         <div className="lg:col-span-8 space-y-8 sm:space-y-10">
+         <div className="lg:col-span-7 space-y-8 sm:space-y-10">
 
            {/* Gestão de Marcos e Backlog */}
            <section>
@@ -382,27 +396,47 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
              </div>
            </section>
 
-           {/* Contexto de Risco (Pendências e Crises Log) */}
-           <section className="space-y-8 pt-4">
+          </div>
+
+          {/* COLUNA SECUNDÁRIA: MEMÓRIA & GOVERNANÇA */}
+          <div className="lg:col-span-5">
+             {/* Governança Humana */}
+             <section>
+               <ProjectOperationalOverrides 
+                  projetoId={id}
+                  observacoes={projeto.observacoes_gerais || ''}
+                  historyResumo={projeto.audit_history_resumo}
+                  onUpdate={() => setRefreshSignal(prev => prev + 1)}
+               />
+             </section>
+          </div>
+        </div>
+
+        {/* ── LINHA 2: PENDÊNCIAS E FINANCEIRO ── */}
+        <div className="px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10 mt-8 sm:mt-10 items-start">
+          
+          {/* ESQUERDA: Pendências */}
+          <div className="lg:col-span-7">
+            <section>
               {/* Pendências */}
               <div>
                  <SectionHeader label="Log de Pendências" />
                  <div className="mt-6 space-y-4">
                    {pendencias.length > 0 ? (
                      <>
-                       {pendencias.slice(0, 3).map(p => (
-                         <div key={p.id} className="bg-zinc-900/40 border-l-2 border-amber-500/50 p-5 rounded-r-3xl">
+                       {pendencias.slice(0, 5).map(p => (
+                         <div key={p.id} className="bg-zinc-900/40 border-l-2 border-amber-500 p-5 rounded-r-3xl">
                            <div className="flex items-center justify-between mb-2">
                              <p className="text-[10px] font-black uppercase tracking-widest text-amber-500">Pendência Ativa</p>
-                             <p className="text-[10px] text-zinc-500 font-bold">Prazo: {displayDate(p.data_prazo)}</p>
+                             <p className="text-[10px] text-zinc-400 font-bold">Prazo: {displayDate(p.data_prazo)}</p>
                            </div>
-                           <p className="text-zinc-200 text-sm font-bold mb-1">{p.descricao}</p>
-                           <p className="text-zinc-500 text-[10px] uppercase font-black tracking-tighter">Responsável: {p.responsavel}</p>
+                           <p className="text-white text-sm font-bold mb-1">{p.descricao}</p>
+                           <p className="text-zinc-300 text-[10px] uppercase font-bold tracking">Responsável: {p.responsavel}</p>
                          </div>
                        ))}
-                       {pendencias.length > 3 && (
-                         <p className="text-zinc-500 text-[10px] uppercase font-black tracking-widest pl-2 mt-4">
-                            + {pendencias.length - 3} pendências arquivadas
+                       {pendencias.length > 5 && (
+                         <p className="text-zinc-400 text-[10px] uppercase font-black tracking-widest pl-2 mt-4">
+                            + {pendencias.length - 5} pendências arquivadas
                          </p>
                        )}
                      </>
@@ -411,31 +445,73 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
                    )}
                  </div>
               </div>
+            </section>
+          </div>
 
+          {/* DIREITA: Fluxo Financeiro */}
+          <div className="lg:col-span-5">
+            <section>
+              <SectionHeader label="Fluxo Financeiro" />
+              <div className="mt-6 bg-zinc-900/30 border border-zinc-800/50 rounded-3xl overflow-hidden shadow-lg">
+                <div className="bg-zinc-800/20 p-4 border-b border-zinc-800/50 flex items-center gap-2">
+                   <DollarSign size={14} className="text-sky-400" />
+                   <p className="text-[10px] md:text-[12px] font-black uppercase tracking-widest text-sky-400">Cronograma de Recebíveis</p>
+                </div>
+                {parcelas.length > 0 ? (
+                  <div className="divide-y divide-zinc-800/50">
+                    {parcelas.map(p => (
+                      <div key={p.id} className="p-4 flex items-center justify-between hover:bg-zinc-800/20 transition-colors">
+                        <div>
+                          <p className="text-white text-sm font-bold">Parcela {p.numero_parcela}</p>
+                          <p className="text-[9px] text-zinc-400 font-black uppercase tracking-widest">{displayDate(p.data_pagamento_prevista)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-zinc-200 font-black text-sm">{formatCurrency(p.valor_parcela)}</p>
+                          <p className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${p.pago ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {p.pago ? 'Pago' : 'Pendente'}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyBox message="Sem parcelas registradas." />
+                )}
+              </div>
+            </section>
+          </div>
+        </div>
+
+        {/* ── LINHA 3: CRISES E TIMELINE ── */}
+        <div className="px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10 mt-8 sm:mt-10 items-start">
+          
+          {/* ESQUERDA: Eventos Críticos */}
+          <div className="lg:col-span-7">
+            <section>
               {/* Eventos Críticos */}
               <div>
                  <SectionHeader label="Crises Institucionais" />
                  <div className="mt-6 space-y-4">
                    {eventos.length > 0 ? (
                      <>
-                       {eventos.slice(0, 2).map(ev => (
+                       {eventos.slice(0, 5).map(ev => (
                          <div key={ev.id} className="bg-zinc-900/40 border-l-2 border-rose-500/50 p-5 rounded-r-3xl">
                            <div className="flex items-center justify-between mb-2">
                              <p className="text-[10px] font-black uppercase tracking-widest text-rose-500">Evento Crítico</p>
-                             <p className="text-[10px] text-zinc-500 font-bold">{displayDate(ev.data_evento)}</p>
+                             <p className="text-[10px] text-zinc-400 font-bold">{displayDate(ev.data_evento)}</p>
                            </div>
                            <p className="text-zinc-200 text-sm font-bold mb-2">{ev.descricao}</p>
                            {ev.acao_tomada && (
                              <div className="bg-black/20 p-3 rounded-xl border border-zinc-800/50 mt-3">
-                               <p className="text-[9px] font-black uppercase text-zinc-500 mb-1">Resposta do Adriano</p>
-                               <p className="text-zinc-400 text-xs italic">{ev.acao_tomada}</p>
+                               <p className="text-[10px] font-bold uppercase text-zinc-200 mb-1">Resposta do Adriano</p>
+                               <p className="text-sky-400 text-xs italic">{ev.acao_tomada}</p>
                              </div>
                            )}
                          </div>
                        ))}
-                       {eventos.length > 2 && (
-                         <p className="text-zinc-500 text-[10px] uppercase font-black tracking-widest pl-2 mt-4">
-                            + {eventos.length - 2} crises documentadas
+                       {eventos.length > 3 && (
+                         <p className="text-zinc-400 text-[10px] uppercase font-black tracking-widest pl-2 mt-4">
+                            + {eventos.length - 3} crises documentadas
                          </p>
                        )}
                      </>
@@ -444,63 +520,19 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
                    )}
                  </div>
               </div>
-           </section>
-         </div>
+            </section>
+          </div>
 
-         {/* COLUNA SECUNDÁRIA: MEMÓRIA & GOVERNANÇA */}
-         <div className="lg:col-span-4 space-y-10">
-           
-           {/* Governança Humana */}
-           <section>
-              <ProjectOperationalOverrides 
-                 projetoId={id}
-                 observacoes={projeto.observacoes_gerais || ''}
-                 historyResumo={projeto.audit_history_resumo}
-                 onUpdate={() => setRefreshSignal(prev => prev + 1)}
-              />
-           </section>
-
-           {/* Timeline Operacional (Colapsada e Controlada) */}
-           <section>
-              <SectionHeader label="Timeline Factual" />
-              <div className="mt-6 bg-zinc-900/20 border border-zinc-800/40 rounded-3xl p-6 shadow-inner max-h-[450px] overflow-y-auto custom-scrollbar">
-                <ProjectTimeline events={projeto.timeline || []} />
-              </div>
-           </section>
-
-           {/* Ciclo Financeiro */}
-           <section>
-             <SectionHeader label="Fluxo Financeiro" />
-             <div className="mt-6 bg-zinc-900/30 border border-zinc-800/50 rounded-3xl overflow-hidden shadow-lg">
-               <div className="bg-zinc-800/20 p-4 border-b border-zinc-800/50 flex items-center gap-2">
-                  <DollarSign size={14} className="text-sky-500" />
-                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Cronograma de Recebíveis</p>
+          {/* DIREITA: Timeline Factual */}
+          <div className="lg:col-span-5">
+            <section>
+               <SectionHeader label="Timeline Factual" />
+               <div className="mt-6 bg-zinc-900/20 border border-zinc-800/40 rounded-3xl p-6 shadow-inner max-h-[500px] overflow-y-auto custom-scrollbar">
+                 <ProjectTimeline events={projeto.timeline || []} />
                </div>
-               {parcelas.length > 0 ? (
-                 <div className="divide-y divide-zinc-800/50">
-                   {parcelas.map(p => (
-                     <div key={p.id} className="p-4 flex items-center justify-between hover:bg-zinc-800/20 transition-colors">
-                       <div>
-                         <p className="text-white text-sm font-bold">Parcela {p.numero_parcela}</p>
-                         <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest">{displayDate(p.data_pagamento_prevista)}</p>
-                       </div>
-                       <div className="text-right">
-                         <p className="text-zinc-200 font-black text-sm">{formatCurrency(p.valor_parcela)}</p>
-                         <p className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${p.pago ? 'text-emerald-500' : 'text-rose-500'}`}>
-                           {p.pago ? 'Pago' : 'Pendente'}
-                         </p>
-                       </div>
-                     </div>
-                   ))}
-                 </div>
-               ) : (
-                 <EmptyBox message="Sem parcelas registradas." />
-               )}
-             </div>
-           </section>
-
-         </div>
-       </div>
+            </section>
+          </div>
+        </div>
 
       {/* OPERATIONAL DRAWER */}
       <OperationalDrawer

@@ -11,8 +11,9 @@ import { getPendenciaSeveridade, getPendenciaStatus } from '@/utils/pendencia'
 import type { Pendencia } from '@/domain/pendencia'
 import { displayDate } from '@/utils/date'
 import { OperationalTabs } from '@/components/OperationalTabs'
+import { Plus } from 'lucide-react'
 
-type Filtro = 'todas' | 'abertas' | 'atrasadas' | 'concluidas'
+type Filtro = 'todas' | 'abertas' | 'atrasadas' | 'concluidas' | 'urgentes'
 
 type PendenciaView = {
   p: Pendencia
@@ -160,6 +161,7 @@ function PendenciasList() {
     if (filtro === 'abertas') return v.status === 'aberta'
     if (filtro === 'atrasadas') return v.status === 'atrasada'
     if (filtro === 'concluidas') return v.status === 'concluida'
+    if (filtro === 'urgentes') return v.severidade === 'urgente' && v.status !== 'concluida'
     return true
   })
 
@@ -217,11 +219,14 @@ function PendenciasList() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 block mb-1">Responsável</label>
-              <input
+              <select
                 className="w-full bg-zinc-800 text-white text-sm rounded-xl px-4 py-2.5 border border-zinc-700 focus:outline-none focus:border-blue-500"
                 value={editForm.responsavel}
                 onChange={e => setEditForm({ ...editForm, responsavel: e.target.value })}
-              />
+              >
+                <option value="Equipe Cliente">Equipe Cliente</option>
+                <option value="AM Consultoria">AM Consultoria</option>
+              </select>
             </div>
             <div>
               <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 block mb-1">Prazo</label>
@@ -362,8 +367,8 @@ function PendenciasList() {
     return (
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">{titulo}</h2>
-          <span className="bg-zinc-800 text-zinc-400 text-[10px] px-2 py-0.5 rounded-full font-bold">
+          <h2 className="text-sm font-black uppercase tracking-widest text-zinc-200">{titulo}</h2>
+          <span className="bg-zinc-800 text-zinc-300 text-[11px] px-2 py-0.5 rounded-full font-bold">
             {items.length}
           </span>
         </div>
@@ -381,10 +386,10 @@ function PendenciasList() {
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white">Pendências</h1>
-            <p className="text-sm text-zinc-400 mt-1">Acompanhamento operacional e itens críticos</p>
+            <p className="text-sm text-zinc-300 mt-1">Acompanhamento operacional e itens críticos</p>
           </div>
-          <Link href="/pendencias/nova" className="w-full sm:w-auto text-center inline-block bg-white text-black font-bold text-sm px-6 py-2.5 rounded-xl hover:bg-zinc-200 transition-colors">
-            + Nova Pendência
+          <Link href="/pendencias/nova" className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white text-black font-bold text-sm px-6 py-2.5 rounded-xl hover:bg-zinc-200 transition-colors">
+            <Plus size={18} strokeWidth={3} /> Nova Pendência
           </Link>
         </div>
       </div>
@@ -415,6 +420,7 @@ function PendenciasList() {
           options={[
             { value: 'todas', label: 'Todas', count: pendencias.length },
             { value: 'abertas', label: 'Abertas', count: kpiAbertas },
+            { value: 'urgentes', label: 'Urgentes', count: kpiUrgentes },
             { value: 'atrasadas', label: 'Atrasadas', count: kpiAtrasadas },
             { value: 'concluidas', label: 'Concluídas', count: kpiConcluidas },
           ]}

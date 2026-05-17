@@ -18,6 +18,8 @@ import { OperationalDrawer } from '@/components/OperationalDrawer'
 import { PendenciaManager } from '@/components/PendenciaManager'
 import { VisitaDetailView } from '@/components/VisitaDetailView'
 import { EntregaManager } from '@/components/EntregaManager'
+import { AttentionPanel } from '@/components/AttentionPanel'
+import { type AttentionItem } from '@/services/analytics.service'
 
 type SubTab = 'organizacao' | 'operacao'
 
@@ -180,6 +182,7 @@ function PlanningList() {
     id: number | string;
     color?: 'amber' | 'zinc' | 'red'
   } | null>(null)
+  const [attentionItems, setAttentionItems] = useState<AttentionItem[]>([])
   const [loading, setLoading] = useState(true)
 
   const activeTab = (searchParams.get('tab') as SubTab) || 'organizacao'
@@ -192,16 +195,18 @@ function PlanningList() {
 
   const loadData = useCallback(async () => {
     try {
-      const [s, today, p, t] = await Promise.all([
+      const [s, today, p, t, attention] = await Promise.all([
         AnalyticsService.getSummary(),
         AnalyticsService.getWeeklyAgenda(),
         AnalyticsService.getPendencies(),
-        AnalyticsService.getTimeline()
+        AnalyticsService.getTimeline(),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/intelligence/attention`).then(r => r.json())
       ])
       setSummary(s)
       setVisits(today)
       setPendencies(p)
       setTimeline(t)
+      setAttentionItems(attention)
     } catch (err) {
       console.error('Erro no planejamento:', err)
     } finally {
@@ -267,6 +272,19 @@ function PlanningList() {
                 <MetricCard label="Contratos" value={summary.contratosAtivos} accent="blue" sub="Em vigor" />
               </div>
             </section>
+
+            {/* 🆕 CAMADA DE ATENÇÃO ESTRATÉGICA INTEGRADA */}
+            {attentionItems.length > 0 && (
+              <section>
+                <AttentionPanel 
+                  isInline
+                  items={attentionItems} 
+                  onItemClick={(id: number) => {
+                    router.push(`/clientes/${id}`)
+                  }}
+                />
+              </section>
+            )}
 
             {/* FUSÃO A + B (TRILHO OPERACIONAL) */}
             <div className="space-y-8">

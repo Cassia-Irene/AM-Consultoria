@@ -152,11 +152,26 @@ class ProjectOperationalState:
                 })
         # Overrides (Audit Log)
         audit_history = AuditManager.get_history("projeto", self.projeto.id_projeto)
+        import re
         for entry in audit_history[-5:]:
+            detail = ""
+            if "observacoes_gerais" in entry.get("changes", {}):
+                val = str(entry["changes"]["observacoes_gerais"].get("para", ""))
+                
+                text_limpo = re.sub(r'\[.*?\]', '', val).strip()
+                tags_match = re.findall(r'\[OVERRIDE_[A-Z]+:(.*?)\]', val)
+
+                if text_limpo:
+                    primeira_linha = text_limpo.split('\n')[0][:45]
+                    sufixo = "..." if len(text_limpo) > 45 else ""
+                    detail = f" - {primeira_linha}{sufixo}"
+                elif tags_match:
+                    detail = f" - Intervenção: {tags_match[-1].title()}"
+
             events.append({
                 "data": entry["timestamp"],
                 "tipo": "governança",
-                "label": f"Intervenção: {entry['user']}",
+                "label": f"Gov: {entry['user']}{detail}",
                 "impacto": "neutro"
             })
         

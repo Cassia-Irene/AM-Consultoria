@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { FaturamentosService } from '@/services/faturamento.service'
@@ -21,7 +21,7 @@ function formatMesAno(mesAno: string) {
   return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
 }
 
-export default function InadimplenciaPage() {
+function InadimplenciaContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
@@ -195,6 +195,18 @@ export default function InadimplenciaPage() {
         </div>
       )}
     </main>
+  )
+}
+
+export default function InadimplenciaPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#07090D] flex items-center justify-center">
+        <span className="text-amber-500 animate-pulse font-black tracking-widest text-xs uppercase text-center">Rastreando Recebíveis...</span>
+      </div>
+    }>
+      <InadimplenciaContent />
+    </Suspense>
   )
 }
 

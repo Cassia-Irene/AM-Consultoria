@@ -518,6 +518,99 @@
       "falso_movimento": false,
       "desgaste_longitudinal": "crítico",
       "snapshot_recente": "2026-05-14"
+    },
+    "2026-05-16": {
+      "ritmo_operacional": "em_atrito",
+      "fase_operacional": "crise_operacional",
+      "evidencias": [
+        "Backlog envelhecido (+25d média).",
+        "Inércia operacional: zero entregas nos últimos 15 dias."
+      ],
+      "evidencias_resumidas": [
+        "Backlog envelhecido (+25d média).",
+        "Inércia operacional: zero entregas nos últimos 15 dias."
+      ],
+      "cadeia_causal": [
+        "3 atrasos acumulados elevaram a tensão operacional."
+      ],
+      "impacto_do_override": "Processamento analítico puro",
+      "audit_history_resumo": [],
+      "motivo_auditavel": "Backlog envelhecido (+25d média).",
+      "motivo_auditavel_resumido": "Backlog envelhecido (+25d média).",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": true,
+      "score_tensao": 36,
+      "score_operacional": 45,
+      "percentual_conclusao": 0,
+      "nivel_tensao": "crítico",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 3,
+      "dias_sem_progresso": 25,
+      "dias_sem_movimento": 93,
+      "motivo_estagnacao": "Inércia operacional prolongada",
+      "motivo_ritmo": "Ritmo condicionado a atrasos",
+      "tendencia_tensao": "alta",
+      "tendencia": "estável",
+      "reincidencia": "Atrasos recorrentes detectados",
+      "backlog_meta": {
+        "aging_medio": 25,
+        "itens_criticos": 3
+      },
+      "timeline": [
+        {
+          "data": "2026-04-28",
+          "tipo": "atraso_critico",
+          "label": "Atraso Crítico: [TRAVADO] Mapeamento de riscos concluído (+18d)",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-04-21",
+          "tipo": "atraso_critico",
+          "label": "Atraso Crítico: [TRAVADO] Protocolo de medicação validado (+25d)",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-04-14",
+          "tipo": "atraso_critico",
+          "label": "Atraso Crítico: [TRAVADO] Dossiê técnico para VISA finalizado (+32d)",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-04-05",
+          "tipo": "evento_critico",
+          "label": "Crise: Tensão institucional: Direção relutante em validar protocolos",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-04-02",
+          "tipo": "evento_critico",
+          "label": "Crise: Ruptura grave detectada no mês anterior",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-04-02",
+          "tipo": "evento_critico",
+          "label": "Crise: Ruptura grave detectada no mês anterior",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-04-01",
+          "tipo": "evento_critico",
+          "label": "Crise: Incidente: Estoque voltou inconsistente após inventário rotativo",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-03-28",
+          "tipo": "evento_critico",
+          "label": "Crise: Gargalo documental: Prontuários sem assinatura técnica acumulados",
+          "impacto": "negativo"
+        }
+      ],
+      "esforco_vs_resultado": "equilibrado",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "alto",
+      "snapshot_recente": "2026-05-15"
     }
   },
   "projeto_955": {
@@ -706,6 +799,81 @@
       "falso_movimento": false,
       "desgaste_longitudinal": "crítico",
       "snapshot_recente": "2026-05-14"
+    },
+    "2026-05-16": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "fluxo_ativo",
+      "evidencias": [],
+      "evidencias_resumidas": [],
+      "cadeia_causal": [
+        "2 atrasos acumulados elevaram a tensão operacional."
+      ],
+      "impacto_do_override": "Processamento analítico puro",
+      "audit_history_resumo": [],
+      "motivo_auditavel": "Estabilidade factual.",
+      "motivo_auditavel_resumido": "Estável",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 24,
+      "score_operacional": 76,
+      "percentual_conclusao": 33,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 2,
+      "dias_sem_progresso": 4,
+      "dias_sem_movimento": 8,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo condicionado a atrasos",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "backlog_meta": {
+        "aging_medio": 4,
+        "itens_criticos": 0
+      },
+      "timeline": [
+        {
+          "data": "2026-05-08",
+          "tipo": "entrega_concluida",
+          "label": "Entrega: Auditoria de estoque inicial",
+          "impacto": "positivo"
+        },
+        {
+          "data": "2026-04-28",
+          "tipo": "evento_critico",
+          "label": "Crise: Gargalo documental: Prontuários sem assinatura técnica acumulados",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-04-05",
+          "tipo": "evento_critico",
+          "label": "Crise: Conflito: Resistência da equipe assistencial às metas de produtividade",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-04-01",
+          "tipo": "evento_critico",
+          "label": "Crise: Risco Sanitário: Medicamento vencido encontrado em estoque ativo",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-03-28",
+          "tipo": "evento_critico",
+          "label": "Crise: Instabilidade: Alta rotatividade na enfermagem prejudicando processos",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-01-26",
+          "tipo": "evento_critico",
+          "label": "Crise: Divergência: Diferença entre estoque físico e contábil",
+          "impacto": "negativo"
+        }
+      ],
+      "esforco_vs_resultado": "equilibrado",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "alto",
+      "snapshot_recente": "2026-05-15"
     }
   },
   "projeto_971": {
@@ -1219,6 +1387,81 @@
       "falso_movimento": false,
       "desgaste_longitudinal": "crítico",
       "snapshot_recente": "2026-05-14"
+    },
+    "2026-05-16": {
+      "ritmo_operacional": "nominal",
+      "fase_operacional": "fluxo_ativo",
+      "evidencias": [],
+      "evidencias_resumidas": [],
+      "cadeia_causal": [
+        "1 atrasos acumulados elevaram a tensão operacional."
+      ],
+      "impacto_do_override": "Processamento analítico puro",
+      "audit_history_resumo": [],
+      "motivo_auditavel": "Estabilidade factual.",
+      "motivo_auditavel_resumido": "Estável",
+      "override_ativo": false,
+      "interpretacao_manual_ativa": false,
+      "is_estagnado": false,
+      "score_tensao": 12,
+      "score_operacional": 88,
+      "percentual_conclusao": 60,
+      "nivel_tensao": "nominal",
+      "motivo_tensao": "Atrasos recorrentes",
+      "count_atrasos": 1,
+      "dias_sem_progresso": 2,
+      "dias_sem_movimento": 14,
+      "motivo_estagnacao": null,
+      "motivo_ritmo": "Ritmo condicionado a atrasos",
+      "tendencia_tensao": "estável",
+      "tendencia": "estável",
+      "reincidencia": null,
+      "backlog_meta": {
+        "aging_medio": 2,
+        "itens_criticos": 0
+      },
+      "timeline": [
+        {
+          "data": "2026-05-02",
+          "tipo": "entrega_concluida",
+          "label": "Entrega: Marco 3: Controle de Lotes e Vencimentos - Fase 3",
+          "impacto": "positivo"
+        },
+        {
+          "data": "2026-04-28",
+          "tipo": "evento_critico",
+          "label": "Crise: Gargalo documental: Prontuários sem assinatura técnica acumulados",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-04-05",
+          "tipo": "evento_critico",
+          "label": "Crise: Conflito: Resistência da equipe assistencial às metas de produtividade",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-04-01",
+          "tipo": "evento_critico",
+          "label": "Crise: Risco Sanitário: Medicamento vencido encontrado em estoque ativo",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-03-28",
+          "tipo": "evento_critico",
+          "label": "Crise: Instabilidade: Alta rotatividade na enfermagem prejudicando processos",
+          "impacto": "negativo"
+        },
+        {
+          "data": "2026-01-26",
+          "tipo": "evento_critico",
+          "label": "Crise: Divergência: Diferença entre estoque físico e contábil",
+          "impacto": "negativo"
+        }
+      ],
+      "esforco_vs_resultado": "equilibrado",
+      "falso_movimento": false,
+      "desgaste_longitudinal": "alto",
+      "snapshot_recente": "2026-05-15"
     }
   },
   "projeto_976": {

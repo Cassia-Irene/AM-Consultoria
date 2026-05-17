@@ -63,6 +63,8 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
   const [fStatus, setFStatus] = useState('')
   const [fInicio, setFInicio] = useState('')
   const [fFim, setFFim] = useState('')
+  // M8 — estado antes dos early returns (Rules of Hooks)
+  const [showAllParcelas, setShowAllParcelas] = useState(false)
 
   useEffect(() => {
     if (projeto) {
@@ -123,6 +125,23 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
   
   const progressPercent = projeto.percentual_conclusao || 0
 
+  // M5 — carga operacional: derivada de dados já disponíveis
+  const pendenciasAbertas = pendencias.filter((p: { resolvida?: boolean }) => !p.resolvida).length
+  const scoreDesgaste = (extras.length * 1.5) + (pendenciasAbertas * 0.5) - (progressPercent * 0.05)
+  const cargaElevada = scoreDesgaste > 5
+
+  // M8 — fluxo financeiro focado
+  const parcelasOrdenadas = [...parcelas].sort(
+    (a, b) => new Date(a.data_pagamento_prevista).getTime() - new Date(b.data_pagamento_prevista).getTime()
+  )
+  const parcelasVisiveis = showAllParcelas
+    ? parcelasOrdenadas
+    : [
+        ...parcelasOrdenadas.filter(p => p.pago).slice(-2),
+        ...parcelasOrdenadas.filter(p => !p.pago).slice(0, 3)
+      ].sort((a, b) => new Date(a.data_pagamento_prevista).getTime() - new Date(b.data_pagamento_prevista).getTime())
+  const parcelasOcultas = parcelas.length - parcelasVisiveis.length
+
   return (
     <main className="min-h-screen bg-[#07090D] text-zinc-300 pb-32 overflow-x-hidden">
 
@@ -141,6 +160,14 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
                 <span className="bg-amber-500/10 text-amber-500 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-md border border-amber-500/20">
                    Projeto Extra
                 </span>
+             )}
+             {cargaElevada && (
+               <span
+                 title={`Carga elevada: ${extras.length} extra(s), ${pendenciasAbertas} pendência(s) em aberto`}
+                 className="text-[9px] font-black text-zinc-600 cursor-help select-none"
+               >
+                 ⚡
+               </span>
              )}
              <StatusBadge status={projeto.status} />
           </div>
@@ -459,7 +486,7 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
                 </div>
                 {parcelas.length > 0 ? (
                   <div className="divide-y divide-zinc-800/50">
-                    {parcelas.map(p => (
+                    {parcelasVisiveis.map(p => (
                       <div key={p.id} className="p-4 flex items-center justify-between hover:bg-zinc-800/20 transition-colors">
                         <div>
                           <p className="text-white text-sm font-bold">Parcela {p.numero_parcela}</p>
@@ -473,6 +500,14 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
                         </div>
                       </div>
                     ))}
+                    {!showAllParcelas && parcelasOcultas > 0 && (
+                      <button
+                        onClick={() => setShowAllParcelas(true)}
+                        className="w-full p-3 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-zinc-300 transition-colors text-center border-t border-zinc-800/50"
+                      >
+                        Ver histórico completo ({parcelasOcultas} parcela{parcelasOcultas > 1 ? 's' : ''})
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <EmptyBox message="Sem parcelas registradas." />
@@ -483,35 +518,36 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
         </div>
 
         {/* ── LINHA 3: CRISES E TIMELINE ── */}
-        <div className="px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10 mt-8 sm:mt-10 items-start">
+        <div className="px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-6 mt-8 items-start">
           
-          {/* ESQUERDA: Eventos Críticos */}
+          {/* ESQUERDA: Eventos Críticos (Crises) */}
           <div className="lg:col-span-7">
             <section>
-              {/* Eventos Críticos */}
               <div>
                  <SectionHeader label="Crises Institucionais" />
-                 <div className="mt-6 space-y-4">
+                 <div className="mt-4 space-y-2">
                    {eventos.length > 0 ? (
                      <>
                        {eventos.slice(0, 5).map(ev => (
-                         <div key={ev.id} className="bg-zinc-900/40 border-l-2 border-rose-500/50 p-5 rounded-r-3xl">
-                           <div className="flex items-center justify-between mb-2">
-                             <p className="text-[10px] font-black uppercase tracking-widest text-rose-500">Evento Crítico</p>
-                             <p className="text-[10px] text-zinc-400 font-bold">{displayDate(ev.data_evento)}</p>
-                           </div>
-                           <p className="text-zinc-200 text-sm font-bold mb-2">{ev.descricao}</p>
-                           {ev.acao_tomada && (
-                             <div className="bg-black/20 p-3 rounded-xl border border-zinc-800/50 mt-3">
-                               <p className="text-[10px] font-bold uppercase text-zinc-200 mb-1">Resposta do Adriano</p>
-                               <p className="text-sky-400 text-xs italic">{ev.acao_tomada}</p>
+                         <div key={ev.id} className="bg-zinc-900/20 border border-zinc-800/40 rounded-xl p-3.5 flex items-start gap-3 hover:bg-zinc-900/30 transition-colors">
+                           <span className="size-2 rounded-full bg-rose-500 mt-1.5 shrink-0 animate-pulse" />
+                           <div className="flex-1 min-w-0">
+                             <div className="flex items-center justify-between gap-4 mb-1">
+                               <p className="text-[9px] font-black uppercase tracking-widest text-rose-500/80">Crise Institucional</p>
+                               <p className="text-[10px] text-zinc-500 font-bold">{displayDate(ev.data_evento)}</p>
                              </div>
-                           )}
+                             <p className="text-zinc-300 text-xs font-semibold leading-relaxed">{ev.descricao}</p>
+                             {ev.acao_tomada && (
+                               <div className="mt-2 bg-black/10 border-l border-zinc-800 pl-2.5 py-1 text-[10.5px] italic text-sky-400/90 leading-snug">
+                                 {ev.acao_tomada}
+                               </div>
+                             )}
+                           </div>
                          </div>
                        ))}
                        {eventos.length > 3 && (
-                         <p className="text-zinc-400 text-[10px] uppercase font-black tracking-widest pl-2 mt-4">
-                            + {eventos.length - 3} crises documentadas
+                         <p className="text-zinc-500 text-[9px] uppercase font-black tracking-widest pl-2 mt-2">
+                            + {eventos.length - 3} crises registradas no histórico
                          </p>
                        )}
                      </>
@@ -527,7 +563,7 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
           <div className="lg:col-span-5">
             <section>
                <SectionHeader label="Timeline Factual" />
-               <div className="mt-6 bg-zinc-900/20 border border-zinc-800/40 rounded-3xl p-6 shadow-inner max-h-[500px] overflow-y-auto custom-scrollbar">
+               <div className="mt-4 bg-zinc-900/10 border border-zinc-800/30 rounded-2xl p-4 shadow-inner max-h-[300px] overflow-y-auto custom-scrollbar">
                  <ProjectTimeline events={projeto.timeline || []} />
                </div>
             </section>

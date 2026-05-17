@@ -99,7 +99,7 @@ export default function ContratoDetailPage({ params }: { params: Promise<{ id: s
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h1 className="text-white text-xl font-black tracking-tight truncate">{cliente.nome_instituicao}</h1>
-                <StatusBadge variant={contrato.status} />
+                <StatusBadge variant={contrato.status || ''} />
               </div>
               <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest mt-0.5">
                 Gestão de Contrato · Versão {contrato.id}

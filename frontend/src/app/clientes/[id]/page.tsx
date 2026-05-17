@@ -43,6 +43,9 @@ export default function ClienteDetalhePage({ params }: PageProps) {
   const [isClientDrawerOpen, setIsClientDrawerOpen] = useState(false)
   const [isContactDrawerOpen, setIsContactDrawerOpen] = useState(false)
   const [selectedContactId, setSelectedContactId] = useState<string | undefined>()
+  const [notasEditando, setNotasEditando] = useState(false)
+  const [notasTexto, setNotasTexto] = useState('')
+  const [notasSalvando, setNotasSalvando] = useState(false)
 
   const loadData = useCallback(async () => {
     try {
@@ -104,6 +107,20 @@ export default function ClienteDetalhePage({ params }: PageProps) {
   const receitaMensal = contratosAtivos.reduce((acc, c) => acc + (c.valor_mensal || 0), 0)
   const projetosAtivos = projetos.filter(p => p.status === 'em andamento')
 
+  const notasAtuais = cliente.observacoes_gerais || ''
+
+  async function salvarNotas() {
+    setNotasSalvando(true)
+    try {
+      await ClientesService.update(id, { ...cliente, observacoes_gerais: notasTexto })
+    } catch (err) {
+      console.error('[NOTAS] Erro ao salvar:', err)
+    } finally {
+      setNotasSalvando(false)
+      setNotasEditando(false)
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#07090D] text-zinc-300 pb-32">
       {/* ── HEADER DE NAVEGAÇÃO ── */}
@@ -145,12 +162,37 @@ export default function ClienteDetalhePage({ params }: PageProps) {
                 )}
               </div>
 
-              {cliente.observacoes_gerais && (
+              {notasEditando ? (
                 <div className="bg-black/20 rounded-2xl p-5 border border-white/5 backdrop-blur-sm">
-                  <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Dinâmica Operacional</p>
-                  <p className="text-zinc-300 text-sm leading-relaxed italic">
-                    &quot;{cliente.observacoes_gerais}&quot;
-                  </p>
+                  <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Notas Operacionais</p>
+                  <textarea
+                    autoFocus
+                    value={notasTexto}
+                    onChange={e => setNotasTexto(e.target.value)}
+                    onBlur={salvarNotas}
+                    rows={4}
+                    placeholder="Contexto, dinâmica institucional, o que o sistema não captura..."
+                    className="w-full bg-transparent text-zinc-300 text-sm leading-relaxed italic resize-none focus:outline-none placeholder-zinc-700"
+                  />
+                  <p className="text-[9px] text-zinc-700 mt-2 uppercase tracking-widest">{notasSalvando ? 'Salvando...' : 'Salvo ao perder foco'}</p>
+                </div>
+              ) : (
+                <div
+                  onClick={() => { setNotasTexto(notasAtuais); setNotasEditando(true) }}
+                  className="cursor-pointer group"
+                >
+                  {notasAtuais ? (
+                    <div className="bg-black/20 rounded-2xl p-5 border border-white/5 backdrop-blur-sm group-hover:border-white/10 transition-colors">
+                      <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Notas Operacionais</p>
+                      <p className="text-zinc-300 text-sm leading-relaxed italic">
+                        &quot;{notasAtuais}&quot;
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl p-4 border border-dashed border-zinc-800 group-hover:border-zinc-700 transition-colors">
+                      <p className="text-zinc-700 text-xs italic">Toque para adicionar notas operacionais...</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -214,7 +256,7 @@ export default function ClienteDetalhePage({ params }: PageProps) {
                     <div className="border border-zinc-800 bg-zinc-900/30 rounded-xl p-4 transition-colors group-hover:bg-zinc-800/40 group-hover:border-zinc-700">
                       <div className="flex justify-between items-start mb-3">
                         <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">#{c.id}</span>
-                        <ContratoStatusBadge status={c.status} />
+                        <ContratoStatusBadge status={c.status || ''} />
                       </div>
                       <p className="text-white font-bold text-sm mb-1 line-clamp-1">{c.servicos_contratados}</p>
                       <div className="flex justify-between items-end mt-4">

@@ -147,6 +147,7 @@ export default function DashboardPage() {
   const [caosScores, setCaosScores] = useState<CaosScore[]>([])
 
   const [loading, setLoading] = useState(true)
+  const [showAllPriorities, setShowAllPriorities] = useState(false)
 
   useEffect(() => {
     async function loadData() {
@@ -190,6 +191,10 @@ export default function DashboardPage() {
     return acc
   }, new Map<string, TopPriority[]>())
 
+  const allClientGroups = Array.from(prioritiesByClient.entries())
+  const visibleGroups = showAllPriorities ? allClientGroups : allClientGroups.slice(0, 3)
+  const hiddenGroupsCount = allClientGroups.length - 3
+
 
   return (
     <main className="min-h-screen bg-[#07090D] pb-32">
@@ -211,10 +216,18 @@ export default function DashboardPage() {
           <section>
             <SectionHeader label="Ações Imediatas" count={otherPriorities.length} cor="red" href="/pendencias" />
             <div className="space-y-4">
-              {Array.from(prioritiesByClient.entries()).map(([cliente, items]) => (
+              {visibleGroups.map(([cliente, items]) => (
                 <GrupoCliente key={cliente} clienteNome={cliente} items={items} />
               ))}
             </div>
+            {!showAllPriorities && hiddenGroupsCount > 0 && (
+              <button
+                onClick={() => setShowAllPriorities(true)}
+                className="mt-3 w-full py-3 text-[11px] font-black uppercase tracking-widest text-[#7D8597] border border-dashed border-[#23272F] rounded-2xl active:bg-[#0d1117] transition-colors"
+              >
+                + {hiddenGroupsCount} cliente{hiddenGroupsCount > 1 ? 's' : ''} com pendências
+              </button>
+            )}
           </section>
         )}
 

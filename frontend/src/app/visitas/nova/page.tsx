@@ -1,27 +1,14 @@
 'use client'
-// app/visitas/nova/page.tsx
-//
-// Nova Visita = Gerador de ações futuras.
-// Estrutura em 3 etapas:
-//   1. O que aconteceu  (contexto mínimo obrigatório)
-//   2. O que ficou aberto  (gerador de pendências)
-//   3. Confirmação
 
-import { useState, useEffect, FormEvent } from 'react'
+import { useState, useEffect, useMemo, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { ClientesService } from '@/services/clientes.service'
 import { ContratoService } from '@/services/contrato.service'
 import { VisitasService } from '@/services/visitas.service'
-import { RotateCcw, X } from 'lucide-react'
+import { RotateCcw, Plus, AlertTriangle, Calendar, Clock, ArrowLeft } from 'lucide-react'
 import type { Cliente } from '@/domain/cliente'
 import type { Contrato } from '@/domain/contrato'
 import type { StatusVisita, ModalidadeVisita, TipoVisita } from '@/domain/visita'
-
-
-/* ─────────────────────────────────────────────
-   TYPES
-───────────────────────────────────────────── */
-
 
 interface PendenciaGerada {
   id: string
@@ -30,31 +17,17 @@ interface PendenciaGerada {
   responsavel: string
 }
 
-/** Sugestão gerada automaticamente pelo sistema a partir do resumo */
 interface PendenciaSugerida extends PendenciaGerada {
   gatilho: string
-  estado: 'pendente' | 'editando'
-  scoreBase: number  // 0–1: confiança da sugestão; >= 0.7 → pré-aceita
+  scoreBase: number
 }
-
-
-type Etapa = 1 | 2 | 3
 
 interface Regra {
   palavras: string[]
-  /**
-   * Palavras que CANCELAM a sugestão mesmo que o gatilho bata.
-   * Ex: "contrato" bate, mas "assinou" indica que já foi resolvido.
-   */
   negadores?: string[]
   descricao: string
   diasAFrente: number
   gatilho: string
-  /**
-   * Score base de confiança (0–1).
-   * >= 0.7 → pré-aceita automaticamente (opt-out)
-   * < 0.7  → aparece como sugestão opcional (opt-in)
-   */
   scoreBase: number
 }
 
@@ -69,7 +42,6 @@ const REGRAS: Regra[] = [
   },
   {
     palavras: ['relatório', 'relatorio', 'laudo', 'documentar', 'documentação', 'documentacao'],
-    // 'documento' removido — ambíguo demais ("o cliente pediu um documento" ≠ pendência)
     negadores: ['enviou', 'enviado', 'mandou', 'entregou', 'pronto', 'concluído', 'concluido'],
     descricao: 'Enviar relatório',
     diasAFrente: 7,
@@ -78,7 +50,6 @@ const REGRAS: Regra[] = [
   },
   {
     palavras: ['contrato', 'renovação', 'renovacao', 'assinatura'],
-    // 'assinar'/'assinou' removidos — indicam conclusão, não pendência
     negadores: ['assinou', 'assinado', 'fechou', 'fechado', 'renovado'],
     descricao: 'Resolver pendência contratual',
     diasAFrente: 5,
@@ -102,7 +73,6 @@ const REGRAS: Regra[] = [
     scoreBase: 0.7,
   },
   {
-    // Intenção implícita: "pedir", "marcar", "combinar" indicam ação futura
     palavras: ['retorno', 'reagendar', 'próxima visita', 'proxima visita', 'voltar lá', 'agendar', 'marcar visita', 'pediu pra voltar', 'pediu retorno'],
     negadores: ['cancelou', 'cancelado', 'não quer', 'não precisa'],
     descricao: 'Agendar próxima visita',
@@ -119,7 +89,6 @@ const REGRAS: Regra[] = [
     scoreBase: 0.8,
   },
   {
-    // Equipe: qualquer mencao é suficiente para sugerir alinhamento
     palavras: [
       'equipe', 'funcionários', 'funcionarios', 'colaborador', 'colaboradores',
       'alinhar', 'alinhamento', 'comunicar', 'comunicado', 'reunir', 'reunião',
@@ -131,7 +100,6 @@ const REGRAS: Regra[] = [
     scoreBase: 0.65,
   },
   {
-    // Saúde: contexto comum em clientes como Lar São Francisco e APAE
     palavras: [
       'paciente', 'residente', 'idoso', 'cuidado', 'cuidador', 'enfermagem',
       'medico', 'médico', 'saúde', 'saude', 'medicamento', 'prontuário', 'prontuario',
@@ -144,7 +112,6 @@ const REGRAS: Regra[] = [
     scoreBase: 0.7,
   },
   {
-    // Solicitações diretas do cliente são ações implícitas
     palavras: ['cliente pediu', 'pediu para', 'solicitou', 'precisa de', 'está esperando', 'aguardando'],
     negadores: ['não precisa', 'cancelou', 'desistiu'],
     descricao: 'Atender solicitação do cliente',
@@ -154,21 +121,8 @@ const REGRAS: Regra[] = [
   },
 ]
 
-/**
- * Palavras de urgência CIRURGICAS.
- * Em vez de elevar tudo, só elevam a regra cujo gatilho está próximo no texto.
- * A proximidade é definida por uma janela de 40 caracteres antes/depois do boost.
- */
-const BOOSTS_URGENTE = [
-  'urgente', 'urgência', 'urgencia', 'crítico', 'critico',
-  'imediato', 'imediata', 'emergencia', 'emergência',
-  // Removido 'prazo' — muito ambíguo, causa boost em contextos informativos
-]
-
-/** Score mínimo para pré-aceitar (aparecer como "Já inclusa"). Abaixo disso → sugestão opcional */
+const BOOSTS_URGENTE = ['urgente', 'urgência', 'urgencia', 'crítico', 'critico', 'imediato', 'imediata', 'emergencia', 'emergência']
 const THRESHOLD_PRE_ACEITAR = 0.7
-
-/** Janela de caracteres para considerar boost de urgência cirúrgico */
 const JANELA_BOOST = 60
 
 function prazoEmDiasISO(dias: number): string {
@@ -177,32 +131,22 @@ function prazoEmDiasISO(dias: number): string {
   return d.toISOString().split('T')[0]
 }
 
-/** 
- * Corrige o problema de timezone ao exibir datas YYYY-MM-DD.
- * new Date("2024-05-15") vira 14/05 no Brasil (UTC-3).
- */
 function formatarDataBR(isoDate: string): string {
   if (!isoDate) return ''
   const [ano, mes, dia] = isoDate.split('-')
   return `${dia}/${mes}/${ano}`
 }
 
-/**
- * Verifica se existe um boost de urgencia PROXIMO ao gatilho no texto.
- * Evita elevar toda a lista quando a palavra "urgente" aparece em outro contexto.
- */
 function temBoostProximo(texto: string, gatilho: string): boolean {
   const idx = texto.indexOf(gatilho.toLowerCase())
   if (idx === -1) return false
   const inicio = Math.max(0, idx - JANELA_BOOST)
-  const fim    = Math.min(texto.length, idx + gatilho.length + JANELA_BOOST)
+  const fim = Math.min(texto.length, idx + gatilho.length + JANELA_BOOST)
   const janela = texto.slice(inicio, fim)
   return BOOSTS_URGENTE.some(b => janela.includes(b))
 }
 
-/** Boost global: quando o texto inteiro é claramente de urgência */
 function temBoostGlobal(texto: string): boolean {
-  // Só aplica boost global se houver 2+ palavras de urgência no texto
   const count = BOOSTS_URGENTE.filter(b => texto.includes(b)).length
   return count >= 2
 }
@@ -213,32 +157,23 @@ function sugerirPendencias(resumo: string): PendenciaSugerida[] {
   const sugestoes: PendenciaSugerida[] = []
 
   for (const regra of REGRAS) {
-    // 1. Verifica se algum gatilho batóu
     const match = regra.palavras.some(p => texto.includes(p))
     if (!match) continue
 
-    // 2. Verifica negadores: se o contexto indica que já foi resolvido, ignora
     const negado = regra.negadores?.some(n => texto.includes(n)) ?? false
     if (negado) continue
 
-    // 3. Calcula boost de urgência cirúrgico
     const boostLocal = temBoostProximo(texto, regra.gatilho)
-    const comBoost   = boostGlobal || boostLocal
-
-    // 4. Score final (boost sobe o score, dando mais chances de pré-aceitar)
+    const comBoost = boostGlobal || boostLocal
     const scoreFinal = comBoost ? Math.min(regra.scoreBase + 0.15, 1) : regra.scoreBase
-
-    // 5. Ajusta prazo se for urgente
     const diasFinal = comBoost ? Math.max(1, Math.ceil(regra.diasAFrente * 0.5)) : regra.diasAFrente
 
     sugestoes.push({
-      id: uid(),
+      id: Math.random().toString(36).slice(2, 9),
       descricao: regra.descricao,
       data_prazo: prazoEmDiasISO(diasFinal),
-      responsavel: 'Equipe Cliente', // Padrão
+      responsavel: 'Equipe Cliente',
       gatilho: regra.gatilho,
-      estado: 'pendente',
-      // score utilizado pelo chamador para separar opt-out vs opt-in
       scoreBase: scoreFinal,
     })
   }
@@ -246,263 +181,11 @@ function sugerirPendencias(resumo: string): PendenciaSugerida[] {
   return sugestoes
 }
 
-/* ─────────────────────────────────────────────
-   HELPERS
-───────────────────────────────────────────── */
-
-// Removido clientesAtivos do escopo global
-
-function uid() {
-  return Math.random().toString(36).slice(2, 9)
-}
-
-/* ─────────────────────────────────────────────
-   SUB-COMPONENTES
-───────────────────────────────────────────── */
-
-function AdicionarPendenciaInline({ onAdd, variant = 'dashed' }: { onAdd: (p: PendenciaGerada) => void, variant?: 'dashed' | 'primary' }) {
-  const [descricao, setDescricao] = useState('')
-  const [dataPrazo, setDataPrazo] = useState(prazoEmDiasISO(5))
-  const [responsavel, setResponsavel] = useState('Equipe Cliente')
-  const [aberto, setAberto] = useState(false)
-
-  function submeter() {
-    if (!descricao.trim()) return
-    onAdd({
-      id: Math.random().toString(36).slice(2, 9),
-      descricao: descricao.trim(),
-      data_prazo: dataPrazo,
-      responsavel: responsavel.trim(),
-    })
-    setDescricao('')
-    setDataPrazo(prazoEmDiasISO(5))
-    setResponsavel('Equipe Cliente')
-    setAberto(false)
-  }
-
-  if (!aberto) {
-    if (variant === 'primary') {
-      return (
-        <button
-          type="button"
-          onClick={() => setAberto(true)}
-          className="w-full flex items-center justify-center gap-2 bg-[#0466C8] rounded-xl py-3 text-white text-sm font-bold active:bg-[#0353A4] transition-colors"
-        >
-          + Adicionar pendência
-        </button>
-      )
-    }
-
-    return (
-      <button
-        type="button"
-        onClick={() => setAberto(true)}
-        className="w-full flex items-center justify-center gap-2 border border-dashed border-[#23272F] rounded-2xl py-3.5 text-[#0466C8] text-sm font-semibold active:border-[#0466C8]/60 active:bg-[#0466C8]/5 transition-colors"
-      >
-        <span className="text-lg leading-none">+</span> Escrever pendência
-      </button>
-    )
-  }
-
-  return (
-    <div className="bg-[#0d1117] border border-[#0466C8]/40 rounded-2xl px-4 py-4 space-y-3">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-[#0466C8]">Nova pendência</p>
-
-      <input
-        type="text"
-        value={descricao}
-        onChange={e => setDescricao(e.target.value)}
-        onKeyDown={e => e.key === 'Enter' && submeter()}
-        placeholder="O que ficou em aberto?"
-        autoFocus
-        className="w-full bg-transparent text-white text-sm placeholder-[#7D8597] border-b border-[#23272F] pb-2 focus:outline-none focus:border-[#0466C8] transition-colors"
-      />
-
-      {/* Prazo */}
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] text-[#7D8597] shrink-0">Prazo:</span>
-        <input
-          type="date"
-          value={dataPrazo}
-          onChange={e => setDataPrazo(e.target.value)}
-          className="flex-1 bg-[#23272F] text-white text-xs rounded-lg px-3 py-1.5 placeholder-[#7D8597] focus:outline-none focus:ring-1 focus:ring-[#0466C8]"
-        />
-      </div>
-
-      {/* Responsável */}
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] text-[#7D8597] shrink-0">Resp:</span>
-        <select
-          value={responsavel}
-          onChange={e => setResponsavel(e.target.value)}
-          className="flex-1 bg-[#23272F] text-white text-xs rounded-lg px-3 py-1.5 placeholder-[#7D8597] focus:outline-none focus:ring-1 focus:ring-[#0466C8]"
-        >
-          <option value="Equipe Cliente">Equipe Cliente</option>
-          <option value="AM Consultoria">AM Consultoria</option>
-        </select>
-      </div>
-
-      <div className="flex gap-2 pt-1">
-        <button type="button" onClick={() => setAberto(false)}
-          className="flex-1 py-2.5 rounded-xl text-sm text-[#7D8597] bg-[#23272F] active:opacity-70 transition-opacity">
-          Cancelar
-        </button>
-        <button type="button" onClick={submeter} disabled={!descricao.trim()}
-          className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0466C8] disabled:opacity-40 active:bg-[#0353A4] transition-colors">
-          Adicionar
-        </button>
-      </div>
-    </div>
-  )
-}
-
-/** Card editável para pendências já incluídas — toque para expandir e editar */
-function PendenciaEditavel({
-  p,
-  onChange,
-  onRemove,
-}: {
-  p: PendenciaGerada
-  onChange: (changes: Partial<PendenciaGerada>) => void
-  onRemove: () => void
-}) {
-  const [expandido, setExpandido] = useState(false)
-
-  const urgencia = (new Date(p.data_prazo).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-  const isUrgente = urgencia < 2
-  const cColor = isUrgente ? 'border-red-500' : 'border-[#23272F]'
-  const dColor = isUrgente ? 'text-red-400' : 'text-[#7D8597]'
-
-  if (!expandido) {
-    return (
-      <div
-        className={`flex items-center gap-3 bg-[#0d1117] border-l-4 ${cColor} rounded-r-xl px-4 py-3 active:bg-[#161b22] transition-colors cursor-pointer`}
-        onClick={() => setExpandido(true)}
-      >
-        <div className="flex-1 min-w-0">
-          <p className="text-white text-sm font-semibold truncate">{p.descricao || '(sem descrição)'}</p>
-          <p className={`text-[10px] font-bold ${dColor}`}>Prazo: {formatarDataBR(p.data_prazo)} · Resp: {p.responsavel}</p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[#7D8597] text-[10px]">editar</span>
-          <button
-            type="button"
-            onClick={e => { e.stopPropagation(); onRemove() }}
-            className="text-[#7D8597] active:text-red-400 text-lg leading-none"
-          >×</button>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className={`bg-[#0d1117] border-l-4 ${cColor} rounded-r-xl px-4 py-4 space-y-3`}>
-      {/* Descrição */}
-      <input
-        type="text"
-        value={p.descricao}
-        onChange={e => onChange({ descricao: e.target.value })}
-        placeholder="O que ficou pendente?"
-        autoFocus
-        className="w-full bg-transparent text-white text-sm font-semibold placeholder-[#7D8597] border-b border-[#23272F] pb-2 focus:outline-none focus:border-[#0466C8] transition-colors"
-      />
-
-      {/* Prazo */}
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] text-[#7D8597] shrink-0">Prazo:</span>
-        <input
-          type="date"
-          value={p.data_prazo}
-          onChange={e => onChange({ data_prazo: e.target.value })}
-          className="flex-1 bg-[#23272F] text-white text-xs rounded-lg px-3 py-1.5 placeholder-[#7D8597] focus:outline-none focus:ring-1 focus:ring-[#0466C8]"
-        />
-      </div>
-
-      {/* Responsável */}
-      <div className="flex items-center gap-2 mt-2">
-        <span className="text-[10px] text-[#7D8597] shrink-0">Resp:</span>
-        <select
-          value={p.responsavel}
-          onChange={e => onChange({ responsavel: e.target.value })}
-          className="flex-1 bg-[#23272F] text-white text-xs rounded-lg px-3 py-1.5 placeholder-[#7D8597] focus:outline-none focus:ring-1 focus:ring-[#0466C8]"
-        >
-          <option value="Equipe Cliente">Equipe Cliente</option>
-          <option value="AM Consultoria">AM Consultoria</option>
-        </select>
-      </div>
-
-      {/* Ações */}
-      <div className="flex gap-2 pt-1">
-        <button
-          type="button"
-          onClick={onRemove}
-          className="px-4 py-2 rounded-xl text-xs text-red-400 bg-red-900/20 active:bg-red-900/40 transition-colors"
-        >
-          Remover
-        </button>
-        <button
-          type="button"
-          onClick={() => setExpandido(false)}
-          className="flex-1 py-2 rounded-xl text-sm font-bold text-white bg-[#0466C8] active:bg-[#0353A4] transition-colors"
-        >
-          Pronto
-        </button>
-      </div>
-    </div>
-  )
-}
-
-/** Indicador de etapas no topo */
-function EtapaIndicador({ atual }: { atual: Etapa }) {
-  const etapas = [
-    { num: 1, label: 'Resumo' },
-    { num: 2, label: 'Pendências' },
-    { num: 3, label: 'Confirmar' },
-  ]
-
-  return (
-    <div className="flex items-center justify-center gap-2 px-2 py-3 border-b border-[#23272F]">
-      {etapas.map((e, i) => (
-        <div key={e.num} className="flex items-center">
-          <div className="flex flex-col items-center">
-            <div className={`size-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-colors ${
-              e.num < atual
-                ? 'bg-emerald-500 text-white'
-                : e.num === atual
-                  ? 'bg-[#0466C8] text-white'
-                  : 'bg-[#23272F] text-white'
-            }`}>
-              {e.num < atual ? '✓' : e.num}
-            </div>
-            <p className={`text-[12px] mt-1 font-medium whitespace-nowrap px-1 ${
-              e.num === atual ? 'text-[#0466C8]' : 'text-white'
-            }`}>
-              {e.label}
-            </p>
-          </div>
-          
-          {i < etapas.length - 1 && (
-            <div className={`w-8 h-px mx-1 -mt-4 transition-colors ${
-              e.num < atual ? 'bg-emerald-500' : 'bg-[#23272F]'
-            }`} />
-          )}
-        </div>
-      ))}
-    </div>
-  )
-}
-
-
-/* ─────────────────────────────────────────────
-   PAGE
-───────────────────────────────────────────── */
-
 interface FormState {
   clienteId: string
   contratoId: string
   projetoId: string
   status: StatusVisita
-  
   tipo_visita: TipoVisita
   modalidade: ModalidadeVisita
   duracao_minutos: number
@@ -512,7 +195,7 @@ interface FormState {
   pendencias: PendenciaGerada[]
 }
 
-const DRAFT_KEY = 'am_consultoria_visita_draft_v1'
+const DRAFT_KEY = 'am_consultoria_visita_draft_v2'
 
 const INITIAL_FORM: FormState = {
   clienteId: '',
@@ -531,63 +214,33 @@ const INITIAL_FORM: FormState = {
 export default function NovaVisitaPage() {
   const router = useRouter()
 
-  const [etapa, setEtapa] = useState<Etapa>(1)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [sugestoes, setSugestoes] = useState<PendenciaSugerida[]>([])
-  /**
-   * Opção C: UI + log.
-   * True quando o backend confirmou a visita mas NÃO retornou pendencias_ids,
-   * indicando que as pendências foram enviadas mas não persistidas.
-   * Remove quando pendencia.py estiver implementado no backend.
-   */
-
-  console.log('>>> [DRAFT] ARQUIVO NOVA VISITA EXECUTADO NO BROWSER <<<')
   const [errorSubmit, setErrorSubmit] = useState<string | null>(null)
-  const [showDraftNotice, setShowDraftNotice] = useState(() => {
-    if (typeof window === 'undefined') return false
-    const saved = localStorage.getItem(DRAFT_KEY)
-    if (!saved) return false
-    try {
-      const draft = JSON.parse(saved)
-      const hasContent = !!(draft.clienteId || draft.descricao || draft.resultados)
-      // Se não tiver timestamp, assume que é novo (para rascunhos antigos na transição)
-      const timestamp = draft.draftTimestamp || Date.now()
-      const isOld = Date.now() - timestamp > 48 * 60 * 60 * 1000
-      return !isOld && hasContent
-    } catch {
-      return false
-    }
-  })
+  
+  // Rastrear gatilhos que o usuário removeu manualmente para evitar reinserção automática
+  const [gatilhosDescartados, setGatilhosDescartados] = useState<string[]>([])
 
-  const [form, setForm] = useState<FormState>(() => {
-    if (typeof window === 'undefined') return INITIAL_FORM
-    const saved = localStorage.getItem(DRAFT_KEY)
-    if (!saved) return INITIAL_FORM
+  const [showDraftNotice, setShowDraftNotice] = useState(false)
+  const [form, setForm] = useState<FormState>(INITIAL_FORM)
+
+  // Carrega rascunho de forma segura no cliente para evitar Hydration Mismatch
+  useEffect(() => {
+    const savedDraft = localStorage.getItem(DRAFT_KEY)
+    if (!savedDraft) return
     try {
-      const draft = JSON.parse(saved)
-      const hasContent = !!(draft.clienteId || draft.descricao || draft.resultados)
-      const timestamp = draft.draftTimestamp || Date.now()
-      const isOld = Date.now() - timestamp > 48 * 60 * 60 * 1000
-      if (!isOld && hasContent) {
-        console.info('[DRAFT] Recuperando dados do rascunho...', draft)
-        return draft
+      const draft = JSON.parse(savedDraft)
+      if (draft.clienteId || draft.descricao || draft.resultados || (draft.pendencias && draft.pendencias.length > 0)) {
+        Promise.resolve().then(() => {
+          setForm(draft)
+          setShowDraftNotice(true)
+        })
       }
-    } catch (err) {
-      console.error('[DRAFT] Erro ao carregar rascunho:', err)
+    } catch {
       localStorage.removeItem(DRAFT_KEY)
     }
-    return INITIAL_FORM
-  })
-
-  // Log para diagnóstico no console do usuário
-  useEffect(() => {
-    console.info('[DRAFT] Status do aviso:', showDraftNotice)
-    const raw = localStorage.getItem(DRAFT_KEY)
-    if (raw) console.info('[DRAFT] Conteúdo no localStorage:', JSON.parse(raw))
-    else console.info('[DRAFT] LocalStorage vazio')
-  }, [showDraftNotice])
-
+  }, [])
 
   const [allClientes, setAllClientes] = useState<Cliente[]>([])
   const [allContratos, setAllContratos] = useState<Contrato[]>([])
@@ -613,86 +266,90 @@ export default function NovaVisitaPage() {
     return () => { isMounted = false }
   }, [])
 
-  // 1. Recuperação Automática do Draft (Removido daqui e movido para a inicialização do useState)
-
-  // 2. Auto-save Silencioso (Debounced)
+  // Auto-save silencioso debounced
   useEffect(() => {
-    // Só salva se houver algum conteúdo preenchido
     if (!form.clienteId && !form.descricao && !form.resultados) return
-
     const timer = setTimeout(() => {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({
-        ...form,
-        draftTimestamp: Date.now()
-      }))
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(form))
     }, 500)
-
     return () => clearTimeout(timer)
   }, [form])
+
+  // Processar sugestões de pendências inline conforme o usuário digita (Debounced)
+  useEffect(() => {
+    if (!form.descricao.trim()) {
+      Promise.resolve().then(() => {
+        setSugestoes([])
+      })
+      return
+    }
+
+    const timer = setTimeout(() => {
+      const todas = sugerirPendencias(form.descricao)
+
+      // Identificar pre-aceitas (>= 0.7) e opcionais (< 0.7)
+      const preAceitas = todas.filter(s => s.scoreBase >= THRESHOLD_PRE_ACEITAR && !gatilhosDescartados.includes(s.gatilho))
+      const opcionais = todas.filter(s => s.scoreBase < THRESHOLD_PRE_ACEITAR && !gatilhosDescartados.includes(s.gatilho))
+
+      // Injetar pré-aceitas no formulário sem duplicar
+      if (preAceitas.length > 0) {
+        setForm(f => {
+          const novas = [...f.pendencias]
+          let mudou = false
+          preAceitas.forEach(pa => {
+            if (!novas.some(n => n.descricao.toLowerCase() === pa.descricao.toLowerCase())) {
+              novas.push({
+                id: pa.id,
+                descricao: pa.descricao,
+                data_prazo: pa.data_prazo,
+                responsavel: pa.responsavel
+              })
+              mudou = true
+            }
+          })
+          return mudou ? { ...f, pendencias: novas } : f
+        })
+      }
+
+      // Filtrar sugestões opcionais que ainda não estão nas pendências salvas
+      setSugestoes(opcionais.filter(op => 
+        !form.pendencias.some(p => p.descricao.toLowerCase() === op.descricao.toLowerCase())
+      ))
+    }, 600)
+
+    return () => clearTimeout(timer)
+  }, [form.descricao, gatilhosDescartados, form.pendencias])
 
   const descartarDraft = () => {
     localStorage.removeItem(DRAFT_KEY)
     setForm(INITIAL_FORM)
     setShowDraftNotice(false)
-    setEtapa(1)
+    setGatilhosDescartados([])
   }
 
-  /* ── navegação entre etapas ── */
-  function avancarEtapa1() {
-    const e: typeof errors = {}
-    if (!form.clienteId) e.clienteId = 'Selecione o cliente'
-    if (!form.contratoId) e.contratoId = 'Selecione o contrato'
-    if (!form.descricao.trim()) e.descricao = 'Descreva brevemente o que aconteceu'
-    if (form.status === 'realizada' && !form.resultados.trim()) e.resultados = 'Informe os resultados'
-    setErrors(e)
-    if (Object.keys(e).length === 0) {
-      if (sugestoes.length === 0) {
-        const todas = sugerirPendencias(form.descricao)
-        
-        // Agora usamos o Score de Confiança para decidir o Opt-out
-        // >= THRESHOLD_PRE_ACEITAR (0.7) → Entra direto como "Já inclusa"
-        // < 0.7 → Fica como sugestão opcional (chip)
-        const paraIncluir = todas.filter(s => s.scoreBase >= THRESHOLD_PRE_ACEITAR)
-        const paraSugerir = todas.filter(s => s.scoreBase < THRESHOLD_PRE_ACEITAR)
-
-        if (paraIncluir.length > 0) {
-          setForm(f => ({ 
-            ...f, 
-            pendencias: [
-              ...f.pendencias, 
-              ...paraIncluir.map(s => ({ 
-                id: s.id, 
-                descricao: s.descricao, 
-                data_prazo: s.data_prazo, 
-                responsavel: s.responsavel 
-              }))
-            ] 
-          }))
-        }
-        setSugestoes(paraSugerir)
-      }
-      setEtapa(2)
-    }
-  }
-
-  function avancarEtapa2() {
-    setEtapa(3)
-  }
-
-  /* ── sugestões ── */
   function aceitarSugestao(id: string) {
     const s = sugestoes.find(s => s.id === id)
     if (!s) return
-    // move para pendencias confirmadas
-    setForm(f => ({ ...f, pendencias: [...f.pendencias, { id: s.id, descricao: s.descricao, data_prazo: s.data_prazo, responsavel: s.responsavel }] }))
+    setForm(f => ({
+      ...f,
+      pendencias: [...f.pendencias, { id: s.id, descricao: s.descricao, data_prazo: s.data_prazo, responsavel: s.responsavel }]
+    }))
     setSugestoes(ss => ss.filter(s => s.id !== id))
   }
 
-  function descartarSugestao(id: string) {
+  function descartarSugestao(id: string, gatilho?: string) {
+    if (gatilho) {
+      setGatilhosDescartados(prev => [...prev, gatilho])
+    }
     setSugestoes(ss => ss.filter(s => s.id !== id))
   }
 
-  function removePendencia(id: string) {
+  function removePendencia(id: string, descricao: string) {
+    // Mapear descrição de volta a regra de gatilho para ignorar futuras sugestões automáticas idênticas
+    const regra = REGRAS.find(r => r.descricao.toLowerCase() === descricao.toLowerCase())
+    if (regra) {
+      setGatilhosDescartados(prev => [...prev, regra.gatilho])
+    }
     setForm(f => ({ ...f, pendencias: f.pendencias.filter(p => p.id !== id) }))
   }
 
@@ -702,11 +359,25 @@ export default function NovaVisitaPage() {
 
   async function handleSubmit(e?: FormEvent) {
     e?.preventDefault()
+    
+    // Validação rápida
+    const eMap: typeof errors = {}
+    if (!form.clienteId) eMap.clienteId = 'Selecione o cliente'
+    if (!form.contratoId) eMap.contratoId = 'Selecione o contrato'
+    if (!form.descricao.trim()) eMap.descricao = 'Descreva o que aconteceu'
+    if (form.status === 'realizada' && !form.resultados.trim()) eMap.resultados = 'Descreva os resultados'
+    
+    setErrors(eMap)
+    if (Object.keys(eMap).length > 0) {
+      const primeiroErro = Object.values(eMap)[0]
+      setErrorSubmit(primeiroErro)
+      return
+    }
+
     setSaving(true)
     setErrorSubmit(null)
 
     try {
-      // O componente passa dados brutos. O service → adapter decide o formato da API.
       await VisitasService.criar({
         clienteId: form.clienteId,
         contratoId: form.contratoId,
@@ -727,7 +398,6 @@ export default function NovaVisitaPage() {
       setSaving(false)
       setSaved(true)
       localStorage.removeItem(DRAFT_KEY)
-      // Redirecionamento automático removido para dar controle ao usuário na tela de sucesso.
     } catch (error: unknown) {
       console.error('[ERROR][API] Erro ao submeter visita:', error)
       setSaving(false)
@@ -736,76 +406,67 @@ export default function NovaVisitaPage() {
     }
   }
 
-  const hoje = new Date().toLocaleDateString('pt-BR', {
-    weekday: 'short', day: 'numeric', month: 'short',
-  })
-
   const nomeCliente = allClientes.find(c => c.id === form.clienteId)?.nome_instituicao ?? ''
   
-  const contratosDoCliente = form.clienteId 
-    ? allContratos.filter(c => c.clienteId === form.clienteId) 
-    : []
+  const contratosDoCliente = useMemo(() => {
+    return form.clienteId ? allContratos.filter(c => c.clienteId === form.clienteId) : []
+  }, [form.clienteId, allContratos])
 
-  /* ────────── TELA DE CONFIRMAÇÃO ────────── */
+  // Auto-selecionar contrato único do cliente
+  useEffect(() => {
+    if (contratosDoCliente.length === 1 && !form.contratoId) {
+      const id = contratosDoCliente[0].id
+      Promise.resolve().then(() => {
+        setForm(f => ({ ...f, contratoId: id }))
+      })
+    }
+  }, [contratosDoCliente, form.contratoId])
+
   if (saved) {
-    const urgentes = form.pendencias.filter(p => {
-      const urgencia = (new Date(p.data_prazo).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-      return urgencia < 2
-    }).length
-    const total    = form.pendencias.length
-
+    const total = form.pendencias.length
     return (
       <main className="min-h-screen bg-[#07090D] flex flex-col items-center justify-center px-6 text-center">
         <div className="size-16 rounded-full bg-emerald-900/50 border border-emerald-700 flex items-center justify-center mb-5">
           <span className="text-emerald-400 text-3xl">✓</span>
         </div>
         <p className="text-white text-xl font-bold mb-1">Visita registrada</p>
-        <p className="text-[#7D8597] text-sm">{nomeCliente}</p>
+        <p className="text-zinc-500 text-sm mb-6">{nomeCliente}</p>
 
         {total > 0 && (
-          <div className="mt-5 bg-[#0d1117] border border-[#23272F] rounded-2xl px-5 py-4 text-left w-full max-w-sm">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
-              Pendências Identificadas
-            </p>
-            <div className="space-y-1">
-              {urgentes > 0 && (
-                <p className="text-red-400 text-sm font-semibold">
-                  {urgentes} pendência{urgentes > 1 ? 's' : ''} com alta prioridade
-                </p>
-              )}
-              {total - urgentes > 0 && (
-                <p className="text-[#979DAC] text-sm">
-                  {total - urgentes} pendência{total - urgentes > 1 ? 's' : ''} para acompanhamento
-                </p>
-              )}
+          <div className="bg-zinc-900/30 border border-zinc-800 rounded-2xl p-5 text-left w-full max-w-sm mb-8">
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-3">Pendências Geradas ({total})</p>
+            <div className="space-y-2">
+              {form.pendencias.map(p => (
+                <div key={p.id} className="text-xs">
+                  <p className="text-zinc-200 font-bold leading-snug">• {p.descricao}</p>
+                  <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest mt-0.5 ml-2">Prazo: {formatarDataBR(p.data_prazo)} · {p.responsavel}</p>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
-        <div className="mt-10 w-full max-w-sm space-y-3">
+        <div className="w-full max-w-sm space-y-3">
           <button
             onClick={() => router.push('/dashboard')}
-            className="w-full bg-[#0466C8] text-white font-bold py-4 rounded-xl transition-all active:scale-[0.98]"
+            className="w-full bg-[#0466C8] hover:bg-[#0353A4] text-white font-bold py-4 rounded-xl transition-colors"
           >
             Voltar ao Início
           </button>
-          
           <button
             onClick={() => router.push(`/clientes/${form.clienteId}`)}
-            className="w-full bg-[#0d1117] border border-[#23272F] text-[#7D8597] font-bold py-4 rounded-xl transition-all active:scale-[0.98]"
+            className="w-full bg-zinc-900/50 border border-zinc-800/80 hover:bg-zinc-900 text-zinc-400 font-bold py-4 rounded-xl transition-colors"
           >
             Ver Timeline do Cliente
           </button>
-
           <button
             onClick={() => {
               setSaved(false)
-              setEtapa(1)
               setForm(INITIAL_FORM)
               setSugestoes([])
-              localStorage.removeItem(DRAFT_KEY)
+              setGatilhosDescartados([])
             }}
-            className="w-full text-[#4A5568] text-xs font-bold uppercase tracking-widest py-4"
+            className="w-full text-zinc-600 text-xs font-black uppercase tracking-widest py-3 hover:text-zinc-400 transition-colors"
           >
             Registrar outra visita
           </button>
@@ -814,442 +475,342 @@ export default function NovaVisitaPage() {
     )
   }
 
-  /* ────────── LAYOUT BASE ────────── */
   return (
-    <main className="min-h-screen bg-[#07090D] flex flex-col">
-
-      {/* HEADER */}
-      <div className="bg-[#07090D] border-b border-[#23272F] px-4 pt-10 pb-0">
-        <div className="flex items-center gap-3 mb-3">
+    <main className="min-h-screen bg-[#07090D] text-zinc-300 pb-32">
+      {/* HEADER DE AÇÃO */}
+      <div className="px-5 pt-12 pb-4 flex items-center justify-between border-b border-zinc-900/80">
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => etapa === 1 ? router.back() : setEtapa(e => (e - 1) as Etapa)}
-            className="size-9 flex items-center justify-center rounded-xl text-[#7D8597] active:text-white active:bg-[#23272F] transition-colors"
+            onClick={() => router.back()}
+            className="size-8 flex items-center justify-center rounded-xl bg-zinc-900/40 border border-zinc-800/50 text-zinc-400 hover:text-white transition-colors"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
+            <ArrowLeft size={16} />
           </button>
           <div>
-            <h1 className="text-white text-base font-bold">Registrar Visita</h1>
-            <p className="text-[#7D8597] text-xs capitalize">{hoje}</p>
+            <h1 className="text-white text-base font-black tracking-tight">Nova Visita</h1>
+            <p className="text-zinc-600 text-[10px] uppercase tracking-wider font-bold">Relato e Ação Direta</p>
           </div>
         </div>
-        <EtapaIndicador atual={etapa} />
       </div>
 
-      {/* ── AVISO DE DRAFT RECUPERADO ── */}
-      {showDraftNotice && etapa === 1 && (
-        <div className="mx-6 mt-4 bg-[#0466C8]/20 border border-[#0466C8]/40 rounded-xl p-4 flex items-center justify-between shadow-lg backdrop-blur-md">
+      {showDraftNotice && (
+        <div className="mx-5 mt-5 bg-sky-950/20 border border-sky-800/30 rounded-2xl p-4 flex items-center justify-between shadow-lg">
           <div className="flex items-center gap-3">
-            <div className="size-8 rounded-full bg-[#0466C8] flex items-center justify-center shrink-0">
-              <RotateCcw size={16} className="text-white" />
+            <div className="size-8 rounded-full bg-sky-600/10 flex items-center justify-center shrink-0">
+              <RotateCcw size={14} className="text-sky-400" />
             </div>
             <div>
-              <p className="text-white text-sm font-bold">Rascunho recuperado</p>
-              <p className="text-blue-200/70 text-[10px]">Você tem um preenchimento não finalizado.</p>
+              <p className="text-white text-xs font-bold">Rascunho recuperado</p>
+              <p className="text-zinc-600 text-[9px] uppercase tracking-wider font-bold">Preenchimento não finalizado</p>
             </div>
           </div>
           <button 
             onClick={descartarDraft}
-            className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-[10px] uppercase tracking-wider font-black text-blue-300 transition-colors flex items-center gap-2"
+            className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[9px] uppercase tracking-widest font-black text-sky-400 border border-white/5 transition-colors"
           >
-            <X size={12} /> Descartar
+            Descartar
           </button>
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto px-6 py-6">
-
-      {/* Toggle removido conforme nova orientação de fluxo separado */}
-      
       {errorSubmit && (
-        <div className="mx-4 mt-4 bg-red-950/40 border border-red-700/50 rounded-xl px-4 py-3 text-red-400 text-sm">
-          <p className="font-bold uppercase tracking-widest text-[10px] mb-1">Erro</p>
-          {errorSubmit}
+        <div className="mx-5 mt-5 bg-red-950/20 border border-red-900/30 rounded-2xl p-4 flex items-start gap-3">
+          <AlertTriangle size={16} className="text-red-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-red-400 text-xs font-bold">Atenção</p>
+            <p className="text-zinc-400 text-xs mt-0.5">{errorSubmit}</p>
+          </div>
         </div>
       )}
 
-      {/* ════════════════════════════
-          ETAPA 1 — O QUE ACONTECEU
-      ════════════════════════════ */}
-      {etapa === 1 && (
-        <div className="justify-center px-4 pt-5 pb-32 space-y-5">
-
-          {/* Cliente */}
+      <form onSubmit={handleSubmit} className="px-5 mt-6 space-y-6">
+        
+        {/* CLIENTE & CONTRATO */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
-              Cliente *
-            </label>
+            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-2">Cliente *</label>
             <select
               value={form.clienteId}
               onChange={e => {
                 setForm(f => ({ ...f, clienteId: e.target.value, contratoId: '' }))
                 setErrors(er => ({ ...er, clienteId: undefined }))
               }}
-              className={`w-full rounded-xl border px-4 py-3.5 text-base text-white bg-[#0d1117] appearance-none focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40 ${
-                errors.clienteId ? 'border-red-500' : 'border-[#23272F]'
+              className={`w-full rounded-xl border px-4 py-3 text-sm text-white bg-zinc-950 focus:outline-none focus:border-[#0466C8] transition-colors ${
+                errors.clienteId ? 'border-red-900' : 'border-zinc-800/80'
               }`}
             >
-              <option value="" className="bg-[#0d1117]">Selecione o cliente...</option>
+              <option value="">Selecione o cliente...</option>
               {allClientes.map(c => (
-                <option key={c.id} value={c.id} className="bg-[#0d1117]">{c.nome_instituicao}</option>
+                <option key={c.id} value={c.id}>{c.nome_instituicao}</option>
               ))}
             </select>
-            {errors.clienteId && <p className="mt-1 text-xs text-red-400">{errors.clienteId}</p>}
-          </div>
-
-          {/* Contrato Vinculado */}
-          {form.clienteId && (
-            <div>
-              <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
-                Contrato Vinculado *
-              </label>
-              <select
-                value={form.contratoId}
-                onChange={e => {
-                  setForm(f => ({ ...f, contratoId: e.target.value }))
-                  setErrors(er => ({ ...er, contratoId: undefined }))
-                }}
-                className={`w-full rounded-xl border px-4 py-3.5 text-base text-white bg-[#0d1117] appearance-none focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40 ${
-                  errors.contratoId ? 'border-red-500' : 'border-[#23272F]'
-                }`}
-              >
-                <option value="" className="bg-[#0d1117]">Selecione o contrato...</option>
-                {contratosDoCliente.map(c => (
-                  <option key={c.id} value={c.id} className="bg-[#0d1117]">{c.servicos_contratados}</option>
-                ))}
-              </select>
-              {errors.contratoId && <p className="mt-1 text-xs text-red-400">{errors.contratoId}</p>}
-            </div>
-          )}
-
-          {/* Status da Visita */}
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
-              Status *
-            </label>
-            <div className="flex gap-2">
-              {(['agendada', 'realizada', 'cancelada'] as StatusVisita[]).map(status => (
-                <button
-                  type="button"
-                  key={status}
-                  onClick={() => setForm(f => ({ ...f, status }))}
-                  className={`flex-1 py-3 rounded-xl text-sm font-semibold border transition-colors capitalize ${
-                    form.status === status
-                      ? 'bg-[#001845] text-white border-[#0466C8]'
-                      : 'bg-[#0d1117] text-[#7D8597] border-[#23272F]'
-                  }`}
-                >
-                  {status === 'realizada' ? 'Concluída' : status}
-                </button>
-              ))}
-            </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
-              Tipo de Visita *
-            </label>
+            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-2">Contrato Vinculado *</label>
             <select
-              value={form.tipo_visita}
-              onChange={e => setForm(f => ({ ...f, tipo_visita: e.target.value as TipoVisita }))}
-              className="w-full rounded-xl border border-[#23272F] px-4 py-3.5 text-base text-white bg-[#0d1117] focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40"
+              value={form.contratoId}
+              onChange={e => {
+                setForm(f => ({ ...f, contratoId: e.target.value }))
+                setErrors(er => ({ ...er, contratoId: undefined }))
+              }}
+              disabled={!form.clienteId}
+              className={`w-full rounded-xl border px-4 py-3 text-sm text-white bg-zinc-950 focus:outline-none focus:border-[#0466C8] disabled:opacity-40 transition-colors ${
+                errors.contratoId ? 'border-red-900' : 'border-zinc-800/80'
+              }`}
             >
-              <option value="rotineira">Rotineira</option>
-              <option value="urgente">Urgente</option>
-              <option value="pontual">Pontual</option>
-              <option value="estruturada">Estruturada</option>
-              <option value="acompanhamento direcionado">Acompanhamento Direcionado</option>
+              <option value="">Selecione o contrato...</option>
+              {contratosDoCliente.map(c => (
+                <option key={c.id} value={c.id}>{c.servicos_contratados}</option>
+              ))}
             </select>
           </div>
+        </div>
 
-
-          {/* Resumo — curto e objetivo */}
+        {/* RELATO CENTRAL (FOCO TOTAL) */}
+        <div className="bg-zinc-900/20 border border-zinc-800/40 rounded-2xl p-5 space-y-4">
           <div>
-            <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
-              O que aconteceu? *
-            </label>
+            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-2">O que aconteceu? (Relato Principal) *</label>
             <textarea
+              autoFocus
               value={form.descricao}
               onChange={e => {
                 setForm(f => ({ ...f, descricao: e.target.value }))
                 setErrors(er => ({ ...er, descricao: undefined }))
               }}
-              rows={3}
-              placeholder="Ex: Inspeção sanitária mensal na cozinha e refeitório..."
-              className={`w-full rounded-xl border px-4 py-3.5 text-base text-white bg-[#0d1117] placeholder-[#7D8597] focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40 resize-none ${
-                errors.descricao ? 'border-red-500' : 'border-[#23272F]'
+              rows={4}
+              placeholder="Descreva a visita. Ex: Inspeção sanitária mensal na cozinha. Identificado estoque sem identificação de validade..."
+              className={`w-full bg-zinc-950 rounded-xl border px-4 py-3 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-[#0466C8] resize-none transition-colors ${
+                errors.descricao ? 'border-red-900' : 'border-zinc-800/80'
               }`}
             />
-            {errors.descricao && <p className="mt-1 text-xs text-red-400">{errors.descricao}</p>}
           </div>
 
-          {/* Resultados detalhados */}
           {form.status === 'realizada' && (
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
-                Resultados *
-              </label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-2">Resultados Detalhados *</label>
               <textarea
                 value={form.resultados}
                 onChange={e => {
                   setForm(f => ({ ...f, resultados: e.target.value }))
                   setErrors(er => ({ ...er, resultados: undefined }))
                 }}
-                rows={4}
-                placeholder="Ex: Tudo conforme, exceto lixeiras sem pedal..."
-                className={`w-full rounded-xl border px-4 py-3.5 text-base text-white bg-[#0d1117] placeholder-[#7D8597] focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40 resize-none ${
-                  errors.resultados ? 'border-red-500' : 'border-[#23272F]'
+                rows={3}
+                placeholder="Ex: Treinado manipuladores sobre descarte imediato. Lixeira sem pedal marcada para troca..."
+                className={`w-full bg-zinc-950 rounded-xl border px-4 py-3 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-[#0466C8] resize-none transition-colors ${
+                  errors.resultados ? 'border-red-900' : 'border-zinc-800/80'
                 }`}
               />
-              {errors.resultados && <p className="mt-1 text-xs text-red-400">{errors.resultados}</p>}
+            </div>
+          )}
+        </div>
+
+        {/* PENDÊNCIAS & AÇÕES GERADAS INLINE */}
+        <div className="bg-zinc-900/20 border border-zinc-800/40 rounded-2xl p-5 space-y-4">
+          <div>
+            <h3 className="text-white text-xs font-black uppercase tracking-widest">Pendências e Ações Geradas</h3>
+            <p className="text-[10px] text-zinc-600 mt-1">Conforme você relata, pendências com score alto são salvas automaticamente. Outras aparecem como sugestões.</p>
+          </div>
+
+          {/* Lista de Inclusas */}
+          {form.pendencias.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Já Inclusas ({form.pendencias.length})</p>
+              <div className="grid grid-cols-1 gap-2">
+                {form.pendencias.map(p => (
+                  <div key={p.id} className="bg-zinc-950/60 border border-zinc-800/60 rounded-xl p-3 flex items-start justify-between gap-3">
+                    <div className="flex-1 space-y-2">
+                      <input
+                        type="text"
+                        value={p.descricao}
+                        onChange={e => updatePendencia(p.id, { descricao: e.target.value })}
+                        className="w-full bg-transparent text-white text-xs font-bold focus:outline-none border-b border-dashed border-zinc-800 focus:border-zinc-700 pb-1"
+                      />
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-1.5 bg-zinc-900 px-2 py-1 rounded text-[10px]">
+                          <span className="text-zinc-600 font-bold uppercase tracking-widest">Prazo:</span>
+                          <input
+                            type="date"
+                            value={p.data_prazo}
+                            onChange={e => updatePendencia(p.id, { data_prazo: e.target.value })}
+                            className="bg-transparent text-zinc-300 focus:outline-none cursor-pointer"
+                          />
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-zinc-900 px-2 py-1 rounded text-[10px]">
+                          <span className="text-zinc-600 font-bold uppercase tracking-widest">Responsável:</span>
+                          <select
+                            value={p.responsavel}
+                            onChange={e => updatePendencia(p.id, { responsavel: e.target.value })}
+                            className="bg-transparent text-zinc-300 focus:outline-none"
+                          >
+                            <option value="Equipe Cliente" className="bg-zinc-950">Equipe Cliente</option>
+                            <option value="AM Consultoria" className="bg-zinc-950">AM Consultoria</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removePendencia(p.id, p.descricao)}
+                      className="size-6 rounded-lg bg-zinc-900/60 hover:bg-red-950/20 text-zinc-500 hover:text-red-400 transition-colors flex items-center justify-center text-sm"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            {/* Data da Visita */}
+          {/* Sugestões Opcionais (Opt-in) */}
+          {sugestoes.length > 0 && (
+            <div className="space-y-2 pt-2 border-t border-zinc-900/50">
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#0466C8]">Adicionar também? ({sugestoes.length})</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {sugestoes.map(s => (
+                  <div key={s.id} className="bg-zinc-950/30 border border-zinc-900/80 rounded-xl p-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-white text-xs font-bold truncate">{s.descricao}</p>
+                      <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest mt-0.5">Prazo: {formatarDataBR(s.data_prazo)}</p>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => aceitarSugestao(s.id)}
+                        className="px-2.5 py-1 rounded bg-[#0466C8]/10 hover:bg-[#0466C8]/20 border border-[#0466C8]/20 text-[#0466C8] text-[10px] font-black uppercase tracking-widest transition-colors"
+                      >
+                        + Sim
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => descartarSugestao(s.id, s.gatilho)}
+                        className="px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-500 text-[10px] font-black uppercase tracking-widest transition-colors"
+                      >
+                        Não
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Botão de Inclusão Manual */}
+          <button
+            type="button"
+            onClick={() => {
+              setForm(f => ({
+                ...f,
+                pendencias: [
+                  ...f.pendencias,
+                  {
+                    id: Math.random().toString(36).slice(2, 9),
+                    descricao: '',
+                    data_prazo: prazoEmDiasISO(5),
+                    responsavel: 'Equipe Cliente'
+                  }
+                ]
+              }))
+            }}
+            className="w-full py-3.5 border border-dashed border-zinc-800/80 rounded-xl hover:border-zinc-700 text-zinc-500 hover:text-zinc-400 text-xs font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
+          >
+            <Plus size={12} /> Escrever pendência manual
+          </button>
+        </div>
+
+        {/* DETALHES ADICIONAIS (CONTINUIDADE NATURAL - COMPACTOS E PRÉ-PREENCHIDOS) */}
+        <div className="bg-zinc-900/10 border border-zinc-900/40 rounded-2xl p-5 space-y-4">
+          <div>
+            <h3 className="text-white text-xs font-black uppercase tracking-widest">Detalhes de Execução (Opcionais)</h3>
+            <p className="text-[10px] text-zinc-700">Preenchidos por padrão para máxima agilidade. Altere se necessário.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
-                Data *
+              <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1.5">Status</label>
+              <select
+                value={form.status}
+                onChange={e => setForm(f => ({ ...f, status: e.target.value as StatusVisita }))}
+                className="w-full bg-zinc-950 rounded-xl border border-zinc-900/80 px-3 py-2 text-xs text-white focus:outline-none focus:border-[#0466C8]"
+              >
+                <option value="realizada">Concluída</option>
+                <option value="agendada">Agendada</option>
+                <option value="cancelada">Cancelada</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1.5">Tipo de Visita</label>
+              <select
+                value={form.tipo_visita}
+                onChange={e => setForm(f => ({ ...f, tipo_visita: e.target.value as TipoVisita }))}
+                className="w-full bg-zinc-950 rounded-xl border border-zinc-900/80 px-3 py-2 text-xs text-white focus:outline-none focus:border-[#0466C8]"
+              >
+                <option value="rotineira">Rotineira</option>
+                <option value="urgente">Urgente</option>
+                <option value="pontual">Pontual</option>
+                <option value="estruturada">Estruturada</option>
+                <option value="acompanhamento direcionado">Direcionada</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1.5">Modalidade</label>
+              <select
+                value={form.modalidade}
+                onChange={e => setForm(f => ({ ...f, modalidade: e.target.value as ModalidadeVisita }))}
+                className="w-full bg-zinc-950 rounded-xl border border-zinc-900/80 px-3 py-2 text-xs text-white focus:outline-none focus:border-[#0466C8]"
+              >
+                <option value="presencial">Presencial</option>
+                <option value="remota">Remota</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1.5 flex items-center gap-1">
+                <Calendar size={10} /> Data e Hora
               </label>
               <input
                 type="datetime-local"
                 value={form.data_hora}
                 onChange={e => setForm(f => ({ ...f, data_hora: e.target.value }))}
                 style={{ colorScheme: 'dark' }}
-                className="w-full rounded-xl border border-[#23272F] px-4 py-3.5 text-base text-white bg-[#0d1117] focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40 transition-all cursor-pointer"
+                className="w-full bg-zinc-950 rounded-xl border border-zinc-900/80 px-3 py-2 text-xs text-white focus:outline-none focus:border-[#0466C8] cursor-pointer"
               />
             </div>
-            
-            {/* Duração Estimada */}
+
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
-                Duração (min)
+              <label className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1.5 flex items-center gap-1">
+                <Clock size={10} /> Duração (minutos)
               </label>
               <input
                 type="number"
                 value={form.duracao_minutos}
                 onChange={e => setForm(f => ({ ...f, duracao_minutos: Number(e.target.value) }))}
-                className="w-full rounded-xl border border-[#23272F] px-4 py-3.5 text-base text-white bg-[#0d1117] focus:outline-none focus:ring-2 focus:ring-[#0466C8]/40"
+                className="w-full bg-zinc-950 rounded-xl border border-zinc-900/80 px-3 py-2 text-xs text-white focus:outline-none focus:border-[#0466C8]"
               />
             </div>
           </div>
-
-          {/* Modalidade */}
-          <div>
-            <label className="block text-[11px] font-bold uppercase tracking-widest text-[#7D8597] mb-2">
-              Modalidade
-            </label>
-            <div className="flex gap-2">
-              {(['presencial', 'remota'] as ModalidadeVisita[]).map(mod => (
-                <button
-                  type="button"
-                  key={mod}
-                  onClick={() => setForm(f => ({ ...f, modalidade: mod }))}
-                  className={`flex-1 py-3 rounded-xl text-sm font-semibold border transition-colors capitalize ${
-                    form.modalidade === mod
-                      ? 'bg-[#001845] text-white border-[#0466C8]'
-                      : 'bg-[#0d1117] text-[#7D8597] border-[#23272F]'
-                  }`}
-                >
-                  {mod === 'remota' ? 'Remota' : 'Presencial'}
-                </button>
-              ))}
-            </div>
-          </div>
-          </div>
-      )}
-
-      {/* ════════════════════════════
-          ETAPA 2 — FICOU ALGO ABERTO?
-      ════════════════════════════ */}
-      {etapa === 2 && (
-        <div className="px-4 pt-5 pb-32 space-y-5">
-
-          {/* ── BLOCO 1: JÁ VÃO SER SALVAS (pré-aceitas, opt-out, editáveis) ── */}
-          {form.pendencias.length > 0 && (
-            <section>
-              <p className="text-[11px] font-black uppercase tracking-widest text-emerald-500 px-1 mb-2">
-                Ações detectadas — já inclusas ({form.pendencias.length})
-              </p>
-              <p className="text-[10px] text-[#7D8597] px-1 mb-3">Toque para editar · × para remover.</p>
-              <div className="space-y-2">
-                {form.pendencias.map(p => (
-                  <PendenciaEditavel
-                    key={p.id}
-                    p={p}
-                    onChange={changes => updatePendencia(p.id, changes)}
-                    onRemove={() => removePendencia(p.id)}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* ── BLOCO 2: SUGESTÕES OPCIONAIS (atenção/normal — chips) ── */}
-          {sugestoes.length > 0 && (
-            <section>
-              <p className="text-[11px] font-black uppercase tracking-widest text-[#0466C8] px-1 mb-2">
-                Adicionar também? ({sugestoes.length})
-              </p>
-              <div className="space-y-2">
-                {sugestoes.map(s => {
-                  const urgencia = (new Date(s.data_prazo).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-                  const isUrgente = urgencia < 2
-                  const dest   = isUrgente ? '→ Planejamento hoje' : '→ Planejamento'
-                  const dColor = isUrgente ? 'text-amber-400' : 'text-[#7D8597]'
-                  return (
-                    <div key={s.id} className="flex items-center gap-3 bg-[#0d1117] border border-[#23272F] rounded-xl px-4 py-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-semibold truncate">{s.descricao}</p>
-                        <p className={`text-[10px] font-bold ${dColor}`}>{dest} · {formatarDataBR(s.data_prazo)}</p>
-                      </div>
-                      <div className="flex gap-2 shrink-0">
-                        <button type="button" onClick={() => aceitarSugestao(s.id)}
-                          className="text-emerald-400 text-xs font-bold bg-emerald-900/30 px-3 py-1.5 rounded-lg active:bg-emerald-900/60">+ Sim</button>
-                        <button type="button" onClick={() => descartarSugestao(s.id)}
-                          className="text-[#7D8597] text-xs font-bold bg-[#23272F] px-3 py-1.5 rounded-lg active:opacity-60">Não</button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </section>
-          )}
-
-          {/* Estado vazio + adicionar manualmente */}
-          {sugestoes.length === 0 && form.pendencias.length === 0 && (
-            <div className="py-8 space-y-6">
-              <div className="text-center">
-                <p className="text-2xl mb-3">✏️</p>
-                <p className="text-white text-sm font-bold">Nada detectado no resumo</p>
-                <p className="text-[#7D8597] text-[10px] mt-1.5 leading-relaxed">
-                  O sistema não encontrou palavras-chave<br />
-                  Adicione a pendência manualmente abaixo.
-                </p>
-              </div>
-              <AdicionarPendenciaInline 
-                variant="primary" 
-                onAdd={p => setForm(f => ({ ...f, pendencias: [...f.pendencias, p] }))} 
-              />
-            </div>
-          )}
-
-          {/* Link discreto para adicionar mais, quando já há itens */}
-          {(sugestoes.length > 0 || form.pendencias.length > 0) && (
-            <AdicionarPendenciaInline onAdd={p => setForm(f => ({ ...f, pendencias: [...f.pendencias, p] }))} />
-          )}
         </div>
-      )}
 
-      {/* ════════════════════════════
-          ETAPA 3 — CONFIRMAR
-      ════════════════════════════ */}
-      {etapa === 3 && (
-        <div className="px-4 pt-5 pb-32 space-y-4">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-[#7D8597] px-1">
-            Resumo do registro
-          </p>
-
-          {/* Visita */}
-          <div className="bg-[#0d1117] border border-[#23272F] rounded-2xl px-4 py-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-white font-semibold text-sm">{nomeCliente}</p>
-              <div className="flex gap-1">
-                <span className="text-[10px] font-bold text-sky-400 bg-sky-900/30 px-2 py-0.5 rounded-lg capitalize">
-                  {form.tipo_visita}
-                </span>
-                <span className="text-[10px] font-bold text-zinc-400 bg-zinc-800/50 px-2 py-0.5 rounded-lg capitalize">
-                  {form.status}
-                </span>
-              </div>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-0.5">Descrição</p>
-              <p className="text-[#979DAC] text-xs leading-snug">{form.descricao}</p>
-            </div>
-            {form.status === 'realizada' && form.resultados && (
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#7D8597] mb-0.5">Resultados</p>
-                <p className="text-[#979DAC] text-xs leading-snug">{form.resultados}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Pendências geradas */}
-          {form.pendencias.length > 0 && (
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-[#7D8597] px-1 mb-2">
-                Pendências geradas ({form.pendencias.length})
-              </p>
-              <div className="space-y-2">
-                {form.pendencias.map(p => {
-                  const urgencia = (new Date(p.data_prazo).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-                  const isUrgente = urgencia < 2
-                  const cor = isUrgente ? 'border-red-500' : 'border-[#23272F]'
-                  const label = isUrgente ? '→ Modo Caos' : '→ Planejamento'
-                  const labelColor = isUrgente ? 'text-red-400' : 'text-[#7D8597]'
-                  return (
-                    <div key={p.id} className={`bg-[#0d1117] border-l-4 ${cor} rounded-r-xl px-4 py-3`}>
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-white text-sm flex-1">{p.descricao || '(sem descrição)'}</p>
-                        <span className={`text-[10px] font-bold shrink-0 ${labelColor}`}>{label}</span>
-                      </div>
-                      {p.data_prazo && <p className="text-[#7D8597] text-xs mt-0.5">Prazo: {formatarDataBR(p.data_prazo)}</p>}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {form.pendencias.length === 0 && (
-            <div className="bg-[#0d1117] border border-[#23272F] rounded-2xl px-4 py-3">
-              <p className="text-[#7D8597] text-sm">Nenhuma pendência gerada nessa visita.</p>
-            </div>
-          )}
-        </div>
-      )}
-      </div>
-
-      {/* ════════════════════════════
-          BOTÃO FIXO NO RODAPÉ
-      ════════════════════════════ */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#07090D]/95 backdrop-blur-sm border-t border-[#23272F] px-4 py-4 z-20">
-        {etapa === 1 && (
+        {/* BOTÃO FIXO/FINAL DE ENVIO */}
+        <div className="pt-4">
           <button
-            type="button"
-            onClick={avancarEtapa1}
-            className="w-full py-4 rounded-xl text-base font-bold text-white bg-[#0466C8] active:bg-[#0353A4] active:scale-[0.98] transition-all"
-          >
-            Continuar →
-          </button>
-        )}
-
-        {etapa === 2 && (
-          <button
-            type="button"
-            onClick={avancarEtapa2}
-            className="w-full py-4 rounded-xl text-base font-bold text-white bg-[#0466C8] active:bg-[#0353A4] active:scale-[0.98] transition-all"
-          >
-            {form.pendencias.length === 0 ? 'Nada em aberto' : 'Pronto'}
-          </button>
-        )}
-
-        {etapa === 3 && (
-          <button
-            type="button"
-            onClick={() => handleSubmit()}
+            type="submit"
             disabled={saving}
-            className={`w-full py-4 rounded-xl text-base font-bold text-white transition-all active:scale-[0.98] ${
-              saving ? 'bg-[#0466C8]/50' : 'bg-[#0466C8] active:bg-[#0353A4]'
+            className={`w-full py-4 rounded-xl text-sm font-black uppercase tracking-widest text-white transition-all shadow-lg active:scale-[0.99] ${
+              saving 
+                ? 'bg-sky-600/40 text-sky-300' 
+                : 'bg-sky-600 hover:bg-sky-500 shadow-sky-900/10'
             }`}
           >
-            {saving ? 'Salvando...' : 'Registrar visita'}
+            {saving ? 'Registrando Visita...' : 'Registrar Visita'}
           </button>
-        )}
-      </div>
+        </div>
 
+      </form>
     </main>
   )
 }

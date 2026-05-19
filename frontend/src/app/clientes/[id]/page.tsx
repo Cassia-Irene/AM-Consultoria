@@ -14,6 +14,7 @@ import { getStatusFaturamento } from '@/domain/faturamento'
 import { OperationalDrawer } from '@/components/OperationalDrawer'
 import { ClientManager } from '@/components/ClientManager'
 import { ContactManager } from '@/components/ContactManager'
+import { ContractCreateManager } from '@/components/ContractCreateManager'
 import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react'
 
 import type { Cliente } from '@/domain/cliente'
@@ -48,10 +49,12 @@ export default function ClienteDetalhePage({ params }: PageProps) {
 
   const [isClientDrawerOpen, setIsClientDrawerOpen] = useState(false)
   const [isContactDrawerOpen, setIsContactDrawerOpen] = useState(false)
+  const [isContractDrawerOpen, setIsContractDrawerOpen] = useState(false)
   const [selectedContactId, setSelectedContactId] = useState<string | undefined>()
   const [notasEditando, setNotasEditando] = useState(false)
   const [notasTexto, setNotasTexto] = useState('')
   const [notasSalvando, setNotasSalvando] = useState(false)
+  const [expandedContactNotes, setExpandedContactNotes] = useState<Record<string, boolean>>({})
 
   const loadData = useCallback(async () => {
     try {
@@ -278,7 +281,18 @@ export default function ClienteDetalhePage({ params }: PageProps) {
           
           {/* COLUNA 1: Contratos */}
           <div className="space-y-4">
-            <SectionHeader label="Contratos" />
+            <div className="flex justify-between items-center gap-3">
+              <div className="flex-1">
+                <SectionHeader label="Contratos" />
+              </div>
+              <button 
+                onClick={() => setIsContractDrawerOpen(true)}
+                className="flex items-center gap-1 bg-sky-600/90 hover:bg-sky-500 active:bg-sky-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest px-3 py-1.5 transition-all shadow-lg shadow-sky-950/20 active:scale-95 shrink-0"
+              >
+                <Plus size={11} className="stroke-3" />
+                Novo
+              </button>
+            </div>
             <div className="space-y-3">
               {contratos.length > 0 ? (
                 contratos.slice(0, 3).map(c => (
@@ -313,12 +327,32 @@ export default function ClienteDetalhePage({ params }: PageProps) {
             <div>
               <SectionHeader label="Stakeholders & Contatos" />
               <div className="space-y-3 mt-4">
-                {contatos.length > 0 ? (
-                  contatos.map(contato => {
-                    // Extrai tags das observações para exibição
-                    const match = (contato.observacoes_gerais || '').match(/^\[(.*?)\]/)
+                {(() => {
+                  const prioridadePapel: Record<string, number> = {
+                    'Decisor': 1,
+                    'Financeiro': 2,
+                    'Influenciador': 3,
+                    'Técnico': 4,
+                    'Operacional': 5,
+                  }
+                  
+                  const contatosOrdenados = [...contatos].sort((a, b) => {
+                    const pa = prioridadePapel[a.papel] || 999
+                    const pb = prioridadePapel[b.papel] || 999
+                    return pa - pb
+                  })
+
+                  return contatosOrdenados.length > 0 ? (
+                    contatosOrdenados.map(contato => {
+                      // Extrai tags das observações para exibição
+                      const match = (contato.observacoes_gerais || '').match(/^\[(.*?)\]/)
                     const tags = match ? match[1].split(',').map(t => t.trim()) : []
                     const cleanObs = (contato.observacoes_gerais || '').replace(/^\[.*?\]\s*/, '')
+                    
+                    // M2: Sanitização robusta do WhatsApp
+                    const cleanNum = (contato.telefone_whatsapp || '').replace(/\D/g, '')
+                    const finalNum = cleanNum.startsWith('55') ? cleanNum : `55${cleanNum}`
+                    const isObsExpanded = !!expandedContactNotes[contato.id]
 
                     return (
                       <div 
@@ -354,15 +388,27 @@ export default function ClienteDetalhePage({ params }: PageProps) {
 
                         <div className="mt-4 flex flex-wrap gap-4" onClick={e => e.stopPropagation()}>
                           {contato.telefone_whatsapp && (
-                            <a 
-                              href={`https://wa.me/55${contato.telefone_whatsapp.replace(/\D/g, '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-zinc-400 hover:text-emerald-400 text-xs flex items-center gap-1.5 transition-colors group/wa"
-                            >
-                              <span className="text-emerald-500 text-[10px] font-black uppercase group-hover/wa:underline">WA:</span> 
-                              <span className="font-medium group-hover/wa:underline">{contato.telefone_whatsapp}</span>
-                            </a>
+                            <>
+                              {/* WA Link Sanitizado */}
+                              <a 
+                                href={`https://wa.me/${finalNum}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-zinc-400 hover:text-emerald-400 text-xs flex items-center gap-1.5 transition-colors group/wa"
+                              >
+                                <span className="text-emerald-500 text-[10px] font-black uppercase group-hover/wa:underline">WA:</span> 
+                                <span className="font-medium group-hover/wa:underline">{contato.telefone_whatsapp}</span>
+                              </a>
+
+                              {/* M3: Ligação Telefônica Direta */}
+                              <a 
+                                href={`tel:${cleanNum}`}
+                                className="text-zinc-300 hover:text-sky-400 text-xs flex items-center gap-1.5 transition-colors group/tel"
+                              >
+                                <span className="text-sky-500 text-[10px] md:text-[11px] font-black uppercase group-hover/tel:underline">Tel:</span> 
+                                <span className="font-medium group-hover/tel:underline">{contato.telefone_whatsapp}</span>
+                              </a>
+                            </>
                           )}
                           {contato.email && (
                             <a 
@@ -376,7 +422,19 @@ export default function ClienteDetalhePage({ params }: PageProps) {
                         </div>
 
                         {cleanObs && (
-                          <p className="mt-3 text-[11px] text-zinc-500 italic leading-relaxed border-t border-white/5 pt-3 line-clamp-1 group-hover:line-clamp-none transition-all">
+                          /* M4: Expansão sem conflito com e.stopPropagation */
+                          <p 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setExpandedContactNotes(prev => ({
+                                ...prev,
+                                [contato.id]: !prev[contato.id]
+                              }))
+                            }}
+                            className={`mt-3 text-[11px] text-zinc-500 italic leading-relaxed border-t border-white/5 pt-3 cursor-pointer transition-all duration-300 ${
+                              isObsExpanded ? 'line-clamp-none' : 'line-clamp-1 group-hover:line-clamp-none'
+                            }`}
+                          >
                             &quot;{cleanObs}&quot;
                           </p>
                         )}
@@ -385,7 +443,8 @@ export default function ClienteDetalhePage({ params }: PageProps) {
                   })
                 ) : (
                   <EmptyCard message="Nenhum contato vinculado" />
-                )}
+                )
+                })()}
               </div>
             </div>
 
@@ -487,6 +546,21 @@ export default function ClienteDetalhePage({ params }: PageProps) {
           clienteId={id}
           onClose={() => setIsContactDrawerOpen(false)}
           onSuccess={loadData}
+        />
+      </OperationalDrawer>
+
+      <OperationalDrawer
+        isOpen={isContractDrawerOpen}
+        onClose={() => setIsContractDrawerOpen(false)}
+        title="Novo Contrato"
+      >
+        <ContractCreateManager
+          clienteId={id}
+          onClose={() => setIsContractDrawerOpen(false)}
+          onSuccess={(novoContrato) => {
+            setContratos(prev => [novoContrato, ...prev])
+            loadData()
+          }}
         />
       </OperationalDrawer>
     </main>

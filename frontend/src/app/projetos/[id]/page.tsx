@@ -1,8 +1,8 @@
 'use client'
-
 import { use, useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { ProjetosService } from '@/services/projetos.service'
+import { ParcelasService } from '@/services/parcelas.service'
 import { formatCurrency } from '@/utils/finance'
 import { displayDate } from '@/utils/date'
 import type { Projeto } from '@/domain/projeto'
@@ -12,11 +12,33 @@ import { ProjectMarcoList } from '@/components/ProjectMarcoList'
 import { ProjectOperationalOverrides } from '@/components/ProjectOperationalOverrides'
 import { ProjectTimeline } from '@/components/ProjectTimeline'
 import { ArrowLeft, ArrowUpRight, Zap, FileText, AlertCircle, DollarSign, Package, Edit3, CheckCircle2, History, TrendingUp, Plus, Target } from 'lucide-react'
-
+function linkifyText(text: string, linkClass = "text-sky-400 hover:text-sky-300 hover:underline break-all") {
+  if (!text) return ''
+  const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/g
+  const parts = text.split(urlRegex)
+  if (parts.length === 1) return text
+  return parts.map((part, index) => {
+    if (part.match(urlRegex)) {
+      const href = part.startsWith('www.') ? `https://${part}` : part
+      return (
+        <a 
+          key={index} 
+          href={href} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className={linkClass}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {part}
+        </a>
+      )
+    }
+    return part
+  })
+}
 interface PageProps {
   params: Promise<{ id: string }>
 }
-
 export default function ProjetoDetalhePage({ params }: PageProps) {
   const { id } = use(params)
   
@@ -25,22 +47,22 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
+  const [showAllPendencias, setShowAllPendencias] = useState(false)
+  const [showAllEventos, setShowAllEventos] = useState(false)
+  
   const [selectedItem, setSelectedItem] = useState<{ 
     type: string; 
     id?: number | string;
     projetoId?: number | string;
   } | null>(null)
   const [refreshSignal, setRefreshSignal] = useState(0)
-
   const loadData = useCallback(async () => {
     try {
       const foundProjeto = await ProjetosService.getById(id)
-
       if (!foundProjeto) {
         setError('Projeto não encontrado.')
         return
       }
-
       setProjeto(foundProjeto)
     } catch (err) {
       console.error('[ERROR][PROJETO_DETAIL]', err)
@@ -49,13 +71,10 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
       setLoading(false)
     }
   }, [id])
-
   useEffect(() => {
     // Evita cascading renders síncronos
     Promise.resolve().then(() => loadData())
   }, [loadData, refreshSignal])
-
-
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [isEditingFactual, setIsEditingFactual] = useState(false)
   const [fTitle, setFTitle] = useState('')
@@ -65,7 +84,6 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
   const [fFim, setFFim] = useState('')
   // M8 — estado antes dos early returns (Rules of Hooks)
   const [showAllParcelas, setShowAllParcelas] = useState(false)
-
   useEffect(() => {
     if (projeto) {
       Promise.resolve().then(() => {
@@ -77,7 +95,6 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
       })
     }
   }, [projeto])
-
   const handleTitleSave = async () => {
     if (!projeto) return
     try {
@@ -88,7 +105,6 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
       console.error('Erro ao atualizar título:', err)
     }
   }
-
   const handleFactualSave = async () => {
     if (!projeto) return
     try {
@@ -104,32 +120,57 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
       console.error('Erro ao atualizar dados fatuais:', err)
     }
   }
-
+  async function handleQuitarParcela(parcelaId: string | number) {
+    try {
+      const nowStr = new Date().toISOString().split('T')[0]
+      await ParcelasService.update(parcelaId, { pago: true, data_pagamento: nowStr })
+      
+      // Atualização imediata do estado local (Refino 4)
+      setProjeto(prev => {
+        if (!prev) return null
+        const parcelasAtualizadas = (prev.parcelas || []).map(p => 
+          String(p.id) === String(parcelaId) ? { ...p, pago: true, data_pagamento: nowStr } : p
+        )
+        const totalPago = parcelasAtualizadas.filter(p => p.pago).reduce((sum, p) => sum + (p.valor_parcela || 0), 0)
+        return {
+          ...prev,
+          parcelas: parcelasAtualizadas,
+          valor_recebido: totalPago
+        }
+      })
+      
+      setRefreshSignal(prev => prev + 1)
+    } catch (err) {
+      console.error('Erro ao quitar parcela:', err)
+      alert('Erro ao dar baixa na parcela.')
+    }
+  }
   if (loading) return <LoadingSkeleton />
   if (error || !projeto) return <ErrorState message={error || 'Projeto inexistente'} />
-
   // Operação Factual Consolidada (Single Payload)
   const entregas = projeto.entregas || []
   const parcelas = projeto.parcelas || []
   const extras = projeto.extras || []
   const pendencias = projeto.pendencias || []
   const eventos = projeto.eventos || []
-
-  const tensionLevel = projeto.nivel_tensao || 'Baixa'
-  const tensionColor = tensionLevel === 'Crítica' ? 'text-rose-500' : tensionLevel === 'Moderada' ? 'text-amber-500' : 'text-emerald-500'
+  const rawTension = projeto.nivel_tensao || 'baixo'
+  const tensionLevel = rawTension.toLowerCase().trim()
+  const tensionColor = 
+    tensionLevel === 'critico' || tensionLevel === 'crítico' || tensionLevel === 'crítica'
+      ? 'text-rose-500' 
+      : tensionLevel === 'moderado' || tensionLevel === 'moderada' 
+        ? 'text-amber-500' 
+        : 'text-emerald-500'
   const lateCount = projeto.count_atrasos || 0
-
   const nextDelivery = entregas
     .filter(e => !e.entregue && new Date(e.data_entrega_prevista) >= new Date())
     .sort((a, b) => new Date(a.data_entrega_prevista).getTime() - new Date(b.data_entrega_prevista).getTime())[0]
   
   const progressPercent = projeto.percentual_conclusao || 0
-
   // M5 — carga operacional: derivada de dados já disponíveis
   const pendenciasAbertas = pendencias.filter((p: { resolvida?: boolean }) => !p.resolvida).length
   const scoreDesgaste = (extras.length * 1.5) + (pendenciasAbertas * 0.5) - (progressPercent * 0.05)
   const cargaElevada = scoreDesgaste > 5
-
   // M8 — fluxo financeiro focado
   const parcelasOrdenadas = [...parcelas].sort(
     (a, b) => new Date(a.data_pagamento_prevista).getTime() - new Date(b.data_pagamento_prevista).getTime()
@@ -141,12 +182,9 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
         ...parcelasOrdenadas.filter(p => !p.pago).slice(0, 3)
       ].sort((a, b) => new Date(a.data_pagamento_prevista).getTime() - new Date(b.data_pagamento_prevista).getTime())
   const parcelasOcultas = parcelas.length - parcelasVisiveis.length
-
   return (
     <main className="min-h-screen bg-[#07090D] text-zinc-300 pb-32 overflow-x-hidden">
-
       <header className="px-4 sm:px-6 pt-8 sm:pt-12 pb-6 sm:pb-8">
-
         {/* Nav Context */}
         <div className="flex items-center justify-between mb-6">
           <Link 
@@ -173,7 +211,6 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
              <StatusBadge status={projeto.status} />
           </div>
         </div>
-
         {/* Título */}
         <div className="mb-5">
           {isEditingTitle ? (
@@ -186,7 +223,6 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
             </h1>
           )}
         </div>
-
         {/* ── SINAIS VITAIS ── */}
         <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-6 py-5 px-8 bg-zinc-900/40 border border-zinc-800/60 rounded-3xl mb-8">
            
@@ -207,18 +243,15 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
            </div>
            
            <div className="w-px h-12 bg-zinc-800 hidden md:block"></div>
-
            {/* Tensão */}
            <div className="flex flex-col gap-1.5">
              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-200">Tensão</span>
              <div className="flex items-center gap-2">
                <Zap size={18} className={tensionColor} />
-               <span className={`text-lg font-black uppercase tracking-widest ${tensionColor}`}>{tensionLevel}</span>
+               <span className={`text-lg font-black uppercase tracking-widest ${tensionColor}`}>{rawTension}</span>
              </div>
            </div>
-
            <div className="w-px h-12 bg-zinc-800 hidden md:block"></div>
-
            {/* Backlog */}
            <div className="flex flex-col gap-1.5">
              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-200">Atrasos Ativos</span>
@@ -237,13 +270,10 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
                </div>
              )}
            </div>
-
            <div className="w-px h-12 bg-zinc-800 hidden md:block"></div>
-
            {/* Próximo Marco / Estagnação */}
            <div className="flex flex-col gap-1.5 flex-1 min-w-[200px]">
              <span className={`text-[10px] font-black uppercase tracking-widest ${projeto.is_estagnado ? 'text-rose-500' : 'text-sky-500'}`}>
-
                {projeto.is_estagnado ? 'Atenção Crítica' : 'Próximo Foco'}
              </span>
              {projeto.is_estagnado ? (
@@ -266,14 +296,12 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
              )}
            </div>
         </div>
-
         {/* ── CONTEXTO ESTRATÉGICO ── */}
         <div className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-6 sm:p-8 relative overflow-hidden group">
           <div className="absolute top-[-20] md:top-8 right-0 p-8 opacity-8 pointer-events-none">
             <TrendingUp className="hidden md:block md:w-20 md:h-20" />
           </div>
           <div className="relative z-10">
-
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
               <div className="flex items-center gap-2">
                 <FileText size={16} className="text-sky-500" />
@@ -293,7 +321,6 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
                   {isEditingFactual ? <CheckCircle2 size={10} /> : <Edit3 size={10} />}
                   {isEditingFactual ? 'Salvar' : 'Editar'}
                 </button>
-
                 <Link 
                   href={`/clientes/${projeto.clienteId}`} 
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700 hover:border-sky-500/30 transition-all group/link"
@@ -310,11 +337,9 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
                 </Link>
               </div>
             </div>
-
             <div className="mb-4">
               <p className="text-white text-base font-bold leading-snug mb-1">{projeto.motivo_auditavel}</p>
             </div>
-
                    {/* Demandas Extraordinárias Integradas ou Projetos Extras */}
                    {(extras.length > 0 || projeto.isExtra) ? (
                       <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-500/3 border border-amber-500/20 max-w-3xl mb-5">
@@ -327,7 +352,6 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
                                   {projeto.descricao}
                                </p>
                             )}
-
                             <p className="text-zinc-300 text-xs">
                                {extras.length > 0 
                                 ? <>Frentes paralelas solicitadas por <span className="text-white font-bold">{extras[0].solicitado_por_nome}</span> expandem a diretriz original.</>
@@ -346,14 +370,12 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
                                   {projeto.descricao}
                                </p>
                             )}
-
                             <p className="text-zinc-300 text-xs">
                                Projeto base ativo. Todas as entregas previstas estão estritamente alinhadas com a diretriz estratégica e contrato original.
                             </p>
                          </div>
                       </div>
                    )}
-
             {projeto.cadeia_causal && projeto.cadeia_causal.length > 0 && (
               <div className="bg-rose-500/5 border border-rose-500/10 rounded-xl px-4 py-3.5 mb-6 max-w-3xl">
                 <div className="flex flex-col gap-2">
@@ -369,7 +391,6 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
                 </div>
               </div>
             )}
-
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-zinc-700">
               {isEditingFactual ? (
                 <>
@@ -390,14 +411,11 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
           </div>
         </div>
       </header>
-
-
        {/* ── CONTEÚDO OPERACIONAL ── */}
        <div className="px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10">
          
          {/* COLUNA PRINCIPAL (EXECUÇÃO OPERACIONAL) */}
          <div className="lg:col-span-7 space-y-8 sm:space-y-10">
-
            {/* Gestão de Marcos e Backlog */}
            <section>
              <div className="flex items-center gap-4 mb-6">
@@ -412,7 +430,6 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
                   <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest mt-0.5">Novo Marco</span>
                 </button>
              </div>
-
              <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-3xl sm:rounded-[40px] p-6 sm:p-8 shadow-2xl">
                <ProjectMarcoList 
                  projetoId={id}
@@ -423,9 +440,7 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
                />
              </div>
            </section>
-
           </div>
-
           {/* COLUNA SECUNDÁRIA: MEMÓRIA & GOVERNANÇA */}
           <div className="lg:col-span-5">
              {/* Governança Humana */}
@@ -439,7 +454,6 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
              </section>
           </div>
         </div>
-
         {/* ── LINHA 2: PENDÊNCIAS E FINANCEIRO ── */}
         <div className="px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10 mt-8 sm:mt-10 items-start">
           
@@ -452,20 +466,29 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
                  <div className="mt-6 space-y-4">
                    {pendencias.length > 0 ? (
                      <>
-                       {pendencias.slice(0, 5).map(p => (
-                         <div key={p.id} className="bg-zinc-900/40 border-l-2 border-amber-500 p-5 rounded-r-3xl">
-                           <div className="flex items-center justify-between mb-2">
-                             <p className="text-[10px] font-black uppercase tracking-widest text-amber-500">Pendência Ativa</p>
-                             <p className="text-[10px] text-zinc-400 font-bold">Prazo: {displayDate(p.data_prazo)}</p>
+                       {(showAllPendencias ? pendencias : pendencias.slice(0, 5)).map(p => (
+                         <Link
+                           key={p.id}
+                           href={`/pendencias?id=${p.id}&highlight=amber`}
+                           className="block hover:scale-[1.01] active:scale-95 transition-all cursor-pointer"
+                         >
+                           <div className="bg-zinc-900/40 hover:bg-zinc-900/60 border-l-2 border-amber-500 p-5 rounded-r-3xl">
+                             <div className="flex items-center justify-between mb-2">
+                               <p className="text-[10px] font-black uppercase tracking-widest text-amber-500">Pendência Ativa</p>
+                               <p className="text-[10px] text-zinc-400 font-bold">Prazo: {displayDate(p.data_prazo)}</p>
+                             </div>
+                             <p className="text-white text-sm font-bold mb-1 whitespace-pre-line">{linkifyText(p.descricao)}</p>
+                             <p className="text-zinc-300 text-[10px] uppercase font-bold tracking">Responsável: {p.responsavel}</p>
                            </div>
-                           <p className="text-white text-sm font-bold mb-1">{p.descricao}</p>
-                           <p className="text-zinc-300 text-[10px] uppercase font-bold tracking">Responsável: {p.responsavel}</p>
-                         </div>
+                         </Link>
                        ))}
                        {pendencias.length > 5 && (
-                         <p className="text-zinc-400 text-[10px] uppercase font-black tracking-widest pl-2 mt-4">
-                            + {pendencias.length - 5} pendências arquivadas
-                         </p>
+                         <button
+                           onClick={() => setShowAllPendencias(!showAllPendencias)}
+                           className="text-zinc-400 hover:text-white text-[10px] uppercase font-black tracking-widest pl-2 mt-4 transition-colors cursor-pointer block w-full text-left"
+                         >
+                           {showAllPendencias ? "- Ocultar pendências adicionais" : `+ ${pendencias.length - 5} pendências arquivadas`}
+                         </button>
                        )}
                      </>
                    ) : (
@@ -475,7 +498,6 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
               </div>
             </section>
           </div>
-
           {/* DIREITA: Fluxo Financeiro */}
           <div className="lg:col-span-5">
             <section>
@@ -493,11 +515,22 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
                           <p className="text-white text-sm font-bold">Parcela {p.numero_parcela}</p>
                           <p className="text-[9px] text-zinc-400 font-black uppercase tracking-widest">{displayDate(p.data_pagamento_prevista)}</p>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right flex flex-col items-end gap-1">
                           <p className="text-zinc-200 font-black text-sm">{formatCurrency(p.valor_parcela)}</p>
-                          <p className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${p.pago ? 'text-emerald-500' : 'text-rose-500'}`}>
-                            {p.pago ? 'Pago' : 'Pendente'}
-                          </p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {!p.pago && (
+                              <button
+                                onClick={() => handleQuitarParcela(p.id)}
+                                className="text-[9px] font-black uppercase tracking-wider text-sky-400 hover:text-white bg-sky-950/20 border border-sky-900/10 hover:border-sky-700/30 px-2 py-0.5 rounded transition-all cursor-pointer shadow-sm active:scale-95"
+                                title="Dar Baixa (Marcar como paga)"
+                              >
+                                Dar Baixa
+                              </button>
+                            )}
+                            <span className={`text-[9px] font-black uppercase tracking-widest ${p.pago ? 'text-emerald-500' : 'text-rose-500'}`}>
+                              {p.pago ? '✓ Pago' : 'Pendente'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -517,7 +550,6 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
             </section>
           </div>
         </div>
-
         {/* ── LINHA 3: CRISES E TIMELINE ── */}
         <div className="px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-6 mt-8 items-start">
           
@@ -529,27 +561,50 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
                  <div className="mt-4 space-y-2">
                    {eventos.length > 0 ? (
                      <>
-                       {eventos.slice(0, 5).map(ev => (
-                         <div key={ev.id} className="bg-zinc-900/20 border border-zinc-800/40 rounded-xl p-3.5 flex items-start gap-3 hover:bg-zinc-900/30 transition-colors">
-                           <span className="size-2 rounded-full bg-rose-500 mt-1.5 shrink-0 animate-pulse" />
-                           <div className="flex-1 min-w-0">
-                             <div className="flex items-center justify-between gap-4 mb-1">
-                               <p className="text-[9px] font-black uppercase tracking-widest text-rose-500/80">Crise Institucional</p>
-                               <p className="text-[10px] text-zinc-500 font-bold">{displayDate(ev.data_evento)}</p>
-                             </div>
-                             <p className="text-zinc-300 text-xs font-semibold leading-relaxed">{ev.descricao}</p>
-                             {ev.acao_tomada && (
-                               <div className="mt-2 bg-black/10 border-l border-zinc-800 pl-2.5 py-1 text-[10.5px] italic text-sky-400/90 leading-snug">
-                                 {ev.acao_tomada}
-                               </div>
-                             )}
-                           </div>
-                         </div>
-                       ))}
+                        {(showAllEventos ? eventos : eventos.slice(0, 3)).map(ev => {
+                          const cardContent = (
+                            <div className="bg-zinc-900/20 hover:bg-zinc-900/30 border border-zinc-800/40 rounded-xl p-3.5 flex items-start gap-3 transition-colors">
+                              <span className="size-2 rounded-full bg-rose-500 mt-1.5 shrink-0 animate-pulse" />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-4 mb-1">
+                                  <p className="text-[9px] font-black uppercase tracking-widest text-rose-500/80">Crise Institucional</p>
+                                  <p className="text-[10px] text-zinc-500 font-bold">{displayDate(ev.data_evento)}</p>
+                                </div>
+                                <p className="text-zinc-300 text-xs font-semibold leading-relaxed whitespace-pre-line">{linkifyText(ev.descricao)}</p>
+                                {ev.acao_tomada && (
+                                  <div className="mt-2 bg-black/10 border-l border-zinc-800 pl-2.5 py-1 text-[10.5px] italic text-sky-400/90 leading-snug whitespace-pre-line">
+                                    {linkifyText(ev.acao_tomada)}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )
+
+                          if (ev.visitaId) {
+                            return (
+                              <Link
+                                key={ev.id}
+                                href={`/visitas/${ev.visitaId}`}
+                                className="block hover:scale-[1.01] active:scale-95 transition-all cursor-pointer"
+                              >
+                                {cardContent}
+                              </Link>
+                            )
+                          }
+
+                          return (
+                            <div key={ev.id}>
+                              {cardContent}
+                            </div>
+                          )
+                        })}
                        {eventos.length > 3 && (
-                         <p className="text-zinc-500 text-[9px] uppercase font-black tracking-widest pl-2 mt-2">
-                            + {eventos.length - 3} crises registradas no histórico
-                         </p>
+                         <button
+                           onClick={() => setShowAllEventos(!showAllEventos)}
+                           className="text-zinc-500 hover:text-zinc-300 text-[9px] uppercase font-black tracking-widest pl-2 mt-2 transition-colors cursor-pointer block w-full text-left"
+                         >
+                           {showAllEventos ? "- Ocultar crises adicionais" : `+ ${eventos.length - 3} crises registradas no histórico`}
+                         </button>
                        )}
                      </>
                    ) : (
@@ -559,7 +614,6 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
               </div>
             </section>
           </div>
-
           {/* DIREITA: Timeline Factual */}
           <div className="lg:col-span-5">
             <section>
@@ -570,7 +624,6 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
             </section>
           </div>
         </div>
-
       {/* OPERATIONAL DRAWER */}
       <OperationalDrawer
         isOpen={!!selectedItem}
@@ -593,9 +646,7 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
     </main>
   )
 }
-
 /* ── COMPONENTES INTERNOS ── */
-
 function MetaItem({ label, value, highlight, color }: { label: string; value: string; highlight?: boolean; color?: string }) {
   const colorMap: Record<string, string> = {
     sky: 'text-sky-400',
@@ -611,7 +662,6 @@ function MetaItem({ label, value, highlight, color }: { label: string; value: st
     </div>
   )
 }
-
 function EditableMetaItem({ label, value, onChange, type, options }: { 
   label: string; 
   value: string; 
@@ -641,7 +691,6 @@ function EditableMetaItem({ label, value, onChange, type, options }: {
     </div>
   )
 }
-
 function SectionHeader({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-4 w-full">
@@ -650,7 +699,6 @@ function SectionHeader({ label }: { label: string }) {
     </div>
   )
 }
-
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
     planejado: 'bg-zinc-800 text-zinc-400 border-zinc-700/30',
@@ -664,7 +712,6 @@ function StatusBadge({ status }: { status: string }) {
     </span>
   )
 }
-
 function EmptyBox({ message }: { message: string }) {
   return (
     <div className="py-10 px-6 border border-zinc-800/50 border-dashed rounded-3xl text-center">
@@ -672,7 +719,6 @@ function EmptyBox({ message }: { message: string }) {
     </div>
   )
 }
-
 function LoadingSkeleton() {
   return (
     <div className="min-h-screen bg-[#07090D] p-12 space-y-12 animate-pulse">
@@ -685,7 +731,6 @@ function LoadingSkeleton() {
     </div>
   )
 }
-
 function ErrorState({ message }: { message: string }) {
   return (
     <div className="min-h-screen bg-[#07090D] flex flex-col items-center justify-center p-5">

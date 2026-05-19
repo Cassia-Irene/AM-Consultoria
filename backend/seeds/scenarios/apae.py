@@ -80,7 +80,7 @@ class APAEScenario(Scenario):
             resultados="Identificada divergência no rateio do SUS."
         )
         self._add_and_commit([v_imersao])
-        pendencias.append(create_causal_pendency(v_imersao, "Revisar rateio do convênio", responsavel="Adriano", dias_prazo=15))
+        pendencias.append(create_causal_pendency(v_imersao, "Revisar rateio do convênio", responsavel="AM Consultoria", dias_prazo=15))
 
         if mode in ["realistic", "stress"]:
             # Visita Extra: Suporte a Fiscalização do MEC/SEC

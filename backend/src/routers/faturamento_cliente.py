@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from src.services.faturamento_service import calcular_valor_base, calcular_valor_extra
 from src.database import get_db
@@ -49,8 +49,11 @@ def criar_faturamento(faturamento: FaturamentoClienteCreate, db: Session = Depen
         raise HTTPException(status_code=500, detail=f"Erro ao salvar faturamento: {str(e)}")
 
 @router.get("/", response_model=List[FaturamentoClienteRead])
-def listar_faturamentos(db: Session = Depends(get_db)):
-    return db.query(FaturamentoCliente).all()
+def listar_faturamentos(id_contrato: Optional[int] = None, db: Session = Depends(get_db)):
+    query = db.query(FaturamentoCliente)
+    if id_contrato is not None:
+        query = query.filter(FaturamentoCliente.id_contrato == id_contrato)
+    return query.all()
 
 @router.patch("/{id_faturamento}", response_model=FaturamentoClienteRead)
 def atualizar_faturamento(

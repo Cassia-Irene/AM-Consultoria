@@ -35,7 +35,7 @@ export function ContratoTimeline({ contratos, historicos, contratoId }: Props) {
                 item.type === 'substituicao' ? 'bg-amber-400' : 'bg-emerald-500'
               }`} />
               {idx !== items.length - 1 && (
-                <div className="w-0.5 flex-1 bg-zinc-800/50 my-1" />
+                <div className="w-0.5 flex-1 bg-zinc-800 my-1" />
               )}
             </div>
 
@@ -43,7 +43,7 @@ export function ContratoTimeline({ contratos, historicos, contratoId }: Props) {
             <div className="pb-8 flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-sm font-bold text-white">{item.label}</p>
-                <p className="text-[10px] font-bold tabular-nums text-zinc-500 bg-zinc-900/50 px-2 py-0.5 rounded-lg border border-zinc-800/30">
+                <p className="text-[10px] font-bold tabular-nums text-zinc-300 bg-zinc-900/50 px-2 py-0.5 rounded-lg border border-zinc-700">
                   {new Date(item.data).toLocaleDateString('pt-BR')}
                 </p>
               </div>
@@ -68,7 +68,7 @@ export function ContratoTimeline({ contratos, historicos, contratoId }: Props) {
               )}
 
               {item.type === 'criacao' && item.contratoId === contratoId && (
-                <p className="text-[10px] text-sky-500/60 font-bold uppercase mt-1">Versão atual</p>
+                <p className="text-[10px] text-sky-500 font-bold uppercase mt-1">Versão atual</p>
               )}
             </div>
           </div>
@@ -94,19 +94,31 @@ export function ContratoTimeline({ contratos, historicos, contratoId }: Props) {
 }
 
 function ContratoDiff({ antigo, novo }: { antigo: Contrato; novo: Contrato }) {
+  const formatCurrency = (v: number | string | boolean | undefined | null) => 
+    typeof v === 'number' 
+      ? v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+      : 'R$ 0,00'
+
   const fields = [
     { label: 'Serviços', key: 'servicos_contratados' },
     { label: 'Visitas Mensais', key: 'visitas_previstas_mes' },
+    { label: 'Valor Mensal', key: 'valor_mensal', formatter: formatCurrency },
     { label: 'Relatório', key: 'inclui_relatorio', formatter: (v: boolean | string | number | undefined | null) => v ? 'Incluso' : 'Não incluso' },
     { label: 'Status', key: 'status' },
   ]
 
   return (
     <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl overflow-hidden divide-y divide-zinc-800/50">
-      <div className="grid grid-cols-2 bg-zinc-800/30 px-4 py-2 border-b border-zinc-800">
-        <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Versão Anterior ({antigo.id})</p>
-        <p className="text-[9px] font-black uppercase tracking-widest text-sky-500">Nova Versão ({novo.id})</p>
+      {/* Cabeçalho Responsivo */}
+      <div className="grid grid-cols-1 md:grid-cols-2 bg-zinc-800/30 px-5 py-3 border-b border-zinc-800 gap-2 md:gap-4">
+        <div>
+          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Versão Anterior (v{antigo.id})</p>
+        </div>
+        <div className="hidden md:block">
+          <p className="text-[9px] font-black uppercase tracking-widest text-sky-500">Nova Versão (v{novo.id})</p>
+        </div>
       </div>
+
       {fields.map(f => {
         const valDe = (antigo as unknown as Record<string, string | number | boolean | undefined | null>)[f.key]
         const valPara = (novo as unknown as Record<string, string | number | boolean | undefined | null>)[f.key]
@@ -115,16 +127,28 @@ function ContratoDiff({ antigo, novo }: { antigo: Contrato; novo: Contrato }) {
         if (!mudou) return null
 
         return (
-          <div key={f.key} className="grid grid-cols-2 px-4 py-3 gap-4 group hover:bg-zinc-800/20 transition-colors">
+          <div key={f.key} className="grid grid-cols-1 md:grid-cols-2 px-5 py-4 gap-4 md:gap-8 group hover:bg-zinc-800/10 transition-colors">
+            {/* Esquerda: Versão Anterior */}
             <div className="min-w-0">
-              <p className="text-[8px] font-bold uppercase text-zinc-600 mb-1">{f.label}</p>
-              <p className="text-xs text-zinc-500 line-through truncate">
+              <span className="md:hidden text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">
+                Versão Anterior (v{antigo.id})
+              </span>
+              <p className="text-[8px] font-bold uppercase text-zinc-600 mb-1 tracking-wider">{f.label}</p>
+              <p className="text-xs text-zinc-500 line-through whitespace-pre-wrap leading-relaxed">
                 {f.formatter ? f.formatter(valDe) : valDe}
               </p>
             </div>
+
+            {/* Divisor pontilhado visível apenas no mobile */}
+            <div className="md:hidden h-px border-t border-dashed border-zinc-800/60 my-1" />
+
+            {/* Direita: Nova Versão */}
             <div className="min-w-0">
-              <p className="text-[8px] font-bold uppercase text-zinc-600 mb-1">{f.label}</p>
-              <p className="text-xs text-emerald-400 font-bold truncate">
+              <span className="md:hidden text-[9px] font-black uppercase tracking-widest text-emerald-500 mb-2 block">
+                Nova Versão (v{novo.id})
+              </span>
+              <p className="text-[8px] font-bold uppercase text-zinc-600 mb-1 tracking-wider">{f.label}</p>
+              <p className="text-xs text-emerald-400 font-bold whitespace-pre-wrap leading-relaxed">
                 {f.formatter ? f.formatter(valPara) : valPara}
               </p>
             </div>

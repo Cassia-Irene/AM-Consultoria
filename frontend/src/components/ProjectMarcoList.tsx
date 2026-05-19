@@ -6,6 +6,32 @@ import { type Entrega } from '@/domain/entrega'
 import { CheckCircle2, Circle, AlertCircle, Edit2 } from 'lucide-react'
 import { displayDate } from '@/utils/date'
 
+function linkifyText(text: string, linkClass = "text-sky-400 hover:text-sky-300 hover:underline break-all") {
+  if (!text) return ''
+  const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/g
+  const parts = text.split(urlRegex)
+  if (parts.length === 1) return text
+
+  return parts.map((part, index) => {
+    if (part.match(urlRegex)) {
+      const href = part.startsWith('www.') ? `https://${part}` : part
+      return (
+        <a 
+          key={index} 
+          href={href} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className={linkClass}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {part}
+        </a>
+      )
+    }
+    return part
+  })
+}
+
 interface ProjectMarcoListProps {
   projetoId: string | number
   onEntregaClick?: (id: string | number) => void
@@ -99,10 +125,10 @@ export function ProjectMarcoList({
               </button>
               
               <div className="flex-1 min-w-0">
-                <p className={`text-[11px] md:text-[12px] font-bold truncate ${item.entregue ? 'text-emerald-600' : 'text-zinc-200'}`}>
-                  {item.descricao}
+                <p className={`text-[11px] md:text-[12px] font-bold whitespace-pre-line break-all ${item.entregue ? 'text-emerald-600' : 'text-zinc-200'}`}>
+                  {linkifyText(item.descricao)}
                 </p>
-                <p className={`text-[9px] font-black uppercase tracking-tighter ${isLate ? 'text-rose-500' : 'text-zinc-400'}`}>
+                <p className={`text-[9px] md:text-[11px] font-bold uppercase ${isLate ? 'text-rose-500' : 'text-zinc-400'}`}>
                   {item.entregue ? `Concluído: ${displayDate(item.data_entrega_real!)}` : `Prazo: ${displayDate(item.data_entrega_prevista)}`}
                   {isLate && ' • ATRASADO'}
                 </p>

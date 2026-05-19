@@ -102,7 +102,7 @@ class HomeCareScenario(Scenario):
             v_extra = VisitaExtra(id_visita=v_emergencia.id_visita, solicitado_por=contato_marcia.id_contato)
             self.db.add(v_extra)
 
-            pendencias.append(create_causal_pendency(v_emergencia, "Notificar coordenação sobre hora extra", responsavel="Adriano", atrasada=True))
+            pendencias.append(create_causal_pendency(v_emergencia, "Notificar coordenação sobre hora extra", responsavel="AM Consultoria", atrasada=True))
             eventos.append(create_causal_event(v_emergencia, "Falha de Escala Crítica", acao_tomada="Remanejamento urgente"))
 
         self._add_and_commit(pendencias)

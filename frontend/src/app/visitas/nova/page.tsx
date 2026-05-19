@@ -1,13 +1,17 @@
 'use client'
 
-import { useState, useEffect, useMemo, FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useMemo, FormEvent, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ClientesService } from '@/services/clientes.service'
 import { ContratoService } from '@/services/contrato.service'
 import { VisitasService } from '@/services/visitas.service'
+import { ContatosService } from '@/services/contatos.service'
+import { VisitasExtraService } from '@/services/visitas-extra.service'
+import { EventosService } from '@/services/eventos.service'
 import { RotateCcw, Plus, AlertTriangle, Calendar, Clock, ArrowLeft } from 'lucide-react'
 import type { Cliente } from '@/domain/cliente'
 import type { Contrato } from '@/domain/contrato'
+import type { Contato } from '@/domain/contato'
 import type { StatusVisita, ModalidadeVisita, TipoVisita } from '@/domain/visita'
 
 interface PendenciaGerada {
@@ -193,6 +197,11 @@ interface FormState {
   descricao: string
   resultados: string
   pendencias: PendenciaGerada[]
+  isExtra: boolean
+  solicitadoPor: string
+  temCrise: boolean
+  criseDescricao: string
+  criseAcaoTomada: string
 }
 
 const DRAFT_KEY = 'am_consultoria_visita_draft_v2'
@@ -209,12 +218,24 @@ const INITIAL_FORM: FormState = {
   descricao: '',
   resultados: '',
   pendencias: [],
+  isExtra: false,
+  solicitadoPor: '',
+  temCrise: false,
+  criseDescricao: '',
+  criseAcaoTomada: '',
 }
 
-export default function NovaVisitaPage() {
+function NovaVisitaForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const [allClientes, setAllClientes] = useState<Cliente[]>([])
+  const [allContratos, setAllContratos] = useState<Contrato[]>([])
+  const [contatosCliente, setContatosCliente] = useState<Contato[]>([])
+  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
 
   const [saving, setSaving] = useState(false)
+  const [savingStep, setSavingStep] = useState<string>('')
   const [saved, setSaved] = useState(false)
   const [sugestoes, setSugestoes] = useState<PendenciaSugerida[]>([])
   const [errorSubmit, setErrorSubmit] = useState<string | null>(null)
@@ -225,6 +246,30 @@ export default function NovaVisitaPage() {
   const [showDraftNotice, setShowDraftNotice] = useState(false)
   const [form, setForm] = useState<FormState>(INITIAL_FORM)
 
+  // Pre-fill context when coming from the agenda
+  useEffect(() => {
+    const contratoId = searchParams.get('contratoId')
+    const tipo = searchParams.get('tipo')
+    const modalidade = searchParams.get('modalidade')
+    const dataHora = searchParams.get('dataHora')
+
+    if (contratoId && allContratos.length > 0) {
+      const contrato = allContratos.find(c => String(c.id) === String(contratoId))
+      if (contrato) {
+        Promise.resolve().then(() => {
+          setForm(f => ({
+            ...f,
+            clienteId: contrato.clienteId,
+            contratoId: contrato.id,
+            tipo_visita: (tipo as TipoVisita) || f.tipo_visita,
+            modalidade: (modalidade as ModalidadeVisita) || f.modalidade,
+            data_hora: dataHora ? decodeURIComponent(dataHora).slice(0, 16) : f.data_hora
+          }))
+        })
+      }
+    }
+  }, [searchParams, allContratos])
+
   // Carrega rascunho de forma segura no cliente para evitar Hydration Mismatch
   useEffect(() => {
     const savedDraft = localStorage.getItem(DRAFT_KEY)
@@ -233,7 +278,10 @@ export default function NovaVisitaPage() {
       const draft = JSON.parse(savedDraft)
       if (draft.clienteId || draft.descricao || draft.resultados || (draft.pendencias && draft.pendencias.length > 0)) {
         Promise.resolve().then(() => {
-          setForm(draft)
+          setForm({
+            ...INITIAL_FORM,
+            ...draft
+          })
           setShowDraftNotice(true)
         })
       }
@@ -242,9 +290,19 @@ export default function NovaVisitaPage() {
     }
   }, [])
 
-  const [allClientes, setAllClientes] = useState<Cliente[]>([])
-  const [allContratos, setAllContratos] = useState<Contrato[]>([])
-  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({})
+  useEffect(() => {
+    if (!form.clienteId) {
+      Promise.resolve().then(() => {
+        setContatosCliente([])
+      })
+      return
+    }
+    ContatosService.getByClienteId(form.clienteId).then(data => {
+      Promise.resolve().then(() => {
+        setContatosCliente(data)
+      })
+    })
+  }, [form.clienteId])
 
   useEffect(() => {
     let isMounted = true
@@ -366,6 +424,8 @@ export default function NovaVisitaPage() {
     if (!form.contratoId) eMap.contratoId = 'Selecione o contrato'
     if (!form.descricao.trim()) eMap.descricao = 'Descreva o que aconteceu'
     if (form.status === 'realizada' && !form.resultados.trim()) eMap.resultados = 'Descreva os resultados'
+    if (form.isExtra && !form.solicitadoPor) eMap.solicitadoPor = 'Selecione quem solicitou a visita extra'
+    if (form.temCrise && !form.criseDescricao.trim()) eMap.criseDescricao = 'Descreva a situação crítica ocorrida'
     
     setErrors(eMap)
     if (Object.keys(eMap).length > 0) {
@@ -375,10 +435,11 @@ export default function NovaVisitaPage() {
     }
 
     setSaving(true)
+    setSavingStep('Registrando relato de visita...')
     setErrorSubmit(null)
 
     try {
-      await VisitasService.criar({
+      const createdVisita = await VisitasService.criar({
         clienteId: form.clienteId,
         contratoId: form.contratoId,
         status: form.status,
@@ -395,12 +456,35 @@ export default function NovaVisitaPage() {
         })),
       })
 
+      // Se for visita extra, salvar fisicamente na tabela visitas_extra
+      if (form.isExtra && createdVisita && createdVisita.id_visita) {
+        setSavingStep('Registrando visita extra...')
+        await VisitasExtraService.create({
+          id_visita: createdVisita.id_visita,
+          solicitado_por: Number(form.solicitadoPor)
+        })
+      }
+
+      // Se houver situação crítica, salvar evento crítico vinculado
+      if (form.temCrise && createdVisita && createdVisita.id_visita) {
+        setSavingStep('Integrando situação crítica...')
+        await EventosService.create({
+          id_contrato: Number(form.contratoId),
+          id_visita: createdVisita.id_visita,
+          data_evento: form.data_hora.split('T')[0],
+          descricao: form.criseDescricao.trim(),
+          acao_tomada: form.criseAcaoTomada.trim() || 'Intervenção técnica imediata realizada pelo Adriano.'
+        })
+      }
+
       setSaving(false)
+      setSavingStep('')
       setSaved(true)
       localStorage.removeItem(DRAFT_KEY)
     } catch (error: unknown) {
       console.error('[ERROR][API] Erro ao submeter visita:', error)
       setSaving(false)
+      setSavingStep('')
       const msg = error instanceof Error ? error.message : 'Ocorreu um erro ao salvar. Tente novamente.'
       setErrorSubmit(msg)
     }
@@ -429,7 +513,9 @@ export default function NovaVisitaPage() {
         <div className="size-16 rounded-full bg-emerald-900/50 border border-emerald-700 flex items-center justify-center mb-5">
           <span className="text-emerald-400 text-3xl">✓</span>
         </div>
-        <p className="text-white text-xl font-bold mb-1">Visita registrada</p>
+        <p className="text-white text-xl font-bold mb-1">
+          {form.temCrise ? 'Visita e situação crítica registradas!' : 'Visita registrada'}
+        </p>
         <p className="text-zinc-500 text-sm mb-6">{nomeCliente}</p>
 
         {total > 0 && (
@@ -725,6 +811,104 @@ export default function NovaVisitaPage() {
             <p className="text-[10px] text-zinc-700">Preenchidos por padrão para máxima agilidade. Altere se necessário.</p>
           </div>
 
+          {/* SELEÇÃO DE VISITA EXTRA E SOLICITANTE */}
+          <div className="bg-zinc-950/40 border border-zinc-900/60 rounded-xl p-4 space-y-3.5">
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={form.isExtra}
+                onChange={e => {
+                  setForm(f => ({ ...f, isExtra: e.target.checked, solicitadoPor: '' }))
+                  setErrors(er => ({ ...er, solicitadoPor: undefined }))
+                }}
+                className="size-4 rounded border-zinc-800 bg-zinc-950 text-[#0466C8] focus:ring-0 cursor-pointer"
+              />
+              <div>
+                <p className="text-xs font-bold text-white">Marcar como Visita Extra</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600">Não planejada / Demanda sobressalente</p>
+              </div>
+            </label>
+
+            {form.isExtra && (
+              <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+                <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-1.5">Solicitado por *</label>
+                <select
+                  value={form.solicitadoPor}
+                  onChange={e => {
+                    setForm(f => ({ ...f, solicitadoPor: e.target.value }))
+                    setErrors(er => ({ ...er, solicitadoPor: undefined }))
+                  }}
+                  className={`w-full bg-zinc-950 rounded-xl border px-3 py-2 text-xs text-white focus:outline-none focus:border-[#0466C8] transition-colors ${
+                    errors.solicitadoPor ? 'border-red-900' : 'border-zinc-900/80'
+                  }`}
+                >
+                  <option value="">Selecione o contato solicitante...</option>
+                  {contatosCliente.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.nome} ({c.cargo || 'Contato'})
+                    </option>
+                  ))}
+                </select>
+                {errors.solicitadoPor && (
+                  <p className="text-red-500 text-[10px] mt-1 font-bold">{errors.solicitadoPor}</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* SELEÇÃO DE SITUAÇÃO CRÍTICA (CAUSALIDADE OPERACIONAL) */}
+          <div className="bg-zinc-950/40 border border-zinc-900/60 rounded-xl p-4 space-y-3.5 mt-4">
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={!!form.temCrise}
+                onChange={e => {
+                  setForm(f => ({ ...f, temCrise: e.target.checked }))
+                  setErrors(er => ({ ...er, criseDescricao: undefined }))
+                }}
+                className="size-4 rounded border-zinc-800 bg-zinc-950 text-rose-600 focus:ring-rose-500 cursor-pointer"
+              />
+              <div>
+                <p className="text-xs font-bold text-white">Houve situação crítica nesta visita</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-rose-500/80">Registra uma intercorrência importante na linha do tempo operacional</p>
+              </div>
+            </label>
+
+            {form.temCrise && (
+              <div className="animate-in fade-in slide-in-from-top-1 duration-200 space-y-3.5 pt-2 border-t border-zinc-900/50">
+                <div>
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-1.5">Descrição da Situação Crítica *</label>
+                  <textarea
+                    value={form.criseDescricao || ''}
+                    onChange={e => {
+                      setForm(f => ({ ...f, criseDescricao: e.target.value }))
+                      setErrors(er => ({ ...er, criseDescricao: undefined }))
+                    }}
+                    rows={2}
+                    placeholder="Descreva a intercorrência crítica encontrada em campo..."
+                    className={`w-full bg-zinc-950 rounded-xl border px-3 py-2 text-xs text-white placeholder-zinc-800 focus:outline-none focus:border-rose-500 transition-colors ${
+                      errors.criseDescricao ? 'border-red-900' : 'border-zinc-900/80'
+                    }`}
+                  />
+                  {errors.criseDescricao && (
+                    <p className="text-red-500 text-[10px] mt-1 font-bold">{errors.criseDescricao}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-1.5">Ação Tomada (Opcional)</label>
+                  <input
+                    type="text"
+                    value={form.criseAcaoTomada || ''}
+                    onChange={e => setForm(f => ({ ...f, criseAcaoTomada: e.target.value }))}
+                    placeholder="Opcional. Padrão: Intervenção técnica imediata realizada pelo Adriano."
+                    className="w-full bg-zinc-950 rounded-xl border border-zinc-900/80 px-3 py-2 text-xs text-white placeholder-zinc-800 focus:outline-none focus:border-rose-500 transition-colors"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1.5">Status</label>
@@ -802,15 +986,23 @@ export default function NovaVisitaPage() {
             disabled={saving}
             className={`w-full py-4 rounded-xl text-sm font-black uppercase tracking-widest text-white transition-all shadow-lg active:scale-[0.99] ${
               saving 
-                ? 'bg-sky-600/40 text-sky-300' 
+                ? 'bg-sky-600/40 text-sky-300 animate-pulse' 
                 : 'bg-sky-600 hover:bg-sky-500 shadow-sky-900/10'
             }`}
           >
-            {saving ? 'Registrando Visita...' : 'Registrar Visita'}
+            {saving ? (savingStep || 'Registrando Visita...') : 'Registrar Visita'}
           </button>
         </div>
 
       </form>
     </main>
+  )
+}
+
+export default function NovaVisitaPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#07090D] flex items-center justify-center"><span className="text-sky-500 animate-pulse font-black tracking-widest text-xs uppercase text-center">Carregando...</span></div>}>
+      <NovaVisitaForm />
+    </Suspense>
   )
 }

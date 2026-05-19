@@ -5,28 +5,34 @@ import { useRouter } from 'next/navigation'
 import { ClientesService } from '@/services/clientes.service'
 import { ContratoService } from '@/services/contrato.service'
 import { VisitasService, type NovaVisitaInput } from '@/services/visitas.service'
+import { EventosService } from '@/services/eventos.service'
+import { ContatosService } from '@/services/contatos.service'
+import { VisitasExtraService } from '@/services/visitas-extra.service'
 import { useLocalDraft } from '@/hooks/useLocalDraft'
 import { RotateCcw, X } from 'lucide-react'
 import type { Cliente } from '@/domain/cliente'
 import type { Contrato } from '@/domain/contrato'
+import type { Contato } from '@/domain/contato'
 import type { TipoVisita } from '@/domain/visita'
 
 export default function RegistroRapidoPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [savingStep, setSavingStep] = useState('')
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [contratos, setContratos] = useState<Contrato[]>([])
+  const [contatosCliente, setContatosCliente] = useState<Contato[]>([])
   const [showDraftNotice, setShowDraftNotice] = useState(() => {
     if (typeof window === 'undefined') return false
     const saved = localStorage.getItem('draft_visita_rapida')
     if (!saved) return false
     try {
       const draft = JSON.parse(saved)
-      return !!(draft.clienteId || draft.descricao || draft.pendenciaRapida)
+      return !!(draft.clienteId || draft.descricao || draft.pendenciaRapida || draft.temCrise || draft.isExtra)
     } catch {
       return false
     }
@@ -37,7 +43,12 @@ export default function RegistroRapidoPage() {
     clienteId: '',
     tipoVisita: 'rotineira' as TipoVisita,
     descricao: '',
-    pendenciaRapida: ''
+    pendenciaRapida: '',
+    temCrise: false,
+    criseDescricao: '',
+    criseAcaoTomada: '',
+    isExtra: false,
+    solicitadoPor: ''
   })
 
   const descartarDraft = () => {
@@ -54,6 +65,20 @@ export default function RegistroRapidoPage() {
         ])
         setClientes(cli.filter(c => c.status === 'ativo'))
         setContratos(cont)
+
+        // Se houver clienteId restaurado do rascunho (draft) no localStorage, carrega seus contatos
+        const savedDraft = typeof window !== 'undefined' ? localStorage.getItem('draft_visita_rapida') : null
+        if (savedDraft) {
+          try {
+            const draft = JSON.parse(savedDraft)
+            if (draft.clienteId) {
+              const contatos = await ContatosService.getByClienteId(draft.clienteId)
+              setContatosCliente(contatos)
+            }
+          } catch {
+            // Ignora erro de parsing de rascunho corrompido
+          }
+        }
       } catch (err) {
         console.error('Erro ao carregar dados:', err)
         setError('Falha ao carregar dados operacionais.')
@@ -69,9 +94,18 @@ export default function RegistroRapidoPage() {
       setError('Selecione um cliente e descreva o que aconteceu.')
       return
     }
+    if (form.isExtra && !form.solicitadoPor) {
+      setError('Selecione quem solicitou a visita extra.')
+      return
+    }
+    if (form.temCrise && !form.criseDescricao?.trim()) {
+      setError('A descrição da situação crítica é obrigatória.')
+      return
+    }
 
     setSaving(true)
     setError(null)
+    setSavingStep('Registrando relato rápido...')
 
     try {
       // Busca o contrato ativo para este cliente
@@ -102,7 +136,30 @@ export default function RegistroRapidoPage() {
         })
       }
 
-      await VisitasService.criar(input)
+      // Criar a visita
+      const created = await VisitasService.criar(input)
+
+      // Se for visita extra, salvar fisicamente na tabela visitas_extra
+      if (form.isExtra && created?.id_visita) {
+        setSavingStep('Registrando visita extra...')
+        await VisitasExtraService.create({
+          id_visita: Number(created.id_visita),
+          solicitado_por: Number(form.solicitadoPor)
+        })
+      }
+
+      // Se houver crise selecionada, salvar de forma encadeada síncrona
+      if (form.temCrise && created?.id_visita) {
+        setSavingStep('Integrando situação crítica...')
+        await EventosService.create({
+          id_contrato: Number(contrato.id),
+          id_visita: Number(created.id_visita),
+          data_evento: new Date().toISOString().split('T')[0],
+          descricao: form.criseDescricao.trim(),
+          acao_tomada: form.criseAcaoTomada?.trim() || 'Intervenção técnica imediata realizada pelo Adriano.'
+        })
+      }
+
       clearDraft()
       setSaving(false)
       setSaved(true)
@@ -111,6 +168,7 @@ export default function RegistroRapidoPage() {
       const message = err instanceof Error ? err.message : 'Falha ao salvar. Tente novamente.'
       setError(message)
       setSaving(false)
+      setSavingStep('')
     }
   }
 
@@ -128,7 +186,9 @@ export default function RegistroRapidoPage() {
         <div className="size-16 rounded-full bg-emerald-900/50 border border-emerald-700 flex items-center justify-center mb-5">
           <span className="text-emerald-400 text-3xl">⚡</span>
         </div>
-        <p className="text-white text-xl font-bold mb-1">Relato rápido salvo</p>
+        <p className="text-white text-xl font-bold mb-1">
+          {form.temCrise ? 'Relato e situação crítica salvos!' : 'Relato rápido salvo'}
+        </p>
         <p className="text-[#7D8597] text-sm">O histórico foi atualizado com sucesso.</p>
 
         <div className="mt-10 w-full max-w-sm space-y-3">
@@ -153,7 +213,12 @@ export default function RegistroRapidoPage() {
                 clienteId: '',
                 tipoVisita: 'rotineira',
                 descricao: '',
-                pendenciaRapida: ''
+                pendenciaRapida: '',
+                temCrise: false,
+                criseDescricao: '',
+                criseAcaoTomada: '',
+                isExtra: false,
+                solicitadoPor: ''
               })
             }}
             className="w-full text-[#4A5568] text-xs font-bold uppercase tracking-widest py-4"
@@ -214,7 +279,21 @@ export default function RegistroRapidoPage() {
           </label>
           <select
             value={form.clienteId}
-            onChange={(e) => setForm({ ...form, clienteId: e.target.value })}
+            onChange={async (e) => {
+              const val = e.target.value
+              setForm({ ...form, clienteId: val, solicitadoPor: '' })
+              setError(null)
+              if (!val) {
+                setContatosCliente([])
+                return
+              }
+              try {
+                const data = await ContatosService.getByClienteId(val)
+                setContatosCliente(data)
+              } catch (err) {
+                console.error('Erro ao buscar contatos:', err)
+              }
+            }}
             className="w-full bg-[#0d1117] border border-[#23272F] rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-[#0466C8] appearance-none"
           >
             <option value="">Selecione o cliente...</option>
@@ -266,11 +345,99 @@ export default function RegistroRapidoPage() {
           </label>
           <input
             type="text"
-            value={form.pendenciaRapida}
+            value={form.pendenciaRapida || ''}
             onChange={(e) => setForm({ ...form, pendenciaRapida: e.target.value })}
             placeholder="Ex: Enviar relatório, Agendar retorno..."
             className="w-full bg-[#0d1117] border border-[#23272F] rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-[#0466C8]"
           />
+        </section>
+
+        {/* SELEÇÃO DE VISITA EXTRA E SOLICITANTE */}
+        <section className="bg-zinc-950/40 border border-[#23272F]/60 rounded-2xl p-5 space-y-4">
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={!!form.isExtra}
+              onChange={e => {
+                setForm({ ...form, isExtra: e.target.checked, solicitadoPor: '' })
+                setError(null)
+              }}
+              className="size-4 rounded border-zinc-800 bg-[#0d1117] text-sky-600 focus:ring-sky-500 cursor-pointer"
+            />
+            <div>
+              <p className="text-xs font-bold text-white">Marcar como Visita Extra</p>
+              <p className="text-[9px] font-black uppercase tracking-widest text-[#7D8597]">Não Planejada / Demanda Sobressalente</p>
+            </div>
+          </label>
+
+          {form.isExtra && (
+            <div className="animate-in fade-in slide-in-from-top-1 duration-200 space-y-2 pt-4 border-t border-zinc-900/50">
+              <label className="text-[10px] font-black uppercase tracking-widest text-[#7D8597] ml-1">Quem solicitou a visita? *</label>
+              <select
+                value={form.solicitadoPor || ''}
+                onChange={e => {
+                  setForm({ ...form, solicitadoPor: e.target.value })
+                  setError(null)
+                }}
+                className="w-full bg-[#0d1117] border border-[#23272F] rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-sky-500 text-white"
+              >
+                <option value="">Selecione o solicitante...</option>
+                {contatosCliente.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome} {c.cargo ? `(${c.cargo})` : ''} {c.papel ? `· ${c.papel}` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </section>
+
+        {/* SELEÇÃO DE SITUAÇÃO CRÍTICA (CAUSALIDADE OPERACIONAL) */}
+        <section className="bg-zinc-950/40 border border-[#23272F]/60 rounded-2xl p-5 space-y-4">
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={!!form.temCrise}
+              onChange={e => {
+                setForm({ ...form, temCrise: e.target.checked })
+                setError(null)
+              }}
+              className="size-4 rounded border-zinc-800 bg-[#0d1117] text-rose-600 focus:ring-rose-500 cursor-pointer"
+            />
+            <div>
+              <p className="text-xs font-bold text-white">Houve situação crítica nesta visita</p>
+              <p className="text-[9px] font-black uppercase tracking-widest text-rose-500/80">Registra uma intercorrência importante na linha do tempo operacional</p>
+            </div>
+          </label>
+
+          {form.temCrise && (
+            <div className="animate-in fade-in slide-in-from-top-1 duration-200 space-y-4 pt-4 border-t border-zinc-900/50">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[#7D8597] ml-1">Descrição da Situação Crítica *</label>
+                <textarea
+                  value={form.criseDescricao || ''}
+                  onChange={e => {
+                    setForm({ ...form, criseDescricao: e.target.value })
+                    setError(null)
+                  }}
+                  rows={2}
+                  placeholder="Descreva a intercorrência crítica encontrada em campo..."
+                  className="w-full bg-[#0d1117] border border-[#23272F] rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-rose-500 text-white resize-none"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[#7D8597] ml-1">Ação Tomada (Opcional)</label>
+                <input
+                  type="text"
+                  value={form.criseAcaoTomada || ''}
+                  onChange={e => setForm({ ...form, criseAcaoTomada: e.target.value })}
+                  placeholder="Opcional. Padrão: Intervenção técnica imediata realizada pelo Adriano."
+                  className="w-full bg-[#0d1117] border border-[#23272F] rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-rose-500 text-white"
+                />
+              </div>
+            </div>
+          )}
         </section>
       </div>
 
@@ -279,9 +446,13 @@ export default function RegistroRapidoPage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full bg-[#0466C8] hover:bg-[#0353A4] disabled:opacity-50 text-white font-bold py-4 rounded-xl shadow-2xl shadow-blue-900/40 transition-all active:scale-[0.98]"
+          className={`w-full hover:bg-[#0353A4] disabled:opacity-50 text-white font-bold py-4 rounded-xl shadow-2xl transition-all active:scale-[0.98] ${
+            saving 
+              ? 'bg-[#0466C8]/40 text-blue-300 animate-pulse' 
+              : 'bg-[#0466C8] shadow-blue-900/40'
+          }`}
         >
-          {saving ? 'Salvando...' : 'Finalizar Registro'}
+          {saving ? (savingStep || 'Salvando...') : 'Finalizar Registro'}
         </button>
       </div>
     </main>

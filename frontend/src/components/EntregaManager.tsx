@@ -7,6 +7,15 @@ import { type EntregaRaw } from '@/types/entrega.raw'
 import { CheckCircle2, Circle, Calendar, Link as LinkIcon, AlertTriangle } from 'lucide-react'
 import { displayDate } from '@/utils/date'
 
+function isUrl(str: string): boolean {
+  try {
+    const trimmed = (str || '').trim()
+    return trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('www.')
+  } catch {
+    return false
+  }
+}
+
 interface EntregaManagerProps {
   id?: string | number
   projetoId?: string | number
@@ -23,6 +32,7 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
   const [descricao, setDescricao] = useState('')
   const [dataPrevista, setDataPrevista] = useState('')
   const [referenciaDoc, setReferenciaDoc] = useState('')
+  const [dataEntregaReal, setDataEntregaReal] = useState('')
 
   const loadEntrega = React.useCallback(async () => {
     if (!id) return
@@ -41,6 +51,7 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
       setDescricao(data.descricao)
       setDataPrevista(data.data_entrega_prevista.split('T')[0])
       setReferenciaDoc(data.referencia_doc || '')
+      setDataEntregaReal(data.data_entrega_real ? data.data_entrega_real.split('T')[0] : '')
     }
     setLoading(false)
   }, [id])
@@ -74,15 +85,18 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
       const payload: Partial<EntregaRaw> = {
         descricao,
         data_entrega_prevista: dataPrevista,
-        referencia_doc: referenciaDoc || null
+        referencia_doc: referenciaDoc || null,
+        data_entrega_real: dataEntregaReal || null
       }
 
       if (id) {
+        payload.entregue = !!dataEntregaReal
         await EntregasService.update(Number(id), payload)
         setEditMode(false)
         await loadEntrega()
       } else if (projetoId) {
         payload.id_projeto = Number(projetoId)
+        payload.entregue = !!dataEntregaReal
         await EntregasService.create(payload)
         onUpdate?.()
       }
@@ -178,6 +192,16 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
               </div>
             </div>
 
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Conclusão Real (Opcional - Lançar data conclui o marco)</label>
+              <input 
+                type="date"
+                value={dataEntregaReal}
+                onChange={(e) => setDataEntregaReal(e.target.value)}
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-white text-sm focus:border-emerald-500/50 outline-none"
+              />
+            </div>
+
             <button 
               onClick={handleSave}
               disabled={saving || !descricao || !dataPrevista}
@@ -222,7 +246,22 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
                 <p className="text-[9px] font-black uppercase tracking-widest text-zinc-200 mb-1">Documentação</p>
                 <div className="flex items-center gap-2 text-zinc-300 text-xs font-bold truncate">
                   <LinkIcon size={12} className="text-emerald-500 shrink-0" />
-                  <span className="truncate">{entrega.referencia_doc || 'Sem referência'}</span>
+                  {entrega.referencia_doc ? (
+                    isUrl(entrega.referencia_doc) ? (
+                      <a 
+                        href={entrega.referencia_doc.startsWith('www.') ? `https://${entrega.referencia_doc}` : entrega.referencia_doc} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="truncate text-sky-400 hover:text-sky-300 hover:underline transition-colors"
+                      >
+                        {entrega.referencia_doc}
+                      </a>
+                    ) : (
+                      <span className="truncate">{entrega.referencia_doc}</span>
+                    )
+                  ) : (
+                    <span className="truncate text-zinc-500 italic">Sem referência</span>
+                  )}
                 </div>
               </div>
             </div>

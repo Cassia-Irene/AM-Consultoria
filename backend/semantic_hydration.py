@@ -192,11 +192,30 @@ def consolidate_real_projects(db: Session):
                     ))
 
         # 6. CRISES E FINANCEIRO
+        # Garantir que há visitas para vincular
+        visits = db.query(Visita).filter_by(id_contrato=contrato.id_contrato).all()
+        if not visits:
+            placeholder_visit = Visita(
+                id_contrato=contrato.id_contrato,
+                data_hora=BASE_DATE - timedelta(days=10),
+                status="realizada",
+                tipo_visita="rotineira",
+                modalidade="presencial",
+                duracao_minutos=60,
+                descricao="Visita de alinhamento operacional para revisão de processos e tratamento de intercorrências.",
+                resultados="Alinhamento concluído."
+            )
+            db.add(placeholder_visit)
+            db.flush()
+            visits = [placeholder_visit]
+
         for crisis in sc["crises"]:
             if not db.query(EventoCritico).filter(EventoCritico.id_contrato == contrato.id_contrato, EventoCritico.descricao.like(f"%{crisis[:20]}%")).first():
+                selected_visit = random.choice(visits)
                 db.add(EventoCritico(
                     id_contrato=contrato.id_contrato,
-                    data_evento=BASE_DATE - timedelta(days=random.randint(1, 15)),
+                    id_visita=selected_visit.id_visita,
+                    data_evento=selected_visit.data_hora.date() if hasattr(selected_visit.data_hora, 'date') else selected_visit.data_hora,
                     descricao=crisis,
                     acao_tomada="Intervenção técnica imediata realizada pelo Adriano."
                 ))
@@ -214,6 +233,33 @@ def consolidate_real_projects(db: Session):
                         data_pagamento_prevista=prevista,
                         pago=prevista < BASE_DATE - timedelta(days=5)
                     ))
+
+    # Varredura corretiva: Garante que 100% dos eventos críticos possuam id_visita vinculado
+    eventos_sem_visita = db.query(EventoCritico).filter(EventoCritico.id_visita == None).all()
+    if eventos_sem_visita:
+        print(f"\n  [CORREÇÃO] Encontrados {len(eventos_sem_visita)} eventos críticos sem visita vinculada. Corrigindo...")
+        for ec in eventos_sem_visita:
+            # Buscar visitas do mesmo contrato
+            visits = db.query(Visita).filter_by(id_contrato=ec.id_contrato).all()
+            if not visits:
+                # Criar visita placeholder coerente
+                placeholder_visit = Visita(
+                    id_contrato=ec.id_contrato,
+                    data_hora=ec.data_evento,
+                    status="realizada",
+                    tipo_visita="rotineira",
+                    modalidade="presencial",
+                    duracao_minutos=60,
+                    descricao="Visita operacional emergencial para tratamento e alinhamento de intercorrências registradas.",
+                    resultados="Alinhamento e plano de contingência traçados."
+                )
+                db.add(placeholder_visit)
+                db.flush()
+                visits = [placeholder_visit]
+            
+            selected_visit = random.choice(visits)
+            ec.id_visita = selected_visit.id_visita
+            print(f"    -> Evento #{ec.id_evento} vinculado à Visita #{selected_visit.id_visita}")
 
     db.commit()
     print("\n[CONSOLIDAÇÃO] >>> CARTEIRA REAL CONSOLIDADA COM SUCESSO! <<<\n")

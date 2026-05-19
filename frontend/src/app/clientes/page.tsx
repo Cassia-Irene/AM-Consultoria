@@ -4,7 +4,7 @@
 // Página de gestão de clientes refatorada para o padrão visual Dark/Premium do dashboard.
 // Utiliza mappers e domain limpos.
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { ClientesService } from '@/services/clientes.service'
 import type { Cliente } from '@/domain/cliente'
@@ -18,6 +18,21 @@ export default function ClientesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [selectedClientId, setSelectedClientId] = useState<string | undefined>()
   const [mostrarInativos, setMostrarInativos] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+
+  const filteredClientes = useMemo(() => {
+    const base = clientes.filter(c => mostrarInativos ? true : c.status === 'ativo')
+    if (!searchTerm) return base
+    const term = searchTerm.toLowerCase().trim()
+    return base.filter(c => {
+      const matchesName = c.nome_instituicao.toLowerCase().includes(term)
+      const matchesType = c.tipo_instituicao.toLowerCase().includes(term)
+      const matchesCity = c.cidade.toLowerCase().includes(term)
+      const matchesComplex = c.nivel_complexidade ? c.nivel_complexidade.toLowerCase().includes(term) : false
+      const matchesObs = c.observacoes_gerais ? c.observacoes_gerais.toLowerCase().includes(term) : false
+      return matchesName || matchesType || matchesCity || matchesComplex || matchesObs
+    })
+  }, [clientes, mostrarInativos, searchTerm])
 
   const loadData = async () => {
     try {
@@ -87,6 +102,36 @@ export default function ClientesPage() {
         </div>
       </header>
 
+      {/* ── BARRA DE BUSCA ── */}
+      <div className="px-5 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
+        <div className="sm:col-span-2 relative">
+          <input
+            type="text"
+            placeholder="Buscar por cliente, tipo, cidade ou observações..."
+            className="w-full bg-zinc-900/60 border border-zinc-800 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-zinc-700 transition-colors placeholder-zinc-500"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+          <div className="absolute left-3.5 top-3.5 text-zinc-400">
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      {searchTerm && (
+        <div className="px-5 mb-6 flex justify-end">
+          <button
+            onClick={() => setSearchTerm('')}
+            className="text-xs text-zinc-400 hover:text-white bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-1.5 transition-colors font-semibold"
+          >
+            Limpar busca
+          </button>
+        </div>
+      )}
+
       <div className="px-5 pt-6 space-y-4">
         {/* Botões para telas menores (abaixo da descrição do header e acima dos cards) */}
         <div className="flex md:hidden items-center gap-2 mb-10">
@@ -111,16 +156,14 @@ export default function ClientesPage() {
             Novo
           </button>
         </div>
-        {(() => {
-          const filtered = clientes.filter(c => mostrarInativos ? true : c.status === 'ativo')
-          if (filtered.length === 0) return (
-            <div className="py-20 text-center">
-              <p className="text-zinc-600 text-sm font-medium italic">
-                {mostrarInativos ? 'Nenhum cliente cadastrado' : 'Nenhum cliente ativo encontrado'}
-              </p>
-            </div>
-          )
-          return filtered.map((cliente) => (
+        {filteredClientes.length === 0 ? (
+          <div className="py-20 text-center">
+            <p className="text-zinc-600 text-sm font-medium italic">
+              {searchTerm ? 'Nenhum cliente atende aos termos de busca.' : (mostrarInativos ? 'Nenhum cliente cadastrado' : 'Nenhum cliente ativo encontrado')}
+            </p>
+          </div>
+        ) : (
+          filteredClientes.map((cliente) => (
             <Link key={cliente.id} href={`/clientes/${cliente.id}`} className="block">
               <div className="bg-zinc-900/60 border border-zinc-800 p-5 rounded-2xl hover:border-zinc-700 transition-all group active:scale-[0.99]">
                 <div className="flex justify-between items-start mb-2 gap-3">
@@ -176,7 +219,7 @@ export default function ClientesPage() {
               </div>
             </Link>
           ))
-        })()}
+        )}
       </div>
 
       <OperationalDrawer

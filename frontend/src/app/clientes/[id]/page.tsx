@@ -1,8 +1,6 @@
 'use client'
-// src/app/clientes/[id]/page.tsx
-//
-// Página de detalhes do cliente. Atua como um mini-CRM.
-// Consolida contratos, contatos, faturamentos e projetos.
+
+// Página de detalhes do cliente. Consolida contratos, contatos, faturamentos e projetos.
 
 import { use, useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
@@ -16,13 +14,22 @@ import { getStatusFaturamento } from '@/domain/faturamento'
 import { OperationalDrawer } from '@/components/OperationalDrawer'
 import { ClientManager } from '@/components/ClientManager'
 import { ContactManager } from '@/components/ContactManager'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { ContractCreateManager } from '@/components/ContractCreateManager'
+import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react'
 
 import type { Cliente } from '@/domain/cliente'
 import type { Contrato } from '@/domain/contrato'
 import type { Contato } from '@/domain/contato'
 import type { FaturamentoCliente } from '@/domain/faturamento'
 import type { Projeto } from '@/domain/projeto'
+
+function getComplexidadeColor(nivel?: string) {
+  if (!nivel) return 'bg-sky-500'
+  const normalizado = nivel.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  if (normalizado === 'alta') return 'bg-rose-500'
+  if (normalizado === 'media') return 'bg-amber-500'
+  return 'bg-sky-500' // baixa
+}
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -42,10 +49,12 @@ export default function ClienteDetalhePage({ params }: PageProps) {
 
   const [isClientDrawerOpen, setIsClientDrawerOpen] = useState(false)
   const [isContactDrawerOpen, setIsContactDrawerOpen] = useState(false)
+  const [isContractDrawerOpen, setIsContractDrawerOpen] = useState(false)
   const [selectedContactId, setSelectedContactId] = useState<string | undefined>()
   const [notasEditando, setNotasEditando] = useState(false)
   const [notasTexto, setNotasTexto] = useState('')
   const [notasSalvando, setNotasSalvando] = useState(false)
+  const [expandedContactNotes, setExpandedContactNotes] = useState<Record<string, boolean>>({})
 
   const loadData = useCallback(async () => {
     try {
@@ -127,9 +136,10 @@ export default function ClienteDetalhePage({ params }: PageProps) {
       <div className="px-5 pt-12 pb-4">
         <Link 
           href="/clientes" 
-          className="text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:text-sky-500 transition-colors inline-block mb-4"
+          className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-sky-500 transition-colors inline-flex items-center gap-1.5 mb-4"
         >
-          ← Voltar para clientes
+          <ArrowLeft size={10} strokeWidth={3} />
+          Voltar para clientes
         </Link>
       </div>
 
@@ -145,18 +155,18 @@ export default function ClienteDetalhePage({ params }: PageProps) {
                 <ClienteStatusBadge status={cliente.status} />
               </div>
               
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-zinc-500 text-sm font-medium mb-8">
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-white/70 text-sm font-medium mb-8">
                 <span className="flex items-center gap-2">
-                   <span className="size-1.5 rounded-full bg-zinc-700" />
+                   <span className="size-1.5 rounded-full bg-sky-500" />
                    {cliente.tipo_instituicao}
                 </span>
                 <span className="flex items-center gap-2">
-                   <span className="size-1.5 rounded-full bg-zinc-700" />
+                   <span className="size-1.5 rounded-full bg-sky-500" />
                    {cliente.cidade}
                 </span>
                 {cliente.nivel_complexidade && (
                   <span className="flex items-center gap-2">
-                    <span className="size-1.5 rounded-full bg-sky-500/50" />
+                    <span className={`size-1.5 rounded-full ${getComplexidadeColor(cliente.nivel_complexidade)}`} />
                     Complexidade {cliente.nivel_complexidade}
                   </span>
                 )}
@@ -164,7 +174,7 @@ export default function ClienteDetalhePage({ params }: PageProps) {
 
               {notasEditando ? (
                 <div className="bg-black/20 rounded-2xl p-5 border border-white/5 backdrop-blur-sm">
-                  <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Notas Operacionais</p>
+                  <p className="text-[10px] md:text-[11px] font-black text-sky-400 uppercase tracking-widest mb-2">Notas Operacionais</p>
                   <textarea
                     autoFocus
                     value={notasTexto}
@@ -172,9 +182,9 @@ export default function ClienteDetalhePage({ params }: PageProps) {
                     onBlur={salvarNotas}
                     rows={4}
                     placeholder="Contexto, dinâmica institucional, o que o sistema não captura..."
-                    className="w-full bg-transparent text-zinc-300 text-sm leading-relaxed italic resize-none focus:outline-none placeholder-zinc-700"
+                    className="w-full bg-transparent text-zinc-200 text-sm leading-relaxed italic resize-none focus:outline-none placeholder-zinc-700"
                   />
-                  <p className="text-[9px] text-zinc-700 mt-2 uppercase tracking-widest">{notasSalvando ? 'Salvando...' : 'Salvo ao perder foco'}</p>
+                  <p className="text-[9px] md:text-[10px] text-sky-500 mt-2 uppercase tracking-widest">{notasSalvando ? 'Salvando...' : 'Salvo ao perder foco'}</p>
                 </div>
               ) : (
                 <div
@@ -182,15 +192,19 @@ export default function ClienteDetalhePage({ params }: PageProps) {
                   className="cursor-pointer group"
                 >
                   {notasAtuais ? (
-                    <div className="bg-black/20 rounded-2xl p-5 border border-white/5 backdrop-blur-sm group-hover:border-white/10 transition-colors">
-                      <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Notas Operacionais</p>
+                    <div className="bg-black/20 rounded-2xl p-5 border border-white/5 backdrop-blur-sm group-hover:border-zinc-700/80 group-hover:bg-zinc-900/10 transition-all duration-300">
+                      <div className="flex justify-between items-center mb-2">
+                        <p className="text-[10px] md:text-[11px] font-black text-sky-600 uppercase tracking-widest group-hover:text-sky-400 transition-colors">Notas Operacionais</p>
+                        <Pencil size={11} className="text-zinc-500 group-hover:text-sky-500 transition-colors" />
+                      </div>
                       <p className="text-zinc-300 text-sm leading-relaxed italic">
                         &quot;{notasAtuais}&quot;
                       </p>
                     </div>
                   ) : (
-                    <div className="rounded-2xl p-4 border border-dashed border-zinc-800 group-hover:border-zinc-700 transition-colors">
-                      <p className="text-zinc-700 text-xs italic">Toque para adicionar notas operacionais...</p>
+                    <div className="rounded-2xl p-4 border border-dashed border-zinc-800 group-hover:border-zinc-700 group-hover:bg-zinc-900/10 transition-all duration-300 flex items-center justify-between">
+                      <p className="text-zinc-700 text-xs italic group-hover:text-zinc-500 transition-colors">Toque para adicionar notas operacionais...</p>
+                      <Pencil size={11} className="text-zinc-700 group-hover:text-sky-500 transition-colors" />
                     </div>
                   )}
                 </div>
@@ -215,22 +229,41 @@ export default function ClienteDetalhePage({ params }: PageProps) {
                 <Plus size={14} strokeWidth={3} />
                 Adicionar Contato
               </button>
-              <button 
-                onClick={async () => {
-                  if (confirm('Deseja realmente arquivar esta instituição?')) {
-                    try {
-                      await ClientesService.update(id, { ...cliente, status: 'inativo' })
-                      window.location.href = '/clientes'
-                    } catch {
-                      alert('Erro ao arquivar cliente.')
+              {cliente.status === 'inativo' ? (
+                <button 
+                  onClick={async () => {
+                    if (confirm('Deseja realmente reativar esta instituição no painel de ativos?')) {
+                      try {
+                        const updated = await ClientesService.update(id, { ...cliente, status: 'ativo' })
+                        setCliente(updated)
+                        loadData()
+                      } catch {
+                        alert('Erro ao reativar cliente.')
+                      }
                     }
-                  }
-                }}
-                className="flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-xl border border-red-500/20 transition-all active:scale-[0.98]"
-              >
-                <Trash2 size={12} />
-                Arquivar Instituição
-              </button>
+                  }}
+                  className="flex items-center justify-center gap-2 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-xl border border-emerald-500/20 transition-all active:scale-[0.98] shadow-lg shadow-emerald-950/10"
+                >
+                  Reativar Instituição
+                </button>
+              ) : (
+                <button 
+                  onClick={async () => {
+                    if (confirm('Deseja realmente arquivar esta instituição?')) {
+                      try {
+                        await ClientesService.update(id, { ...cliente, status: 'inativo' })
+                        window.location.href = '/clientes'
+                      } catch {
+                        alert('Erro ao arquivar cliente.')
+                      }
+                    }
+                  }}
+                  className="flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-xl border border-red-500/20 transition-all active:scale-[0.98]"
+                >
+                  <Trash2 size={12} />
+                  Arquivar Instituição
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -248,25 +281,36 @@ export default function ClienteDetalhePage({ params }: PageProps) {
           
           {/* COLUNA 1: Contratos */}
           <div className="space-y-4">
-            <SectionHeader label="Contratos" />
+            <div className="flex justify-between items-center gap-3">
+              <div className="flex-1">
+                <SectionHeader label="Contratos" />
+              </div>
+              <button 
+                onClick={() => setIsContractDrawerOpen(true)}
+                className="flex items-center gap-1 bg-sky-600/90 hover:bg-sky-500 active:bg-sky-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest px-3 py-1.5 transition-all shadow-lg shadow-sky-950/20 active:scale-95 shrink-0"
+              >
+                <Plus size={11} className="stroke-3" />
+                Novo
+              </button>
+            </div>
             <div className="space-y-3">
               {contratos.length > 0 ? (
-                contratos.map(c => (
+                contratos.slice(0, 3).map(c => (
                   <Link key={c.id} href={`/contratos/${c.id}`} className="block group">
                     <div className="border border-zinc-800 bg-zinc-900/30 rounded-xl p-4 transition-colors group-hover:bg-zinc-800/40 group-hover:border-zinc-700">
                       <div className="flex justify-between items-start mb-3">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">#{c.id}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">#{c.id}</span>
                         <ContratoStatusBadge status={c.status || ''} />
                       </div>
                       <p className="text-white font-bold text-sm mb-1 line-clamp-1">{c.servicos_contratados}</p>
                       <div className="flex justify-between items-end mt-4">
                         <div>
-                          <p className="text-[10px] text-zinc-500 uppercase font-black tracking-widest mb-0.5">Valor Mensal</p>
+                          <p className="text-[10px] md:text-[11px] text-sky-500 uppercase font-black tracking-widest mb-0.5">Valor Mensal</p>
                           <p className="text-zinc-200 font-bold">{formatCurrency(c.valor_mensal || 0)}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[10px] text-zinc-500 uppercase font-black tracking-widest mb-0.5">Visitas/mês</p>
-                          <p className="text-zinc-400 font-medium text-sm">{c.visitas_previstas_mes}</p>
+                          <p className="text-[10px] md:text-[11px] text-sky-500 uppercase font-black tracking-widest mb-0.5">Visitas/mês</p>
+                          <p className="text-zinc-200 font-bold">{c.visitas_previstas_mes}</p>
                         </div>
                       </div>
                     </div>
@@ -283,12 +327,32 @@ export default function ClienteDetalhePage({ params }: PageProps) {
             <div>
               <SectionHeader label="Stakeholders & Contatos" />
               <div className="space-y-3 mt-4">
-                {contatos.length > 0 ? (
-                  contatos.map(contato => {
-                    // Extrai tags das observações para exibição
-                    const match = (contato.observacoes_gerais || '').match(/^\[(.*?)\]/)
+                {(() => {
+                  const prioridadePapel: Record<string, number> = {
+                    'Decisor': 1,
+                    'Financeiro': 2,
+                    'Influenciador': 3,
+                    'Técnico': 4,
+                    'Operacional': 5,
+                  }
+                  
+                  const contatosOrdenados = [...contatos].sort((a, b) => {
+                    const pa = prioridadePapel[a.papel] || 999
+                    const pb = prioridadePapel[b.papel] || 999
+                    return pa - pb
+                  })
+
+                  return contatosOrdenados.length > 0 ? (
+                    contatosOrdenados.map(contato => {
+                      // Extrai tags das observações para exibição
+                      const match = (contato.observacoes_gerais || '').match(/^\[(.*?)\]/)
                     const tags = match ? match[1].split(',').map(t => t.trim()) : []
                     const cleanObs = (contato.observacoes_gerais || '').replace(/^\[.*?\]\s*/, '')
+                    
+                    // M2: Sanitização robusta do WhatsApp
+                    const cleanNum = (contato.telefone_whatsapp || '').replace(/\D/g, '')
+                    const finalNum = cleanNum.startsWith('55') ? cleanNum : `55${cleanNum}`
+                    const isObsExpanded = !!expandedContactNotes[contato.id]
 
                     return (
                       <div 
@@ -297,13 +361,16 @@ export default function ClienteDetalhePage({ params }: PageProps) {
                            setSelectedContactId(contato.id)
                            setIsContactDrawerOpen(true)
                         }}
-                        className="group border rounded-xl p-4 transition-all cursor-pointer bg-zinc-900/30 border-zinc-800 hover:border-zinc-700"
+                        className="group border rounded-xl p-4 transition-all cursor-pointer bg-zinc-900/30 border-zinc-800 hover:border-zinc-700/80 hover:bg-zinc-800/15 duration-300"
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center gap-2">
                             <div>
-                              <p className="text-white font-bold text-sm">{contato.nome}</p>
-                              {contato.cargo && <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">{contato.cargo}</p>}
+                              <div className="flex items-center gap-1.5">
+                                <p className="text-white font-bold text-sm group-hover:text-sky-400 transition-colors">{contato.nome}</p>
+                                <Pencil size={10} className="text-zinc-700 group-hover:text-sky-400 opacity-0 group-hover:opacity-100 transition-all duration-300 shrink-0" />
+                              </div>
+                              {contato.cargo && <p className="text-sky-600 text-[10px] font-bold uppercase tracking-widest">{contato.cargo}</p>}
                             </div>
                           </div>
                           <PapelBadge papel={contato.papel} />
@@ -319,23 +386,55 @@ export default function ClienteDetalhePage({ params }: PageProps) {
                           </div>
                         )}
 
-                        <div className="mt-4 flex flex-wrap gap-4">
+                        <div className="mt-4 flex flex-wrap gap-4" onClick={e => e.stopPropagation()}>
                           {contato.telefone_whatsapp && (
-                            <p className="text-zinc-400 text-xs flex items-center gap-1.5">
-                              <span className="text-emerald-500 text-[10px] font-black uppercase">WA:</span> 
-                              <span className="font-medium">{contato.telefone_whatsapp}</span>
-                            </p>
+                            <>
+                              {/* WA Link Sanitizado */}
+                              <a 
+                                href={`https://wa.me/${finalNum}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-zinc-400 hover:text-emerald-400 text-xs flex items-center gap-1.5 transition-colors group/wa"
+                              >
+                                <span className="text-emerald-500 text-[10px] font-black uppercase group-hover/wa:underline">WA:</span> 
+                                <span className="font-medium group-hover/wa:underline">{contato.telefone_whatsapp}</span>
+                              </a>
+
+                              {/* M3: Ligação Telefônica Direta */}
+                              <a 
+                                href={`tel:${cleanNum}`}
+                                className="text-zinc-300 hover:text-sky-400 text-xs flex items-center gap-1.5 transition-colors group/tel"
+                              >
+                                <span className="text-sky-500 text-[10px] md:text-[11px] font-black uppercase group-hover/tel:underline">Tel:</span> 
+                                <span className="font-medium group-hover/tel:underline">{contato.telefone_whatsapp}</span>
+                              </a>
+                            </>
                           )}
                           {contato.email && (
-                            <p className="text-zinc-400 text-xs flex items-center gap-1.5">
-                              <span className="text-sky-500 text-[10px] font-black uppercase">@</span> 
-                              <span className="font-medium truncate max-w-[150px]">{contato.email}</span>
-                            </p>
+                            <a 
+                              href={`mailto:${contato.email}`}
+                              className="text-zinc-300 hover:text-sky-400 text-xs flex items-center gap-1.5 transition-colors group/mail"
+                            >
+                              <span className="text-sky-500 text-[10px] md:text-[11px] font-black uppercase group-hover/mail:underline">@</span> 
+                              <span className="font-medium truncate max-w-[150px] group-hover/mail:underline">{contato.email}</span>
+                            </a>
                           )}
                         </div>
 
                         {cleanObs && (
-                          <p className="mt-3 text-[11px] text-zinc-500 italic leading-relaxed border-t border-white/5 pt-3 line-clamp-1 group-hover:line-clamp-none transition-all">
+                          /* M4: Expansão sem conflito com e.stopPropagation */
+                          <p 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setExpandedContactNotes(prev => ({
+                                ...prev,
+                                [contato.id]: !prev[contato.id]
+                              }))
+                            }}
+                            className={`mt-3 text-[11px] text-zinc-500 italic leading-relaxed border-t border-white/5 pt-3 cursor-pointer transition-all duration-300 ${
+                              isObsExpanded ? 'line-clamp-none' : 'line-clamp-1 group-hover:line-clamp-none'
+                            }`}
+                          >
                             &quot;{cleanObs}&quot;
                           </p>
                         )}
@@ -344,7 +443,8 @@ export default function ClienteDetalhePage({ params }: PageProps) {
                   })
                 ) : (
                   <EmptyCard message="Nenhum contato vinculado" />
-                )}
+                )
+                })()}
               </div>
             </div>
 
@@ -357,9 +457,16 @@ export default function ClienteDetalhePage({ params }: PageProps) {
                       <div className="border border-zinc-800 bg-zinc-900/30 rounded-xl p-4 transition-colors group-hover:bg-zinc-800/40 group-hover:border-zinc-700">
                         <div className="flex justify-between items-start mb-2">
                           <p className="text-white font-bold text-sm line-clamp-1 pr-2">{p.titulo}</p>
-                          <ProjetoStatusBadge status={p.status} />
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {p.isExtra && (
+                              <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border text-amber-500 bg-amber-500/10 border-amber-500/20">
+                                EXTRA
+                              </span>
+                            )}
+                            <ProjetoStatusBadge status={p.status} />
+                          </div>
                         </div>
-                        <p className="text-zinc-400 text-xs mt-2">{formatCurrency(p.valor_total)}</p>
+                        <p className="text-zinc-300 font-bold text-xs md:text-sm mt-4">{formatCurrency(p.valor_total)}</p>
                       </div>
                     </Link>
                   ))
@@ -374,27 +481,42 @@ export default function ClienteDetalhePage({ params }: PageProps) {
           <div className="space-y-4">
             <SectionHeader label="Histórico de Faturamento" />
             <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-2xl overflow-hidden">
-              {faturamentos.length > 0 ? (
-                <div className="divide-y divide-zinc-800/50">
-                  {faturamentos.sort((a, b) => b.mes_ano.localeCompare(a.mes_ano)).slice(0, 10).map(f => {
-                    const status = getStatusFaturamento(f)
-                    return (
-                      <div key={f.id} className="p-4 flex items-center justify-between hover:bg-zinc-800/20 transition-colors">
-                        <div>
-                          <p className="text-white text-sm font-bold">{formatMesAno(f.mes_ano)}</p>
-                          <p className="text-[10px] text-zinc-600 font-medium uppercase tracking-widest mt-0.5">Contrato #{f.contratoId}</p>
+              {(() => {
+                const faturamentosOrdenados = [...faturamentos].sort((a, b) => b.mes_ano.localeCompare(a.mes_ano))
+                const ultimaPaga = faturamentosOrdenados.find(f => getStatusFaturamento(f) === 'pago')
+                const ultimasAtrasadas = faturamentosOrdenados
+                  .filter(f => getStatusFaturamento(f) === 'atrasado')
+                  .slice(0, 3)
+
+                const exibidos: FaturamentoCliente[] = []
+                if (ultimaPaga) exibidos.push(ultimaPaga)
+                exibidos.push(...ultimasAtrasadas)
+                exibidos.sort((a, b) => b.mes_ano.localeCompare(a.mes_ano))
+
+                if (exibidos.length === 0) {
+                  return <div className="p-4"><EmptyCard message="Nenhum faturamento crítico registrado" /></div>
+                }
+
+                return (
+                  <div className="divide-y divide-zinc-800/50">
+                    {exibidos.map(f => {
+                      const status = getStatusFaturamento(f)
+                      return (
+                        <div key={f.id} className="p-4 flex items-center justify-between hover:bg-zinc-800/20 transition-colors">
+                          <div>
+                            <p className="text-white text-sm font-bold">{formatMesAno(f.mes_ano)}</p>
+                            <p className="text-[10px] md:text-[11px] text-zinc-300 font-medium uppercase tracking-widest mt-2">Contrato #{f.contratoId}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-zinc-200 font-black text-sm">{formatCurrency(f.valor_total)}</p>
+                            <FaturamentoStatusText status={status} />
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-zinc-200 font-black text-sm">{formatCurrency(f.valor_total)}</p>
-                          <FaturamentoStatusText status={status} />
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              ) : (
-                <div className="p-4"><EmptyCard message="Sem histórico de faturamentos" /></div>
-              )}
+                      )
+                    })}
+                  </div>
+                )
+              })()}
             </div>
           </div>
 
@@ -426,6 +548,21 @@ export default function ClienteDetalhePage({ params }: PageProps) {
           onSuccess={loadData}
         />
       </OperationalDrawer>
+
+      <OperationalDrawer
+        isOpen={isContractDrawerOpen}
+        onClose={() => setIsContractDrawerOpen(false)}
+        title="Novo Contrato"
+      >
+        <ContractCreateManager
+          clienteId={id}
+          onClose={() => setIsContractDrawerOpen(false)}
+          onSuccess={(novoContrato) => {
+            setContratos(prev => [novoContrato, ...prev])
+            loadData()
+          }}
+        />
+      </OperationalDrawer>
     </main>
   )
 }
@@ -437,7 +574,7 @@ function KpiCard({ label, value, color = 'default' }: { label: string; value: st
   return (
     <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-4 flex flex-col justify-center">
       <p className={`text-2xl font-black tabular-nums tracking-tight ${textColor}`}>{value}</p>
-      <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mt-1">{label}</p>
+      <p className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-zinc-300 mt-1">{label}</p>
     </div>
   )
 }
@@ -445,7 +582,7 @@ function KpiCard({ label, value, color = 'default' }: { label: string; value: st
 function SectionHeader({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-4">
-      <h2 className="text-[11px] font-black uppercase tracking-widest text-zinc-500 shrink-0">{label}</h2>
+      <h2 className="text-[11px] md:text-[12px] font-black uppercase tracking-widest text-zinc-200 shrink-0">{label}</h2>
       <div className="h-px bg-zinc-800/50 flex-1" />
     </div>
   )
@@ -489,7 +626,7 @@ function ProjetoStatusBadge({ status }: { status: string }) {
 }
 
 function PapelBadge({ papel }: { papel: string }) {
-  let colorClass = 'text-zinc-400 bg-zinc-800 border-zinc-700/50' // Operacional ou default
+  let colorClass = 'text-zinc-300 bg-zinc-800 border-zinc-700/50' // Operacional ou default
   const lowerPapel = papel.toLowerCase()
   if (lowerPapel.includes('decisor')) colorClass = 'text-sky-400 bg-sky-900/30 border-sky-800/30'
   else if (lowerPapel.includes('financeiro')) colorClass = 'text-emerald-400 bg-emerald-900/30 border-emerald-800/30'

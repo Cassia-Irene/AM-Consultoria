@@ -18,6 +18,7 @@ export function ProjectOperationalOverrides({
   const [text, setText] = useState(observacoes)
   const [isSaving, setIsSaving] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
+  const [showAllHistory, setShowAllHistory] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [history, setHistory] = useState<AuditEntry[]>(historyResumo)
   const [deletingTimestamp, setDeletingTimestamp] = useState<string | null>(null)
@@ -142,7 +143,7 @@ export function ProjectOperationalOverrides({
           <div className="space-y-4">
             {history.length > 0 ? (
               <>
-                {history.slice(0, 3).map((item, idx) => (
+                {(showAllHistory ? history : history.slice(0, 3)).map((item, idx) => (
                   <HistoryItem 
                     key={idx}
                     user={item.user} 
@@ -155,9 +156,12 @@ export function ProjectOperationalOverrides({
                   />
                 ))}
                 {history.length > 3 && (
-                  <p className="text-zinc-400 text-[10px] uppercase font-black tracking-widest pl-2 mt-4">
-                    + {history.length - 3} registros arquivados
-                  </p>
+                  <button
+                    onClick={() => setShowAllHistory(!showAllHistory)}
+                    className="text-zinc-400 hover:text-white text-[10px] uppercase font-black tracking-widest pl-2 mt-4 transition-colors cursor-pointer block w-full text-left"
+                  >
+                    {showAllHistory ? "- Ocultar registros adicionais" : `+ ${history.length - 3} registros arquivados`}
+                  </button>
                 )}
               </>
             ) : (

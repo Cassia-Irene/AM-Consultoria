@@ -81,7 +81,7 @@ class CAPSScenario(Scenario):
         self._add_and_commit([v_auditoria])
 
         # Causalidade: Auditoria gera pendência urgente
-        pendencias.append(create_causal_pendency(v_auditoria, "Plano de ação para Vigilância Sanitária", responsavel="Adriano", atrasada=True))
+        pendencias.append(create_causal_pendency(v_auditoria, "Plano de ação para Vigilância Sanitária", responsavel="AM Consultoria", atrasada=True))
 
         if mode in ["realistic", "stress"]:
             # Visita Extra: Crise Operacional (Surtos)

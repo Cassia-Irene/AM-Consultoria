@@ -113,5 +113,6 @@ class ContratoUpdateRestrito(BaseModel):
     servicos_contratados: str | None = None
     observacoes_gerais: str | None = None
     inclui_relatorio: bool | None = None
+    data_fim: date | None = None
 
 ContratoRead.model_rebuild()

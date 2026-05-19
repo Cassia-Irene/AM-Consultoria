@@ -65,18 +65,41 @@ class ContractOperationalHealth:
         # 3. Overrides
         self.perfil = self.overrides.get("perfil", self.perfil)
         self.score_desgaste = int(self.overrides.get("desgaste", self.score_desgaste))
+        
+        # 4. Dinâmica de Saúde baseada em desgaste
+        if self.score_desgaste > 60:
+            self.motivo_saude = "Desgaste Crítico"
+        elif self.score_desgaste > 30:
+            self.motivo_saude = "Atenção Recomendada"
+        else:
+            self.motivo_saude = "Em conformidade"
+            
+        # Permitir override da saúde explicitamente nas observações do contrato
+        self.motivo_saude = self.overrides.get("saude", self.overrides.get("motivo_saude", self.motivo_saude))
+            
+        # 5. Evidências Dinâmicas Reais
+        self.evidencias = []
+        if len(eventos_recentes) > 0:
+            self.evidencias.append(f"{len(eventos_recentes)} crise(s)/evento(s) crítico(s) recente(s)")
+        if len(pendencias) > 0:
+            self.evidencias.append(f"{len(pendencias)} pendência(s) operacional(ais) ativa(s)")
+        if self.score_desgaste > 60:
+            self.evidencias.append("Frequência operacional de alto desgaste")
+            
+        if not self.evidencias:
+            self.evidencias = ["Fluxo institucional monitorado e estável"]
 
     def _to_dict_internal(self) -> Dict[str, Any]:
         return {
             "perfil_pragmatico": self.perfil,
             "desgaste_longitudinal": self.score_desgaste,
-            "evidencias": ["Análise de eventos críticos e interações de campo"],
+            "evidencias": self.evidencias,
             "motivo_auditavel": self.overrides.get("motivo") or "Fluxo institucional monitorado e estável.",
             "override_ativo": bool(self.overrides),
             "indice_urgencia": self.score_desgaste,
             "indice_desgaste": self.score_desgaste,
             "perfil": self.perfil,
-            "motivo_saude": "Em conformidade",
+            "motivo_saude": self.motivo_saude,
             "intensidade_operacional": "alta" if self.score_desgaste > 60 else "normal",
             "desgaste_acumulado": self.score_desgaste,
             "personalidade": "reativo",

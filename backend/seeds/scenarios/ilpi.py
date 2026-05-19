@@ -80,7 +80,7 @@ class ILPIScenario(Scenario):
         )
         self._add_and_commit([v_incidente])
         
-        pendencias.append(create_causal_pendency(v_incidente, "Treinar cuidadores no novo protocolo", responsavel="Adriano", dias_prazo=10))
+        pendencias.append(create_causal_pendency(v_incidente, "Treinar cuidadores no novo protocolo", responsavel="AM Consultoria", dias_prazo=10))
 
         if mode in ["realistic", "stress"]:
             # Visita Extra: Vigilância Sanitária

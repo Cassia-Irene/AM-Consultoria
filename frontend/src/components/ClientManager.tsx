@@ -53,8 +53,8 @@ export function ClientManager({ id, onClose, onSuccess }: ClientManagerProps) {
     }
   }
 
-  const inputClass = "w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-sky-500 transition-colors placeholder:text-zinc-700"
-  const labelClass = "text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block ml-1"
+  const labelClass = "text-[10px] md:text-[11px] font-black uppercase tracking-widest text-zinc-300 mb-3 block ml-1"
+  const inputClass = "w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-sky-500 transition-colors placeholder:text-zinc-500"
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -104,10 +104,10 @@ export function ClientManager({ id, onClose, onSuccess }: ClientManagerProps) {
               key={nivel}
               type="button"
               onClick={() => setFormData({ ...formData, nivel_complexidade: nivel })}
-              className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+              className={`py-3 rounded-xl text-[10px] md:text-[11px] font-black uppercase tracking-widest border transition-all ${
                 formData.nivel_complexidade === nivel 
                   ? 'bg-sky-500 border-sky-400 text-white shadow-lg shadow-sky-900/20' 
-                  : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700'
+                  : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:border-zinc-700'
               }`}
             >
               {nivel}
@@ -126,7 +126,7 @@ export function ClientManager({ id, onClose, onSuccess }: ClientManagerProps) {
         />
       </div>
 
-      <div className="pt-4">
+      <div className="pt-2">
         <button
           type="submit"
           disabled={loading}

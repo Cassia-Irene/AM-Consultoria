@@ -70,7 +70,7 @@ export function ContactManager({ id, clienteId, onClose, onSuccess }: ContactMan
         ...formData,
         id_cliente: parseInt(clienteId),
         observacoes_gerais: finalObs,
-        telefone_whatsapp: formData.telefone_whatsapp,
+        telefone: formData.telefone_whatsapp,
       }
 
       if (id) {

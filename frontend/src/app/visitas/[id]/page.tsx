@@ -4,7 +4,11 @@ import { use, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { VisitasService } from '@/services/visitas.service'
+import { VisitasExtraService } from '@/services/visitas-extra.service'
+import { ContatosService } from '@/services/contatos.service'
+import { EventosService, EventoCritico } from '@/services/eventos.service'
 import type { Visita } from '@/domain/visita'
+import { ArrowLeft } from 'lucide-react'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -15,8 +19,10 @@ export default function VisitaDetalhePage({ params }: PageProps) {
   const router = useRouter()
 
   const [visita, setVisita] = useState<Visita | null>(null)
+  const [crise, setCrise] = useState<EventoCritico | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [solicitanteNome, setSolicitanteNome] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadData() {
@@ -25,6 +31,29 @@ export default function VisitaDetalhePage({ params }: PageProps) {
         const v = await VisitasService.getById(id)
         setVisita(v)
         
+        // Buscar situação crítica associada
+        try {
+          const ev = await EventosService.getByVisitaId(id)
+          setCrise(ev)
+        } catch (evErr) {
+          console.warn('[VISITA_DETAIL] Falha ao carregar situação crítica:', evErr)
+        }
+        
+        try {
+          const extras = await VisitasExtraService.getAll()
+          const extra = extras.find(e => Number(e.id_visita) === Number(id))
+          if (extra) {
+            const contatos = await ContatosService.getAll()
+            const contato = contatos.find(c => Number(c.id) === Number(extra.solicitado_por))
+            if (contato) {
+              setSolicitanteNome(contato.nome)
+            } else {
+              setSolicitanteNome(`Contato #${extra.solicitado_por}`)
+            }
+          }
+        } catch (exErr) {
+          console.warn('[VISITA_DETAIL] Falha ao carregar metadados de visita extra:', exErr)
+        }
       } catch (err) {
         console.error('[VISITA_DETAIL]', err)
         setError('Não foi possível carregar os detalhes da visita.')
@@ -43,9 +72,10 @@ export default function VisitaDetalhePage({ params }: PageProps) {
       <header className="px-6 pt-12 pb-6 border-b border-zinc-800/50 bg-zinc-900/20 sticky top-0 z-10 backdrop-blur-md">
         <button 
           onClick={() => router.back()}
-          className="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-sky-500 transition-colors mb-4 flex items-center gap-2"
+          className="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-sky-500 transition-colors mb-4 flex items-center gap-1.5"
         >
-          ← Voltar
+          <ArrowLeft size={10} strokeWidth={3} />
+          Voltar
         </button>
         <div className="flex items-center justify-between">
           <div>
@@ -69,7 +99,7 @@ export default function VisitaDetalhePage({ params }: PageProps) {
       <div className="px-6 py-8 space-y-8 max-w-2xl mx-auto">
         
         {/* Contexto */}
-        <section className="grid grid-cols-2 gap-4">
+        <section className={`grid gap-4 ${solicitanteNome ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2'}`}>
           <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-4">
             <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1">Tipo</p>
             <p className="text-white font-bold text-sm capitalize">{visita.tipo_visita}</p>
@@ -78,6 +108,12 @@ export default function VisitaDetalhePage({ params }: PageProps) {
             <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1">Modalidade</p>
             <p className="text-white font-bold text-sm capitalize">{visita.modalidade}</p>
           </div>
+          {solicitanteNome && (
+            <div className="bg-[#001845]/40 border border-[#002855]/60 rounded-2xl p-4 animate-in fade-in duration-200">
+              <p className="text-[9px] font-black uppercase tracking-widest text-sky-400 mb-1">⭐ Visita Extra</p>
+              <p className="text-white font-bold text-sm truncate">Solicitado por: {solicitanteNome}</p>
+            </div>
+          )}
         </section>
 
         {/* Relato Principal */}
@@ -89,6 +125,28 @@ export default function VisitaDetalhePage({ params }: PageProps) {
             </p>
           </div>
         </section>
+
+        {/* Situação Crítica (Causalidade Operacional) */}
+        {crise && (
+          <section className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+            <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-rose-500 flex items-center gap-2">
+              <span className="size-2 rounded-full bg-rose-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+              Situação Crítica / Alerta Institucional
+            </h2>
+            <div className="bg-rose-500/5 border border-rose-500/15 rounded-3xl p-6 space-y-4">
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-rose-400 mb-1.5">Descrição da Intercorrência</p>
+                <p className="text-zinc-200 text-sm leading-relaxed">{crise.descricao}</p>
+              </div>
+              {crise.acao_tomada && (
+                <div className="pt-3 border-t border-rose-500/10">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-sky-400 mb-1.5">Ação e Intervenção Realizada</p>
+                  <p className="text-sky-300 text-sm leading-relaxed italic">{crise.acao_tomada}</p>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* Resultados */}
         {visita.resultados && (

@@ -41,7 +41,7 @@ export function mapContato(raw: ContatoRaw): Contato {
     cargo: raw.cargo ?? undefined,
     papel: raw.papel || 'Contato',
 
-    telefone_whatsapp: raw.telefone_whatsapp ?? undefined,
+    telefone_whatsapp: raw.telefone ?? raw.telefone_whatsapp ?? undefined,
     email: raw.email ?? undefined,
     observacoes_gerais: raw.observacoes_gerais ?? undefined,
   }

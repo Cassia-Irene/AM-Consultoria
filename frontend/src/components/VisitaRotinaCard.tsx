@@ -10,6 +10,9 @@ export interface CardEvent {
   pendenciasContagem?: number
   ultimaVisitaResultados?: string
   pendenciasLista?: { id: number; descricao: string; dataPrazo?: string }[]
+  tipoVisita?: string
+  modalidade?: string
+  idVisita?: number
 }
 
 function labelPrazo(dateStr: string) {
@@ -118,7 +121,11 @@ export function VisitaRotinaCard({ event, compact = false }: { event: CardEvent;
       )}
 
         <div className="px-4 pb-4">
-          <Link href={`/visitas/nova?contratoId=${event.idContrato}`} className="block" onClick={(e) => e.stopPropagation()}>
+          <Link 
+            href={`/visitas/nova?contratoId=${event.idContrato}&tipo=${encodeURIComponent(event.tipoVisita || '')}&modalidade=${encodeURIComponent(event.modalidade || '')}&dataHora=${encodeURIComponent(event.dataHora || '')}&agendadaId=${event.idVisita || ''}`} 
+            className="block" 
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="bg-[#0466C8] hover:bg-[#0353A4] active:scale-[0.98] transition-all text-white text-[12px] font-black text-center rounded-xl py-3 shadow-lg shadow-blue-900/30 uppercase tracking-widest">
               Registrar visita
             </div>

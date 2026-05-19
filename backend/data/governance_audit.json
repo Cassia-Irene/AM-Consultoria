@@ -285,5 +285,141 @@
       }
     },
     "audit_type": "factual_update"
+  },
+  {
+    "timestamp": "2026-05-19T15:53:17.899198",
+    "entity_type": "projeto",
+    "entity_id": 948,
+    "user": "Adriano",
+    "changes": {
+      "valor_total": {
+        "de": "1500.00",
+        "para": "1500"
+      },
+      "data_fim_prevista": {
+        "de": "None",
+        "para": "2026-05-28"
+      }
+    },
+    "audit_type": "factual_update"
+  },
+  {
+    "timestamp": "2026-05-19T16:03:08.346443",
+    "entity_type": "projeto",
+    "entity_id": 953,
+    "user": "Adriano",
+    "changes": {
+      "marco:[TRAVADO] Dossiê técnico para VISA finalizado:data_entrega_real": {
+        "de": "None",
+        "para": "2026-05-19"
+      },
+      "marco:[TRAVADO] Dossiê técnico para VISA finalizado:entregue": {
+        "de": "False",
+        "para": "True"
+      }
+    },
+    "audit_type": "factual_update"
+  },
+  {
+    "timestamp": "2026-05-19T17:46:14.634586",
+    "entity_type": "projeto",
+    "entity_id": 950,
+    "user": "Adriano",
+    "changes": {
+      "marco:Entrega de Dossiê Final:data_entrega_real": {
+        "de": "None",
+        "para": "2026-05-19"
+      },
+      "marco:Entrega de Dossiê Final:entregue": {
+        "de": "False",
+        "para": "True"
+      }
+    },
+    "audit_type": "factual_update"
+  },
+  {
+    "timestamp": "2026-05-19T17:46:24.991394",
+    "entity_type": "projeto",
+    "entity_id": 950,
+    "user": "Adriano",
+    "changes": {
+      "valor_total": {
+        "de": "2000.00",
+        "para": "2000"
+      },
+      "data_fim_prevista": {
+        "de": "None",
+        "para": "2026-05-20"
+      }
+    },
+    "audit_type": "factual_update"
+  },
+  {
+    "timestamp": "2026-05-19T17:47:02.902264",
+    "entity_type": "projeto",
+    "entity_id": 950,
+    "user": "Adriano",
+    "changes": {
+      "marco:Entrega de Dossiê Final:data_entrega_real": {
+        "de": "2026-05-19",
+        "para": "None"
+      },
+      "marco:Entrega de Dossiê Final:entregue": {
+        "de": "True",
+        "para": "False"
+      }
+    },
+    "audit_type": "factual_update"
+  },
+  {
+    "timestamp": "2026-05-19T19:27:28.343652",
+    "entity_type": "projeto",
+    "entity_id": 952,
+    "user": "Adriano",
+    "changes": {
+      "valor_total": {
+        "de": "2200.00",
+        "para": "2200"
+      },
+      "status": {
+        "de": "em andamento",
+        "para": "cancelado"
+      }
+    },
+    "audit_type": "factual_update"
+  },
+  {
+    "timestamp": "2026-05-19T19:27:45.171562",
+    "entity_type": "projeto",
+    "entity_id": 952,
+    "user": "Adriano",
+    "changes": {
+      "marco:Fluxo de faturamento RAAS regularizado:data_entrega_real": {
+        "de": "None",
+        "para": "2026-05-19"
+      },
+      "marco:Fluxo de faturamento RAAS regularizado:entregue": {
+        "de": "False",
+        "para": "True"
+      }
+    },
+    "audit_type": "factual_update"
+  },
+  {
+    "timestamp": "2026-05-19T19:28:51.148799",
+    "entity_type": "projeto",
+    "entity_id": 952,
+    "user": "Adriano",
+    "changes": {
+      "valor_total": {
+        "de": "2200.00",
+        "para": "2200"
+      },
+      "status": {
+        "de": "cancelado",
+        "para": "em andamento"
+      }
+    },
+    "audit_type": "factual_update"
   }
 ]

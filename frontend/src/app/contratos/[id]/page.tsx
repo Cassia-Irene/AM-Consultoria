@@ -602,22 +602,22 @@ export default function ContratoDetailPage({ params }: { params: Promise<{ id: s
         {eventos.length > 0 && (
           <section id="eventos-criticos" className="mt-8 pt-6 border-t border-zinc-900/60">
             <div className="flex items-baseline gap-2 mb-4 px-1">
-              <h2 className="text-[12px] font-black uppercase tracking-widest text-zinc-400">Eventos Críticos Registrados</h2>
-              <span className="text-[10px] font-bold text-rose-500 uppercase tracking-wide">
+              <h2 className="text-[12px] font-black uppercase tracking-widest text-zinc-300">Eventos Críticos Registrados</h2>
+              <span className="text-[10px] md:text-[11px] font-bold text-rose-500 uppercase tracking-wide">
                 ({eventos.length})
               </span>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {(showAllEventos ? eventos : eventos.slice(0, 3)).map(ev => {
                 const cardContent = (
-                  <div className="flex items-start gap-2.5 bg-rose-950/5 border border-rose-900/10 rounded-xl p-3 hover:bg-rose-950/10 transition-colors">
-                    <span className="size-1.5 rounded-full bg-rose-500 mt-1.5 shrink-0 animate-pulse" />
+                  <div className="flex items-start gap-2.5 bg-rose-950/20 border border-rose-900/30 rounded-xl p-3 hover:bg-rose-950/35 transition-colors">
+                    <span className="size-1.5 rounded-full bg-rose-500 mt-1 shrink-0 animate-pulse" />
                     <div className="flex-1 min-w-0 text-xs">
-                      <div className="flex items-center justify-between gap-4 mb-1">
-                        <span className="text-[9px] font-bold text-rose-400 uppercase tracking-wider">Crise</span>
-                        <span className="text-[10px] text-zinc-500">{displayDate(ev.data_evento)}</span>
+                      <div className="flex items-center justify-between gap-4 mb-1 md:mb-2">
+                        <span className="text-[10px] md:text-[11px] font-bold text-rose-400 uppercase tracking-wider">Crise</span>
+                        <span className="text-[10px] md:text-[11px] text-zinc-400">{displayDate(ev.data_evento)}</span>
                       </div>
-                      <p className="text-zinc-300 leading-relaxed">{ev.descricao}</p>
+                      <p className="text-zinc-200 leading-relaxed">{ev.descricao}</p>
                       {ev.acao_tomada && (
                         <p className="mt-1.5 text-sky-400/90 italic pl-2 border-l border-zinc-800 text-[11px] leading-snug">
                           Ação: {ev.acao_tomada}

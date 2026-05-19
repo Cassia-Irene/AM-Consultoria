@@ -155,18 +155,80 @@ class ProjectOperationalState:
         import re
         for entry in audit_history[-5:]:
             detail = ""
-            if "observacoes_gerais" in entry.get("changes", {}):
-                val = str(entry["changes"]["observacoes_gerais"].get("para", ""))
-                
+            changes = entry.get("changes", {})
+            if "observacoes_gerais" in changes:
+                val = str(changes["observacoes_gerais"].get("para", ""))
                 text_limpo = re.sub(r'\[.*?\]', '', val).strip()
                 tags_match = re.findall(r'\[OVERRIDE_[A-Z]+:(.*?)\]', val)
-
                 if text_limpo:
                     primeira_linha = text_limpo.split('\n')[0][:45]
                     sufixo = "..." if len(text_limpo) > 45 else ""
                     detail = f" - {primeira_linha}{sufixo}"
                 elif tags_match:
                     detail = f" - Intervenção: {tags_match[-1].title()}"
+            else:
+                change_labels = []
+                key_mapping = {
+                    "titulo": "Título",
+                    "valor_total": "Valor Total",
+                    "status": "Status",
+                    "data_inicio": "Data de Início",
+                    "data_fim_prevista": "Previsão de Fim"
+                }
+                for key, change in changes.items():
+                    if key.startswith("marco:"):
+                        parts = key.split(":")
+                        if len(parts) >= 3:
+                            marco_nome = parts[1]
+                            prop_name = parts[2]
+                            
+                            # Casos de criação/exclusão rápida
+                            if prop_name == "criado":
+                                change_labels.append(f"Criou o Marco '{marco_nome}'")
+                                continue
+                            elif prop_name == "excluido":
+                                change_labels.append(f"Excluiu o Marco '{marco_nome}'")
+                                continue
+                                
+                            prop_mapping = {
+                                "descricao": "descrição",
+                                "data_entrega_prevista": "previsão",
+                                "data_entrega_real": "conclusão",
+                                "referencia_doc": "referência",
+                                "entregue": "status"
+                            }
+                            prop_readable = prop_mapping.get(prop_name, prop_name)
+                            para_val = change.get("para")
+                            
+                            if prop_name == "entregue":
+                                para_val = "Concluído" if str(para_val).lower() in ["true", "1"] else "Pendente"
+                            elif prop_name in ["data_entrega_prevista", "data_entrega_real"]:
+                                if not para_val or para_val == "None":
+                                    para_val = "Não definida"
+                                elif re.match(r'^\d{4}-\d{2}-\d{2}$', str(para_val)):
+                                    d_parts = str(para_val).split('-')
+                                    para_val = f"{d_parts[2]}/{d_parts[1]}/{d_parts[0]}"
+                            elif prop_name == "referencia_doc":
+                                if not para_val or para_val == "None":
+                                    para_val = "Sem referência"
+                                    
+                            change_labels.append(f"Marco '{marco_nome}': {prop_readable} alterado para {para_val}")
+                    else:
+                        label_name = key_mapping.get(key, key.replace("_", " ").title())
+                        para_val = change.get("para")
+                        
+                        if key == "data_fim_prevista" and (not para_val or para_val == "None"):
+                            para_val = "Indeterminada"
+                        
+                        # Formatação amigável de datas YYYY-MM-DD para DD/MM/YYYY
+                        if para_val and re.match(r'^\d{4}-\d{2}-\d{2}$', str(para_val)):
+                            parts = str(para_val).split('-')
+                            para_val = f"{parts[2]}/{parts[1]}/{parts[0]}"
+                            
+                        change_labels.append(f"{label_name} alterado para {para_val}")
+                
+                if change_labels:
+                    detail = f" - {', '.join(change_labels)}"
 
             events.append({
                 "data": entry["timestamp"],

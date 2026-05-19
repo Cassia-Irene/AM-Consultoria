@@ -40,3 +40,12 @@ button, [role='button'], select, label[for], input[type='button'], input[type='s
 button:disabled, input:disabled, [role='button'][aria-disabled='true'] { cursor: not-allowed !important; }
 
 a, button { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Oculta barras de rolagem de forma robusta e cross-browser */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE e Edge */
+  scrollbar-width: none;  /* Firefox */
+}

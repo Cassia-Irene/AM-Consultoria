@@ -94,6 +94,7 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
         await EntregasService.update(Number(id), payload)
         setEditMode(false)
         await loadEntrega()
+        onUpdate?.()
       } else if (projetoId) {
         payload.id_projeto = Number(projetoId)
         payload.entregue = !!dataEntregaReal

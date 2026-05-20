@@ -55,15 +55,19 @@ A interface estratégica permite uma análise visual e tomada de decisão intuit
 
 3. **Acede às Plataformas:**
   Interface Web (Frontend Next.js):
-  ```bash 
-  http://localhost:3000 
-  ```
+   ```bash 
+   http://localhost:3000 
+   ```
+   
   Documentação Interativa da API (Swagger FastAPI): 
-  ```bash 
-  http://localhost:8000/docs
-  ```
+   ```bash 
+   http://localhost:8000/docs
+   ```
+
+---
+
 ### 📂 Arquitetura do Sistema
-/
+```text
 📂 AM-Consultoria (Raiz do Projeto)
 ├── 📂 backend                    # Camada de Serviços RESTful (Python 3.11+ / FastAPI)
 │   ├── 📂 data                   # Snapshots narrativos e governança de auditoria em JSON
@@ -124,13 +128,12 @@ A interface estratégica permite uma análise visual e tomada de decisão intuit
 ├── .gitignore                    # Configuração de exclusão de arquivos do Git
 ├── docker-compose.yml            # Orquestração de contêineres multi-serviços (Web, API e Banco)
 └── run_backend.py                # Script raiz para inicialização rápida do servidor FastAPI em desenvolvimento
-\
+```
 
 ### 👩‍💻 Devs
-Cássia Irene | GitHub
-
-Leonardo Ferreira | GitHub
-
-Melissa Wolff | GitHub
+* **Cássia Irene | [GitHub](https://github.com/Cassia-Irene)**
+* **Leonardo Ferreira | [GitHub](https://github.com/leonardoferrza)**
+* **Melissa Wolff | [GitHub](https://github.com/melwolff13)** 
+---
 
 Projeto acadêmico desenvolvido para a disciplina de **Banco de Dados** - **UNDB**, com foco em modelagem relacional, integridade de dados, inteligência operacional e arquitetura Full-Stack aplicada à gestão de contratos e auditoria operacional.

@@ -21,6 +21,6 @@ SELECT
 FROM contratos con
 JOIN clientes c ON con.id_cliente = c.id_cliente
 LEFT JOIN visitas v ON con.id_contrato = v.id_contrato
-WHERE con.data_fim IS NULL
+WHERE con.data_fim IS NULL OR con.data_fim >= CURRENT_DATE
 GROUP BY c.nome, con.id_contrato
 ORDER BY caos_score DESC;

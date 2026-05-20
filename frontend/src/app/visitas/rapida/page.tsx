@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ClientesService } from '@/services/clientes.service'
 import { ContratoService } from '@/services/contrato.service'
 import { VisitasService, type NovaVisitaInput } from '@/services/visitas.service'
@@ -15,8 +15,9 @@ import type { Contrato } from '@/domain/contrato'
 import type { Contato } from '@/domain/contato'
 import type { TipoVisita } from '@/domain/visita'
 
-export default function RegistroRapidoPage() {
+function RegistroRapidoForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [savingStep, setSavingStep] = useState('')
@@ -88,6 +89,43 @@ export default function RegistroRapidoPage() {
     }
     loadData()
   }, [])
+
+  // Auto-seleciona o cliente se contratoId for fornecido via URL
+  useEffect(() => {
+    const contratoId = searchParams.get('contratoId')
+    if (contratoId && contratos.length > 0) {
+      const contrato = contratos.find(c => String(c.id) === String(contratoId))
+      if (contrato) {
+        Promise.resolve().then(() => {
+          setForm(f => ({
+            ...f,
+            clienteId: contrato.clienteId
+          }))
+        })
+      }
+    }
+  }, [searchParams, contratos, setForm])
+
+  // Carrega contatos automaticamente quando form.clienteId mudar (essencial para pré-seleção)
+  useEffect(() => {
+    if (!form.clienteId) {
+      Promise.resolve().then(() => {
+        setContatosCliente([])
+      })
+      return
+    }
+    let active = true
+    ContatosService.getByClienteId(form.clienteId)
+      .then(data => {
+        if (active) {
+          setContatosCliente(data)
+        }
+      })
+      .catch(err => console.error('Erro ao buscar contatos:', err))
+    return () => {
+      active = false
+    }
+  }, [form.clienteId])
 
   async function handleSave() {
     if (!form.clienteId || !form.descricao.trim()) {
@@ -456,5 +494,13 @@ export default function RegistroRapidoPage() {
         </button>
       </div>
     </main>
+  )
+}
+
+export default function RegistroRapidoPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#07090D] flex items-center justify-center"><div className="size-8 border-4 border-[#0466C8]/20 border-t-[#0466C8] rounded-full animate-spin" /></div>}>
+      <RegistroRapidoForm />
+    </Suspense>
   )
 }

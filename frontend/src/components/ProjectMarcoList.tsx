@@ -101,7 +101,7 @@ export function ProjectMarcoList({
     }
   }
 
-  if (loading && entregas.length === 0) return <div className="py-2 animate-pulse text-[9px] text-zinc-600 uppercase font-black">Sincronizando marcos...</div>
+  if (loading && entregas.length === 0) return <div className="py-2 animate-pulse text-[9px] text-zinc-400 uppercase font-black">Sincronizando marcos...</div>
 
   return (
     <div className="space-y-5 ml-1.5 border-l-2 border-zinc-700 pl-6">
@@ -119,7 +119,7 @@ export function ProjectMarcoList({
               <button 
                 onClick={(e) => !readOnly && handleQuickToggle(e, item)}
                 disabled={readOnly}
-                className={`mt-[2px] ${item.entregue ? 'text-emerald-500' : isLate ? 'text-rose-500' : 'text-zinc-700'} ${!readOnly ? 'hover:scale-110' : ''} transition-transform`}
+                className={`mt-[2px] ${item.entregue ? 'text-emerald-500' : isLate ? 'text-rose-500' : 'text-zinc-400'} ${!readOnly ? 'hover:scale-110' : ''} transition-transform`}
               >
                 {item.entregue ? <CheckCircle2 size={15} /> : isLate ? <AlertCircle size={15} /> : <Circle size={15} />}
               </button>
@@ -128,7 +128,7 @@ export function ProjectMarcoList({
                 <p className={`text-[11px] md:text-[12px] font-bold whitespace-pre-line break-all ${item.entregue ? 'text-emerald-600' : 'text-zinc-200'}`}>
                   {linkifyText(item.descricao)}
                 </p>
-                <p className={`text-[9px] md:text-[11px] font-bold uppercase ${isLate ? 'text-rose-500' : 'text-zinc-400'}`}>
+                <p className={`text-[9px] md:text-[11px] font-bold uppercase ${isLate ? 'text-rose-500' : 'text-zinc-300'}`}>
                   {item.entregue ? `Concluído: ${displayDate(item.data_entrega_real!)}` : `Prazo: ${displayDate(item.data_entrega_prevista)}`}
                   {isLate && ' • ATRASADO'}
                 </p>

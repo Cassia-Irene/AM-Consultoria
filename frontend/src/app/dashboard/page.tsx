@@ -20,10 +20,10 @@ function SectionHeader({ label, count, cor, href }: { label: string; count?: num
   const content = (
     <div className="flex items-center gap-2 group cursor-pointer">
       <span className={`size-2 rounded-full ${dotColor} shadow-[0_0_8px_rgba(0,0,0,0.5)] group-hover:scale-125 transition-transform`} />
-      <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#7D8597] group-hover:text-zinc-300 transition-colors">{label}</h2>
-      {count !== undefined && <span className="text-[11px] text-[#4A5568] font-bold">({count})</span>}
+      <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-200 group-hover:text-white transition-colors">{label}</h2>
+      {count !== undefined && <span className="text-[11px] text-white font-bold">({count})</span>}
       {href && (
-        <svg className="text-[#4A5568] group-hover:text-sky-500 transition-colors" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+        <svg className="text-zinc-200 group-hover:text-white transition-colors" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
           <path d="M9 18l6-6-6-6" />
         </svg>
       )}
@@ -58,10 +58,10 @@ function DecisaoCard({ item }: { item: TopPriority }) {
             <div className="size-6 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
               <span className="text-red-500 text-[10px] font-bold">!</span>
             </div>
-            <span className="text-zinc-400 text-xs font-medium">{item.cliente}</span>
+            <span className="text-zinc-200 text-xs font-medium">{item.cliente}</span>
           </div>
           {item.motivoPrioridade && (
-            <p className="text-[10px] text-red-400/80 font-medium italic leading-relaxed pl-1 border-l border-red-900/50">
+            <p className="text-[10px] md:text-[12px] text-red-400 font-medium italic leading-relaxed pl-1 border-l border-red-900/50">
               “{item.motivoPrioridade}”
             </p>
           )}
@@ -83,7 +83,7 @@ function AcaoCard({ item }: { item: TopPriority }) {
       <div className="flex items-center gap-3 bg-[#0d1117] border-l-4 border-red-500 rounded-r-2xl px-4 py-3 min-h-[64px]">
         <div className="flex-1 min-w-0">
           <p className="text-white font-semibold text-[14px] leading-tight truncate">{item.titulo}</p>
-          <p className="text-[#7D8597] text-[10px] mt-0.5 truncate">{item.cliente}</p>
+          <p className="text-zinc-300 text-[10px] md:text-[11px] mt-1 md:mt-2 truncate">{item.cliente}</p>
         </div>
         <div className="shrink-0 text-right">
           <span className="text-red-400 text-xs font-bold tabular-nums">
@@ -98,9 +98,9 @@ function AcaoCard({ item }: { item: TopPriority }) {
 
 function GrupoCliente({ clienteNome, items }: { clienteNome: string; items: TopPriority[] }) {
   return (
-    <div className="space-y-2">
-      <p className="text-[10px] font-bold text-[#4A5568] uppercase tracking-widest ml-1">{clienteNome}</p>
-      <div className="space-y-2">
+    <div className="space-y-2 md:space-y-4 md:mb-6">
+      <p className="text-[10px] md:text-[11px] font-bold text-rose-400 uppercase tracking-widest ml-1">{clienteNome}</p>
+      <div className="space-y-2 md:space-y-4">
         {items.map(item => <AcaoCard key={item.id} item={item} />)}
       </div>
     </div>

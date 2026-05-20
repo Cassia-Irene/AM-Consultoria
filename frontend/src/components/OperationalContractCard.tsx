@@ -60,11 +60,11 @@ export function OperationalContractCard({
         
         <div className="flex items-center gap-4 ml-4">
           <div className="text-right">
-            <span className="text-[9px] font-black uppercase tracking-widest text-[#7D8597] bg-[#23272F] px-2 py-1 rounded">
+            <span className="text-[9px] font-black uppercase tracking-widest text-zinc-300 bg-[#23272F] px-2 py-1 rounded">
               {health.statusOperacional}
             </span>
           </div>
-          {isExpanded ? <ChevronUp size={16} className="text-zinc-700" /> : <ChevronDown size={16} className="text-zinc-700" />}
+          {isExpanded ? <ChevronUp size={16} className="text-zinc-400" /> : <ChevronDown size={16} className="text-zinc-400" />}
         </div>
       </div>
 
@@ -72,12 +72,12 @@ export function OperationalContractCard({
       {isExpanded && (
         <div className="px-6 pb-6 pt-2 border-t border-zinc-800/50 bg-[#07090D]/50 animate-in slide-in-from-top-2 duration-300">
           <div className="flex items-center gap-2 mb-4 mt-2">
-            <Layout size={10} className="text-zinc-600" />
-            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-600">Contexto de Projetos</p>
+            <Layout size={10} className="text-zinc-400" />
+            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-400">Contexto de Projetos</p>
           </div>
 
           {contractProjects.length === 0 ? (
-            <p className="text-[10px] text-zinc-700 italic ml-1">Nenhum projeto ativo para este contrato.</p>
+            <p className="text-[10px] text-zinc-400 italic ml-1">Nenhum projeto ativo para este contrato.</p>
           ) : (
             <div className="space-y-6">
               {contractProjects.map(proj => (
@@ -85,7 +85,7 @@ export function OperationalContractCard({
                   <div className="flex items-center gap-2">
                     <Package size={12} className="text-sky-500/50" />
                     <h5 className="text-zinc-200 text-xs font-bold">{proj.projeto}</h5>
-                    <span className="text-[8px] font-black uppercase bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded leading-none">
+                    <span className="text-[8px] font-black uppercase bg-zinc-800 text-zinc-300 px-1.5 py-0.5 rounded leading-none">
                       {proj.status}
                     </span>
                   </div>

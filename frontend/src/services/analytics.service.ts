@@ -202,7 +202,7 @@ export const AnalyticsService = {
       type: event.tipo,
       title: event.titulo,
       subtitle: event.cliente,
-      critical: event.criticidade === 'critica' || event.criticidade === 'alta',
+      critical: event.criticidade === 'critica',
       idProjeto: event.idProjeto,
       pendencias: event.pendenciasLista?.map(p => ({
         id: String(p.id),

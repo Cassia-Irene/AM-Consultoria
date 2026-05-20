@@ -1,10 +1,15 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 
-export default function EscolhaVisitaPage() {
+function EscolhaVisitaForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const queryStr = searchParams.toString()
+  const urlSuffix = queryStr ? `?${queryStr}` : ''
 
   return (
     <main className="min-h-screen bg-[#07090D] flex flex-col px-6 pt-10 pb-12">
@@ -26,7 +31,7 @@ export default function EscolhaVisitaPage() {
       <div className="flex-1 flex flex-col gap-6 justify-center max-w-md mx-auto w-full">
         
         {/* Opção 1: Relato Rápido */}
-        <Link href="/visitas/rapida" className="group">
+        <Link href={`/visitas/rapida${urlSuffix}`} className="group">
           <div className="bg-[#0d1117] border border-[#23272F] hover:border-[#0466C8]/50 rounded-3xl p-6 transition-all active:scale-[0.98]">
             <div className="flex items-center gap-4 mb-4">
               <div className="size-12 rounded-2xl bg-[#0466C8]/10 flex items-center justify-center text-2xl">
@@ -44,7 +49,7 @@ export default function EscolhaVisitaPage() {
         </Link>
 
         {/* Opção 2: Visita Detalhada */}
-        <Link href="/visitas/nova" className="group">
+        <Link href={`/visitas/nova${urlSuffix}`} className="group">
           <div className="bg-[#0d1117] border border-[#23272F] hover:border-[#0466C8]/50 rounded-3xl p-6 transition-all active:scale-[0.98]">
             <div className="flex items-center gap-4 mb-4">
               <div className="size-12 rounded-2xl bg-[#0466C8]/10 flex items-center justify-center text-2xl">
@@ -72,5 +77,13 @@ export default function EscolhaVisitaPage() {
         </button>
       </div>
     </main>
+  )
+}
+
+export default function EscolhaVisitaPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#07090D] flex items-center justify-center"><span className="text-[#0466C8] animate-pulse font-black tracking-widest text-xs uppercase text-center">Carregando...</span></div>}>
+      <EscolhaVisitaForm />
+    </Suspense>
   )
 }

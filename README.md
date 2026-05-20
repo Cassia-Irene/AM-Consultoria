@@ -2,21 +2,26 @@
 
 O **AM-Consultoria** é um sistema de gestão e inteligência operacional focado no acompanhamento de contratos, auditoria de faturação, monitorização de prioridades e gestão de pendências e rotinas operacionais para empresas de consultoria.
 
-A plataforma é dividida numa arquitetura moderna com um backend robusto em Python (FastAPI) focado em regras de negócio e inteligência, e um frontend ágil, intuitivo e responsivo em TypeScript (Next.js) com Tailwind CSS.
+A plataforma é dividida numa arquitetura moderna com um backend robusto em Python (FastAPI) focado em regras de negócio e inteligência, e um frontend ágil, intuitivo e responsivo em TypeScript (Next.js) com Tailwind CSS, todos orbitando em torno de uma modelagem de banco de dados altamente estratégica.
 
 ## 📌 Visão Geral
 O sistema centraliza pendências e dados de contratos, automatizando o cálculo de criticidade (Score de Tensão e Saúde Operacional). Isto permite que os consultores e gestores identifiquem instantaneamente desvios de escopo, gargalos operacionais e riscos de inadimplência ou atraso nas parcelas e entregas de projetos.
 
 ## 🛠️ Tecnologias Utilizadas
 
-### Backend
+### 🗄️ Banco de Dados 
+* **PostgreSQL**: Sistema de gestão de banco de dados relacional que centraliza toda a persistência, integridade operacional e inteligência de dados.
+* **SQL Nativo (Flyway Style Migrations)**: Controle de versão evolutivo da estrutura do banco via scripts SQL sequenciais puros (`V001` a `V015`), isolando as definições de DDL para tabelas, restrições e relacionamentos.
+* **Consultas Analíticas Avançadas**: Camada de inteligência financeira e operacional alimentada por queries SQL puras otimizadas (`Q01` a `Q13`) para geração de KPIs, timelines complexas e cálculo de scores.
+
+### ⚙️ Backend
 * **Python 3.11+**
 * **FastAPI**: Framework web de alta performance para a construção da API.
 * **SQLAlchemy / Psycopg2**: ORM e driver para comunicação eficiente com a base de dados.
 * **Alembic / Flyway Style Migrations**: Gestão e evolução do esquema da base de dados.
 * **Pydantic**: Validação de dados e definições de esquemas (Schemas).
 
-### Frontend
+### 💻 Frontend
 * **React / Next.js (App Router)**
 * **TypeScript**: Tipagem estática para maior segurança e escalabilidade.
 * **Tailwind CSS**: Estilização utilitária e design responsivo.
@@ -28,9 +33,9 @@ O sistema centraliza pendências e dados de contratos, automatizando o cálculo 
 O ecossistema foi projetado utilizando padrões modernos de arquitetura de dados e lógica distribuída para garantir integridade e agilidade:
 
 * **Motores de Inteligência (Intelligence Engines):** Algoritmos especializados na camada de serviços backend (`TensionEngine`, `HealthEngine`, `PriorityEngine`) que analisam e cruzam dinamicamente variáveis operacionais para gerar filas de prioridade automatizadas.
-* **Mapeamento Objeto-Relacional (ORM SQLAlchemy):** Camada de dados fortemente tipada utilizando herança e relacionamentos complexos para gerenciar entidades do domínio, tais como Clientes, Contatos, Projetos, Parcelas, Visitas (Rotinas e Extras), Faturamento e Eventos Críticos.
+* **Mapeamento Relacional Complexo:** Herança e relacionamentos no SQLAlchemy para gerenciar entidades do domínio, tais como Clientes, Contatos, Projetos, Parcelas, Visitas (Rotinas e Extras), Faturamento e Eventos Críticos.
 * **CQRS / Modelos de Leitura (Read Models):** Separação de conceitos para visualização otimizada de agregados complexos, como a `OperationalPriorityQueue` e o `TimelineOperationalContext`, alimentando o frontend sem sobrecarregar as tabelas transacionais.
-* **Migrações e Restrições de Integridade (Database Constraints):** Scripts estruturados em SQL sequencial nativo para garantir a consistência estrita dos dados via chaves estrangeiras (`FOREIGN KEY`), regras de exclusão em cascata e restrições de checagem (`CHECK`).
+* **Restrições de Integridade (Database Constraints):** Uso estrito de chaves estrangeiras (`FOREIGN KEY`), regras de exclusão em cascata (`ON DELETE CASCADE`) e restrições de checagem (`CHECK`) direto no banco de dados.
 
 ## 📊 Inteligência Visual (Dashboard Interativo)
 A interface estratégica permite uma análise visual e tomada de decisão intuitiva através de três visões centrais:
@@ -54,13 +59,11 @@ A interface estratégica permite uma análise visual e tomada de decisão intuit
    docker-compose up --build
 
 3. **Acede às Plataformas:**
-
-  Interface Web (Frontend Next.js):
+   Interface Web (Frontend Next.js):
    ```bash 
    http://localhost:3000 
    ```
-   
-  Documentação Interativa da API (Swagger FastAPI): 
+   Documentação Interativa da API (Swagger FastAPI): 
    ```bash 
    http://localhost:8000/docs
    ```

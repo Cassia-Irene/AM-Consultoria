@@ -10,7 +10,7 @@ def get_tipo_operacional_visita(visita: Visita) -> str:
     """
     desc = (visita.descricao or "").lower()
     
-    # Horário (Duck-typing ou datetime)
+    # Horário
     dt = visita.data_hora
     if isinstance(dt, str):
         dt = datetime.fromisoformat(dt.replace('Z', '+00:00'))
@@ -39,17 +39,17 @@ def calculate_client_health_score(
     """
     # 1. Índice de Urgência
     emergenciais = [v for v in visitas if get_tipo_operacional_visita(v) == "emergencial"]
-    # Pendências urgentes (simplificado: atrasadas ou keyword)
+    # Pendências urgentes
     urgentes = [p for p in pendencias_abertas if p.data_prazo and p.data_prazo < date.today()]
     
     indice_urgencia = min(100, (len(emergenciais) * 20) + (len(urgentes) * 15))
     
-    # 2. Taxa de Goodwill (Inferida por excesso de visitas)
+    # 2. Taxa de Goodwill
     limite_mensal = contrato.visitas_previstas_mes or 4
     taxa_goodwill = max(0, (len(visitas) - limite_mensal) / max(1, len(visitas)) * 100)
     
     # 3. Índice de Desgaste
-    # TODO: Integrar inadimplência aqui quando o modelo financeiro estiver estável
+    # Integrar inadimplência aqui quando o modelo financeiro estiver estável
     indice_desgaste = min(100, (indice_urgencia * 0.5) + (taxa_goodwill * 0.3))
     
     perfil = "equilibrado"

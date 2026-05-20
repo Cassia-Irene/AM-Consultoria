@@ -4,7 +4,6 @@ from typing import Dict, Optional, Any
 class OverrideHelper:
     """
     Auxiliar para extrair overrides manuais do Adriano dos campos de observações.
-    Isso permite governança humana sem alterar a estrutura do banco de dados.
     
     Tags esperadas: [OVERRIDE_KEY:value]
     Exemplo: [OVERRIDE_PERFIL:estável] [OVERRIDE_MOTIVO:Contrato pausado por auditoria]

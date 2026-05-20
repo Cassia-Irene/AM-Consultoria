@@ -2,19 +2,19 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.routers import clientes, contatos, contratos, visitas, projetos, pendencias, eventos_criticos, visitas_extra, projeto_parcelas, projetos_extra, tipos_pagamento, contrato_pagamento, faturamento_cliente, entregas, analytics, intelligence
 
-# 1º Criar a instância da aplicação
+# Cria a instância da aplicação
 app = FastAPI(title="AM Consultoria API")
 
-# 2º Configurar CORS (Essencial para integração local)
+# Configurar CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Em produção, especificar o domínio do frontend
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 3º Incluir os routers
+# Incluir os routers
 app.include_router(clientes.router)
 app.include_router(contatos.router) 
 app.include_router(contratos.router) 

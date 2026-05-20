@@ -61,7 +61,7 @@ def get_top_priority_insight(db: Session, pendencias_abertas: List[Pendencia]):
     prazo = getattr(top, "data_prazo", None)
     diff = get_diff_dias(prazo) if prazo else 0
 
-    # Acesso seguro a relacionamentos (ORM ou Pydantic)
+    
     contrato = getattr(top, "contrato", None)
     cliente = getattr(contrato, "cliente", None) if contrato else None
     cliente_nome = getattr(cliente, "nome", "Desconhecido") if cliente else "Desconhecido"

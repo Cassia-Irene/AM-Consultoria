@@ -13,7 +13,7 @@ router = APIRouter(prefix="/contatos", tags=["Contatos"])
 @router.post("/", response_model=ContatoRead)
 def criar_contato(contato: ContatoCreate, db: Session = Depends(get_db)):
     # Validação de Segurança: Garante que o cliente existe antes de criar o contato
-    # Usamos id_cliente que é a PK da tabela clientes
+    
     cliente_existe = db.query(Cliente).filter(Cliente.id_cliente == contato.id_cliente).first()
     
     if not cliente_existe:
@@ -22,7 +22,7 @@ def criar_contato(contato: ContatoCreate, db: Session = Depends(get_db)):
             detail="Cliente não encontrado. Não é possível criar um contato para um cliente inexistente."
         )
 
-    # O model_dump() vai mapear automaticamente o campo 'telefone' e 'observacoes_gerais'
+    # Mapeia automaticamente o campo 'telefone' e 'observacoes_gerais'
     novo_contato = Contato(**contato.model_dump())
     
     try:
@@ -34,7 +34,7 @@ def criar_contato(contato: ContatoCreate, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erro ao salvar contato: {str(e)}")
 
-# O endpoint GET para listar contatos vai buscar na tabela "contatos" (plural) porque já arrumamos o Model
+
 @router.get("/", response_model=List[ContatoRead])
 def listar_contatos(db: Session = Depends(get_db)):
     # Busca todos os registros na tabela "contatos"

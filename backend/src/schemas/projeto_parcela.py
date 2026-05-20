@@ -15,7 +15,7 @@ class ProjetoParcelaBase(BaseModel):
 class ProjetoParcelaUpdate(BaseModel):
     data_pagamento: Optional[date] = None
     pago: Optional[bool] = None
-    # Caso queira permitir mudar o valor ou a observação depois
+    # Permitir mudar o valor ou a observação depois
     valor_parcela: Optional[Decimal] = None
     
 class ProjetoParcelaCreate(ProjetoParcelaBase):

@@ -14,7 +14,7 @@ def calculate_project_tension(projeto: Projeto) -> dict:
     atrasos = 0
     entregas = getattr(projeto, "entregas", [])
     for e in entregas:
-        # Pydantic or ORM access
+        
         is_entregue = getattr(e, "entregue", False)
         prevista = getattr(e, "data_entrega_prevista", None)
         if not is_entregue and prevista and prevista < hoje:

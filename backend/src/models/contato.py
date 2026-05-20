@@ -14,6 +14,6 @@ class Contato(Base):
     email = Column(String(50))
     observacoes_gerais = Column(Text)
 
-    # Relacionamento com Cliente (muitos contatos para um cliente)
+    
     cliente = relationship("Cliente", back_populates="contatos")
     

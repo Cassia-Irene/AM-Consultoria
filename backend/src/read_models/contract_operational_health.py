@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class ContractOperationalHealth:
     """
-    Read Model Final com Failsafe e Governança Estrita.
+    Read Model com Failsafe e Governança Estrita.
     """
     
     @classmethod
@@ -77,7 +77,7 @@ class ContractOperationalHealth:
         # Permitir override da saúde explicitamente nas observações do contrato
         self.motivo_saude = self.overrides.get("saude", self.overrides.get("motivo_saude", self.motivo_saude))
             
-        # 5. Evidências Dinâmicas Reais
+        # 5. Evidências Dinâmicas 
         self.evidencias = []
         if len(eventos_recentes) > 0:
             self.evidencias.append(f"{len(eventos_recentes)} crise(s)/evento(s) crítico(s) recente(s)")

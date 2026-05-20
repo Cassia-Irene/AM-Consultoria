@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class ProjectOperationalState:
     """
-    Read Model Final com Failsafe, Timeline Operacional e Aging.
+    Read Model com Failsafe, Timeline Operacional e Aging.
     """
     
     @classmethod
@@ -220,7 +220,7 @@ class ProjectOperationalState:
                         if key == "data_fim_prevista" and (not para_val or para_val == "None"):
                             para_val = "Indeterminada"
                         
-                        # Formatação amigável de datas YYYY-MM-DD para DD/MM/YYYY
+                        # Formatação de datas YYYY-MM-DD para DD/MM/YYYY
                         if para_val and re.match(r'^\d{4}-\d{2}-\d{2}$', str(para_val)):
                             parts = str(para_val).split('-')
                             para_val = f"{parts[2]}/{parts[1]}/{parts[0]}"

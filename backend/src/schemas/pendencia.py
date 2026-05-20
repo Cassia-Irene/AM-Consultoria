@@ -32,7 +32,7 @@ class PendenciaRead(PendenciaBase):
     def queue_logic(self) -> dict:
         """Read Model de Priorização da Pendência."""
         from src.read_models.operational_priority_queue import OperationalPriorityQueue
-        # Como o Read Model trabalha com lista, criamos um helper para item único ou usamos a lógica interna
+        
         engine = OperationalPriorityQueue([self])
         res = engine.to_list()
         return res[0] if res else {"score": 0, "motivo": "Resolvida"}

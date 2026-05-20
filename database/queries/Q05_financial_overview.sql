@@ -1,6 +1,6 @@
 /* 
-  Q05: Visão Financeira Consolidada (Recorrente + Projetos)
-  Consumo: Analytics Financeiro / Dashboard
+  Q05: Visão Financeira (Recorrente + Projetos)
+  Consumo: Analytics Financeiro  
   Objetivo: Soma de toda a receita prevista e realizada por mês.
 */
 

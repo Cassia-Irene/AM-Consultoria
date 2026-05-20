@@ -6,7 +6,7 @@ from typing import List, Dict, Any
 class AnalyticsService:
     @staticmethod
     def _load_query(filename: str) -> str:
-        # Resolve o caminho absoluto para a pasta de queries na raiz do projeto
+        # Resolve o caminho para a pasta de queries na raiz do projeto
         base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../database/queries"))
         file_path = os.path.join(base_path, filename)
         

@@ -18,7 +18,7 @@ from semantic_hydration import hydrate_entities, simulate_history
 
 def clear_all(db: Session):
     """Limpa todo o banco respeitando a ordem de chaves estrangeiras."""
-    # Desativado a pedido do usuário para preservar dados existentes e apenas densificar.
+    # Desativado para preservar dados existentes e apenas densificar.
     print("[SEED] Ignorando limpeza de banco (Preservando dados)...")
     pass
 

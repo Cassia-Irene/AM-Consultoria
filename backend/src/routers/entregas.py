@@ -62,11 +62,11 @@ def atualizar_entrega(
     # 2. Converte o schema em dicionário filtrando o que não foi enviado
     update_data = entrega_update.model_dump(exclude_unset=True)
 
-    # 3. Identifica Mudanças Reais
+    # 3. Identifica Mudanças
     real_changes = {}
     for key, value in update_data.items():
         old_val = getattr(db_entrega, key)
-        if str(old_val) != str(value): # Comparação simples para detecção de drift
+        if str(old_val) != str(value): # Comparação para detecção de drift
             real_changes[f"marco:{db_entrega.descricao}:{key}"] = {"de": str(old_val), "para": str(value)}
             setattr(db_entrega, key, value)
 
@@ -107,4 +107,4 @@ def excluir_entrega(id_entrega: int, db: Session = Depends(get_db)):
         return {"message": "Entrega excluída com sucesso"}
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Erro ao excluir entrega: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao excluir entrega: {str(e)}")

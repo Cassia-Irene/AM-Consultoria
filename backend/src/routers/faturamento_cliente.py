@@ -27,7 +27,7 @@ def criar_faturamento(faturamento: FaturamentoClienteCreate, db: Session = Depen
     if duplicado:
         raise HTTPException(status_code=409, detail="Já existe faturamento para este contrato neste mês.")
 
-    # 3. Calcula tudo automaticamente
+    # 3. Calcula tudo 
     valor_base, visitas_normais = calcular_valor_base(db, faturamento.id_contrato, faturamento.mes_ano)
     valor_extra, _ = calcular_valor_extra(db, faturamento.id_contrato, faturamento.mes_ano)
 
@@ -72,15 +72,15 @@ def atualizar_faturamento(
     # 2. Converte o schema em dicionário, ignorando o que não foi enviado
     update_data = faturamento_update.model_dump(exclude_unset=True)
 
-    # 3. Atualização Dinâmica
+    # 3. Atualização 
     for key, value in update_data.items():
         setattr(db_faturamento, key, value)
 
-   # 🚨 DICA SÊNIOR: Recálculo de Integridade
-    # Se qualquer campo que compõe o cálculo foi alterado, recalculamos o total
+   
+    # Se qualquer campo que compõe o cálculo foi alterado, recalcula o total
     campos_calculo = ["valor_base", "valor_extra", "desconto"]
     if any(campo in update_data for campo in campos_calculo):
-        # Usamos os valores já atualizados no objeto db_faturamento
+        
         db_faturamento.valor_total = (
             db_faturamento.valor_base + 
             db_faturamento.valor_extra - 

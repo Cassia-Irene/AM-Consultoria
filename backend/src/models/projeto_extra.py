@@ -7,11 +7,11 @@ class ProjetoExtra(Base):
 
     id_extra = Column(Integer, primary_key=True, index=True)
     id_projeto = Column(Integer, ForeignKey("projetos.id_projeto"), nullable=False, unique=True)
-    solicitado_por = Column(Integer, ForeignKey("contatos.id_contato"), nullable=False) # ID do usuário que solicitou o extra
-    aprovado_por = Column(Integer, ForeignKey("contatos.id_contato")) # ID do usuário que aprovou o extra (pode ser nulo se ainda não aprovado)
+    solicitado_por = Column(Integer, ForeignKey("contatos.id_contato"), nullable=False) 
+    aprovado_por = Column(Integer, ForeignKey("contatos.id_contato"))
 
 
-    # 🤝 Relacionamento
+    
     projeto = relationship("Projeto", back_populates="extras")
     solicitante = relationship("Contato", foreign_keys=[solicitado_por])
-    aprovador = relationship("Contato", foreign_keys=[aprovado_por])
+    aprovador = relationship("Contato", foreign_keys=[aprovado_por])

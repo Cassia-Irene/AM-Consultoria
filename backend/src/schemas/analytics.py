@@ -119,7 +119,7 @@ class ClientHealth(BaseAnalyticsSchema):
     eventos_ativos: int
     entregas_atrasadas: int
     progresso_medio: int
-    ultima_entrega_data: Optional[date] = None # Adicionado
+    ultima_entrega_data: Optional[date] = None 
     total_minutos_invisiveis: int
     status_operacional: str # Substituiu perfil e indice_desgaste
 

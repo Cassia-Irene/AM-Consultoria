@@ -573,7 +573,7 @@ function NovaVisitaForm() {
             <ArrowLeft size={16} />
           </button>
           <div>
-            <h1 className="text-white text-base font-black tracking-tight">Nova Visita</h1>
+            <h1 className="text-white text-base font-black tracking-tight">Visita Detalhada</h1>
             <p className="text-zinc-600 text-[10px] uppercase tracking-wider font-bold">Relato e Ação Direta</p>
           </div>
         </div>

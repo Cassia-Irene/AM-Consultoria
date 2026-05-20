@@ -28,7 +28,7 @@ class TimelineOperationalContext:
         self.resumo = self._generate_narrative()
 
     def _detect_chaos_windows(self) -> List[Dict[str, Any]]:
-        # Simplificação: Agrupamos por data
+        # Simplificação: Agrupa por data
         eventos_por_data = {}
         for v in self.visitas:
             d = v.data_hora.date() if not isinstance(v.data_hora, str) else date.fromisoformat(v.data_hora[:10])
@@ -46,7 +46,7 @@ class TimelineOperationalContext:
     def _infer_causality(self) -> List[str]:
         narrative_links = []
         # Exemplo de causalidade: Se houve uma visita urgente e depois pendências
-        # Pegamos os últimos 7 dias
+        # Pega os últimos 7 dias
         recent_threshold = self.hoje - timedelta(days=7)
         visitas_recentes = [v for v in self.visitas if (v.data_hora.date() if not isinstance(v.data_hora, str) else date.fromisoformat(v.data_hora[:10])) >= recent_threshold]
         pendencias_recentes = [p for p in self.pendencias if p.data_origem and p.data_origem >= recent_threshold]
@@ -54,7 +54,7 @@ class TimelineOperationalContext:
         if visitas_recentes and pendencias_recentes:
             narrative_links.append(f"Fluxo causal detectado: {len(visitas_recentes)} visitas geraram {len(pendencias_recentes)} novas demandas.")
             
-        # Detecção de Silêncio Perigoso
+        
         if not visitas_recentes and self.hoje.weekday() < 5: # Se é dia de semana e não teve visita
             narrative_links.append("Alerta de Silêncio: Contrato sem interações de campo nos últimos 7 dias.")
             

@@ -141,7 +141,7 @@ export default function VisitaEdicaoPage({ params }: PageProps) {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-white text-2xl font-black tracking-tight uppercase italic">Editar Log</h1>
-            <p className="text-zinc-500 text-xs font-bold">Retificação tática de visita #{id}</p>
+            <p className="text-zinc-300 text-xs md:text-sm font-bold mt-2 md:mt-3">Retificação tática de visita #{id}</p>
           </div>
         </div>
       </header>
@@ -157,11 +157,11 @@ export default function VisitaEdicaoPage({ params }: PageProps) {
         {/* Tipo & Modalidade */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Tipo de Visita</label>
+            <label className="text-[10px] md:text-[12px] font-black uppercase tracking-widest text-zinc-200 ml-1">Tipo de Visita</label>
             <select
               value={tipoVisita}
               onChange={(e) => setTipoVisita(e.target.value as TipoVisita)}
-              className="w-full bg-zinc-900 border border-zinc-850 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-sky-500 text-white appearance-none"
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-4 mt-2 md:mt-3 text-sm focus:outline-none focus:border-sky-500 text-white appearance-none"
             >
               <option value="rotineira">Rotineira</option>
               <option value="urgente">Urgente</option>
@@ -172,11 +172,11 @@ export default function VisitaEdicaoPage({ params }: PageProps) {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Modalidade</label>
+            <label className="text-[10px] md:text-[12px] font-black uppercase tracking-widest text-zinc-200 ml-1">Modalidade</label>
             <select
               value={modalidade}
               onChange={(e) => setModalidade(e.target.value as ModalidadeVisita)}
-              className="w-full bg-zinc-900 border border-zinc-850 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-sky-500 text-white appearance-none"
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-4 mt-2 md:mt-3 text-sm focus:outline-none focus:border-sky-500 text-white appearance-none"
             >
               <option value="presencial">Presencial</option>
               <option value="remota">Remota</option>
@@ -186,40 +186,40 @@ export default function VisitaEdicaoPage({ params }: PageProps) {
 
         {/* Duração */}
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Duração (Minutos)</label>
+          <label className="text-[10px] md:text-[12px] font-black uppercase tracking-widest text-zinc-200 ml-1">Duração (Minutos)</label>
           <input
             type="number"
             min="1"
             value={duracaoMinutos}
             onChange={(e) => setDuracaoMinutos(Number(e.target.value))}
-            className="w-full bg-zinc-900 border border-zinc-850 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-sky-500 text-white"
+            className="w-full bg-zinc-900 border border-zinc-900 rounded-2xl px-5 py-4 mt-2 md:mt-3 text-sm focus:outline-none focus:border-sky-500 text-white"
           />
         </div>
 
         {/* Descrição / Relato */}
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">O que aconteceu?</label>
+          <label className="text-[10px] md:text-[12px] font-black uppercase tracking-widest text-zinc-200 ml-1">O que aconteceu?</label>
           <textarea
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
             placeholder="Relato de imersão de campo..."
-            className="w-full h-40 bg-zinc-900 border border-zinc-850 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-sky-500 text-white resize-none"
+            className="w-full h-40 bg-zinc-900 border border-zinc-900 rounded-2xl px-5 py-4 mt-2 md:mt-3 text-sm focus:outline-none focus:border-sky-500 text-white resize-none"
           />
         </div>
 
         {/* Resultados */}
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Resultados e Conclusões (Opcional)</label>
+          <label className="text-[10px] md:text-[12px] font-black uppercase tracking-widest text-zinc-200 ml-1">Resultados e Conclusões (Opcional)</label>
           <textarea
             value={resultados}
             onChange={(e) => setResultados(e.target.value)}
             placeholder="Impacto, goodwill gerado, ou acordos firmados..."
-            className="w-full h-32 bg-zinc-900 border border-zinc-850 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-sky-500 text-white resize-none"
+            className="w-full h-32 bg-zinc-900 border border-zinc-900 rounded-2xl px-5 py-4 mt-2 md:mt-3 text-sm focus:outline-none focus:border-sky-500 text-white resize-none"
           />
         </div>
 
         {/* SELEÇÃO DE SITUAÇÃO CRÍTICA (CAUSALIDADE OPERACIONAL) */}
-        <div className="bg-zinc-950/40 border border-zinc-900/60 rounded-2xl p-5 space-y-4">
+        <div className="bg-zinc-900/30 border border-zinc-900 rounded-2xl p-5 space-y-4">
           <label className="flex items-center gap-3 cursor-pointer select-none">
             <input
               type="checkbox"
@@ -228,18 +228,18 @@ export default function VisitaEdicaoPage({ params }: PageProps) {
                 setTemCrise(e.target.checked)
                 setError(null)
               }}
-              className="size-4 rounded border-zinc-800 bg-zinc-950 text-rose-600 focus:ring-rose-500 cursor-pointer"
+              className="size-4 rounded border-zinc-800 bg-zinc-900 text-rose-600 focus:ring-rose-500 cursor-pointer"
             />
             <div>
-              <p className="text-xs font-bold text-white">Houve situação crítica nesta visita</p>
-              <p className="text-[9px] font-black uppercase tracking-widest text-rose-500/80">Registra uma intercorrência importante na linha do tempo operacional</p>
+              <p className="text-xs md:text-[12px] font-bold text-white mb-2">Houve situação crítica nesta visita</p>
+              <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-rose-500/80">Registra uma intercorrência importante na linha do tempo operacional</p>
             </div>
           </label>
 
           {temCrise && (
             <div className="animate-in fade-in slide-in-from-top-1 duration-200 space-y-4 pt-4 border-t border-zinc-900/50">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Descrição da Situação Crítica *</label>
+                <label className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-zinc-200 ml-1">Descrição da Situação Crítica *</label>
                 <textarea
                   value={criseDescricao || ''}
                   onChange={e => {
@@ -248,18 +248,18 @@ export default function VisitaEdicaoPage({ params }: PageProps) {
                   }}
                   rows={2}
                   placeholder="Descreva a intercorrência crítica encontrada em campo..."
-                  className="w-full bg-zinc-900 border border-zinc-850 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-rose-500 text-white resize-none"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-4 mt-2 md:mt-3 text-sm focus:outline-none focus:border-rose-500 text-white resize-none placeholder:text-zinc-400"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Ação Tomada (Opcional)</label>
+                <label className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-zinc-200 ml-1">Ação Tomada (Opcional)</label>
                 <input
                   type="text"
                   value={criseAcaoTomada || ''}
                   onChange={e => setCriseAcaoTomada(e.target.value)}
                   placeholder="Opcional. Padrão: Intervenção técnica imediata realizada pelo Adriano."
-                  className="w-full bg-zinc-900 border border-zinc-850 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-rose-500 text-white"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-4 mt-2 md:mt-3 text-sm focus:outline-none focus:border-rose-500 text-white placeholder:text-zinc-400"
                 />
               </div>
             </div>

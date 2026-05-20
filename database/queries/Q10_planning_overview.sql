@@ -1,5 +1,5 @@
 /* 
-  Q10: Visão de Planejamento (Workload & Resources)
+  Q10: Visão de Planejamento 
   Objetivo: Prover indicadores de carga semanal e distribuição de foco.
 */
 

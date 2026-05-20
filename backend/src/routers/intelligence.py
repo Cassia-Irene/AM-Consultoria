@@ -7,5 +7,5 @@ router = APIRouter(prefix="/intelligence", tags=["Inteligência Operacional"])
 
 @router.get("/attention")
 def get_attention(db: Session = Depends(get_db)):
-    """Retorna itens que requerem atenção imediata do Adriano."""
+    """Retorna itens que requerem atenção imediata de Adriano."""
     return IntelligenceService.get_global_attention(db)

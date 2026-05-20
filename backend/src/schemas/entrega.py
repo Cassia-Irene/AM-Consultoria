@@ -19,7 +19,7 @@ class EntregaRead(EntregaBase):
     
     model_config = ConfigDict(from_attributes=True)
 
-class EntregaUpdate(BaseModel): # <-- Herdar direto de BaseModel
+class EntregaUpdate(BaseModel): 
     id_projeto: Optional[int] = None
     descricao: Optional[str] = None
     data_entrega_prevista: Optional[date] = None

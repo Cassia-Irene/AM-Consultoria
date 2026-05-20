@@ -1,5 +1,5 @@
 /* 
-  Q06: Histórico de Alterações de Contratos (Auditoria)
+  Q06: Histórico de Alterações de Contratos 
   Consumo: Detalhes de Contrato / Auditoria
   Objetivo: Rastrear substituições de contratos (REPLACE) e motivos.
 */

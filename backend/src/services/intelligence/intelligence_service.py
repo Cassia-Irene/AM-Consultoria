@@ -17,7 +17,7 @@ class IntelligenceService:
     @staticmethod
     def get_client_health(db: Session, contrato: Contrato):
         """Calcula a saúde operacional de um contrato."""
-        # Filtramos visitas e pendências vinculadas ao contrato
+        # Filtra visitas e pendências vinculadas ao contrato
         visitas = contrato.visitas
         pendencias_abertas = [p for p in contrato.pendencias if not p.resolvida]
         return calculate_client_health_score(contrato, visitas, pendencias_abertas)
@@ -29,8 +29,8 @@ class IntelligenceService:
 
     @staticmethod
     def get_system_caos_index(db: Session):
-        """Calcula o índice de caos global da consultoria (métrica estratégica)."""
-        # Exemplo: Média de desgaste de todos os contratos ativos
+        """Calcula o índice de caos global da consultoria"""
+        
         contratos = db.query(Contrato).all()
         if not contratos:
             return 0

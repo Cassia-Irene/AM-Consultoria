@@ -14,8 +14,7 @@ router = APIRouter(prefix="/projetos", tags=["Projetos"])
 
 @router.post("/", response_model=ProjetoRead)
 def criar_projeto(projeto: ProjetoCreate, db: Session = Depends(get_db)):
-    # 1. Validação de Segurança: Garante que o contrato existe
-    # Todo projeto PRECISA estar amarrado a um contrato (conforme o Modelo Lógico)
+    # Garante que o contrato existe
     contrato_existe = db.query(Contrato).filter(Contrato.id_contrato == projeto.id_contrato).first()
     
     if not contrato_existe:
@@ -62,7 +61,7 @@ def buscar_projeto(id_projeto: int, db: Session = Depends(get_db)):
     if not projeto:
         raise HTTPException(status_code=404, detail="Projeto não encontrado")
     
-    # Snapshot sob demanda (apenas no detalhe para preservar memória operacional)
+    # Snapshot sob demanda (apenas no detalhe)
     from src.read_models.project_operational_state import ProjectOperationalState
     try:
         ProjectOperationalState(projeto).persist_snapshot()
@@ -85,7 +84,7 @@ def atualizar_projeto(
 
     update_data = projeto_update.model_dump(exclude_unset=True)
     
-    # 2. Identifica Mudanças Reais
+    # 2. Identifica Mudanças
     real_changes = {}
     for key, value in update_data.items():
         old_val = getattr(db_projeto, key)
@@ -97,13 +96,13 @@ def atualizar_projeto(
         return db_projeto
 
     try:
-        # 3. Registro de Auditoria (Memória Longitudinal)
+        # 3. Registro de Auditoria
         AuditManager.log_change("projeto", id_projeto, real_changes)
         
         db.commit()
         db.refresh(db_projeto)
         
-        # 4. Trigger de Recálculo de Inteligência (Implícito no GET/Refresh)
+        # 4. Trigger de Recálculo de Inteligência
         return db_projeto
     except Exception as e:
         db.rollback()
@@ -121,7 +120,7 @@ def deletar_auditoria_projeto(id_projeto: int, timestamp: str):
     """
     Remove um registro específico de governança/auditoria pelo timestamp.
     """
-    # Em um sistema real, decodificaria a URL, mas FastAPI já trata isso
+
     success = AuditManager.delete_log(timestamp)
     if not success:
         raise HTTPException(status_code=404, detail="Registro de auditoria não encontrado")

@@ -7,8 +7,8 @@ class IntelligenceService:
     @classmethod
     def get_global_attention(cls, db: Session) -> List[Dict[str, Any]]:
         """
-        Produz o payload consolidado de Atenção Global.
-        Foco 100% em Entregas, Bloqueios e Estagnação.
+        Produz o payload de Atenção Global.
+        Foco em Entregas, Bloqueios e Estagnação.
         Retorna em CamelCase para o Frontend.
         """
         raw_health = AnalyticsService.get_client_health(db)
@@ -17,7 +17,7 @@ class IntelligenceService:
         for client in raw_health:
             cid = client['id_contrato']
             
-            # --- DADOS OPERACIONAIS REAIS ---
+            # --- DADOS OPERACIONAIS ---
             eventos_ativos = client.get('eventos_ativos', 0)
             progresso_medio = int(client.get('progresso_medio', 0))
             ultima_entrega = client.get('ultima_entrega_data')
@@ -32,7 +32,7 @@ class IntelligenceService:
             # --- LÓGICA DE ESTADO OPERACIONAL ---
             state = client.get('status_operacional', 'normal')
             
-            # Narrativa factual — sem dramatização
+            # Narrativa factual
             if state == "emergência":
                 summary = f"{eventos_ativos} evento(s) crítico(s) em aberto · {dias_sem_entrega}d sem entrega"
             elif state == "atenção":

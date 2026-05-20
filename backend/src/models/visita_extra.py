@@ -7,7 +7,7 @@ class VisitaExtra(Base):
 
     id_extra = Column(Integer, primary_key=True, index=True)
     id_visita = Column(Integer, ForeignKey("visitas.id_visita"), nullable=False)
-    solicitado_por = Column(Integer, ForeignKey("contatos.id_contato"), nullable=False) # ID do usuário que solicitou a visita extra
+    solicitado_por = Column(Integer, ForeignKey("contatos.id_contato"), nullable=False) 
 
-    # 🤝 Relacionamento
+    
     visita = relationship("Visita", back_populates="visita_extra")

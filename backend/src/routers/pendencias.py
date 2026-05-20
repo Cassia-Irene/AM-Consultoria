@@ -13,7 +13,7 @@ router = APIRouter(prefix="/pendencias", tags=["Pendências"])
 
 @router.post("/", response_model=PendenciaRead)
 def criar_pendencia(pendencia: PendenciaCreate, db: Session = Depends(get_db)):
-    # 1. Valida se a visita existe (APENAS se o ID for informado)
+    # 1. Valida se a visita existe (se o ID for informado)
     if pendencia.id_visita:
         visita = db.query(Visita).filter(Visita.id_visita == pendencia.id_visita).first()
         if not visita:
@@ -25,12 +25,12 @@ def criar_pendencia(pendencia: PendenciaCreate, db: Session = Depends(get_db)):
         if not contrato:
             raise HTTPException(status_code=404, detail="Contrato não encontrado.")
 
-    # 3. Lógica Back-First: Auto-preenchimento de datas se ausentes
+    # 3. Auto-preenchimento de datas se ausentes
     dados = pendencia.model_dump()
     if not dados.get("data_origem"):
         dados["data_origem"] = date.today()
     if not dados.get("data_prazo"):
-        # Se não houver prazo, assume hoje para forçar atenção imediata no Modo Caos
+        # Se não houver prazo, assume hoje
         dados["data_prazo"] = date.today()
 
     nova_pendencia = Pendencia(**dados)
@@ -65,7 +65,7 @@ def atualizar_pendencia(id_pendencia: int, pendencia_update: PendenciaUpdate, db
 
     update_data = pendencia_update.model_dump(exclude_unset=True)
 
-    # 🚀 Lógica Inteligente:
+    
     # Se 'resolvida' for True e não enviaram uma data, coloca a data de hoje automaticamente
     if update_data.get("resolvida") is True and not update_data.get("data_resolucao"):
         db_pendencia.data_resolucao = date.today()
@@ -85,4 +85,4 @@ def excluir_pendencia(id_pendencia: int, db: Session = Depends(get_db)):
     
     db.delete(db_pendencia)
     db.commit()
-    return {"message": "Pendência excluída com sucesso"}
+    return {"message": "Pendência excluída com sucesso"}

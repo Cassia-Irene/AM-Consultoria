@@ -6,7 +6,7 @@ class Pendencia(Base):
     __tablename__ = "pendencias"
 
     id_pendencia = Column(Integer, primary_key=True, index=True)
-    # 🔗 FK apontando para visitas
+    
     id_visita = Column(Integer, ForeignKey("visitas.id_visita"), nullable=True) # Pode ser nulo para pendências que não estão vinculadas a uma visita específica
     id_contrato = Column(Integer, ForeignKey("contratos.id_contrato"), nullable=False) # Vínculo opcional para facilitar consultas por contrato
     

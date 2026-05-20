@@ -11,7 +11,7 @@ from src.schemas.projeto_extra import ProjetoExtraRead
 from src.schemas.pendencia import PendenciaRead
 from src.schemas.evento_critico import EventoCriticoRead
 
-# O Projeto é a entidade que representa a execução do contrato, ou seja, o acompanhamento das visitas, entregas e resultados. Ele tem um ciclo de vida próprio, com início, andamento e conclusão. Por isso, ele tem uma tabela separada no banco de dados e um schema específico para validação dos dados.
+# O Projeto é a entidade que representa a execução do contrato, ou seja, o acompanhamento das visitas, entregas e resultados. Ele tem um ciclo de vida próprio, com início, andamento e conclusão. Por isso, ele tem um schema específico para validação dos dados.
 class ProjetoBase(BaseModel):
     id_contrato: int
     titulo: str

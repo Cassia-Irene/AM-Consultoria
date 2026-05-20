@@ -83,13 +83,13 @@ export default function VisitaDetalhePage({ params }: PageProps) {
                <span className={`size-2 rounded-full ${visita.status === 'realizada' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-amber-500'}`} />
                <h1 className="text-white text-2xl font-black tracking-tight uppercase italic">Log de Visita</h1>
             </div>
-            <p className="text-zinc-500 text-xs font-bold tabular-nums">
+            <p className="text-zinc-300 text-xs font-bold tabular-nums md:mt-4">
               {new Date(visita.data_hora).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })} · 
               {new Date(visita.data_hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
             </p>
           </div>
           <div className="text-right">
-            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-zinc-800 rounded text-zinc-400 border border-zinc-700/50">
+            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-zinc-800 rounded text-zinc-300 border border-zinc-700/50">
               #{visita.id}
             </span>
           </div>
@@ -101,11 +101,11 @@ export default function VisitaDetalhePage({ params }: PageProps) {
         {/* Contexto */}
         <section className={`grid gap-4 ${solicitanteNome ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2'}`}>
           <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-4">
-            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1">Tipo</p>
+            <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-300 mb-1 md:mb-2">Tipo</p>
             <p className="text-white font-bold text-sm capitalize">{visita.tipo_visita}</p>
           </div>
           <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-4">
-            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1">Modalidade</p>
+            <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-300 mb-1 md:mb-2">Modalidade</p>
             <p className="text-white font-bold text-sm capitalize">{visita.modalidade}</p>
           </div>
           {solicitanteNome && (
@@ -163,9 +163,9 @@ export default function VisitaDetalhePage({ params }: PageProps) {
         {/* Duração */}
         {visita.duracao_minutos && (
           <div className="flex items-center gap-3 px-2">
-            <div className="size-2 rounded-full bg-zinc-800" />
-            <p className="text-zinc-500 text-xs font-medium">
-              Duração da imersão: <span className="text-zinc-300">{visita.duracao_minutos} minutos</span>
+            <div className="size-2 rounded-full bg-sky-500" />
+            <p className="text-zinc-200 text-xs md:text-sm font-medium">
+              Duração da imersão: <span className="text-sky-500">{visita.duracao_minutos} minutos</span>
             </p>
           </div>
         )}

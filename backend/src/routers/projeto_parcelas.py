@@ -45,7 +45,7 @@ def atualizar_parcela_projeto(
 
     update_data = parcela_update.model_dump(exclude_unset=True)
 
-    # 🚀 Automação: Se pagou agora, registra a data de hoje caso esteja nula
+    # Se pagou agora, registra a data de hoje caso esteja nula
     if update_data.get("pago") is True and not db_parcela.data_pagamento:
         db_parcela.data_pagamento = date.today()
 

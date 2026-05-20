@@ -11,7 +11,7 @@ from src.schemas.historico_contrato import HistoricoContratoRead
 from src.models.historico_contrato import HistoricoContrato
 from src.services.contrato_service import encerrar_e_criar_novo_contrato
 
-# ✅ Tag corrigida para "Contratos"
+
 router = APIRouter(prefix="/contratos", tags=["Contratos"]) 
 
 @router.post("/", response_model=ContratoRead)
@@ -59,7 +59,7 @@ def replace_contrato(data: ContratoReplaceRequest, db: Session = Depends(get_db)
 @router.patch("/{id_contrato}", response_model=ContratoRead)
 def atualizar_contrato_cosmetico(
     id_contrato: int, 
-    contrato_update: ContratoUpdateRestrito, # <-- Usando o schema restrito
+    contrato_update: ContratoUpdateRestrito, 
     db: Session = Depends(get_db)
 ):
     db_contrato = db.query(Contrato).filter(Contrato.id_contrato == id_contrato).first()
@@ -67,7 +67,7 @@ def atualizar_contrato_cosmetico(
     if not db_contrato:
         raise HTTPException(status_code=404, detail="Contrato não encontrado")
 
-    # REGRA DE OURO: Se o contrato já estiver encerrado (hoje ou no passado), nem o PATCH restrito passa!
+    
     if db_contrato.data_fim is not None and db_contrato.data_fim <= date.today():
         raise HTTPException(
             status_code=400, 

@@ -44,7 +44,7 @@ class AuditManager:
 
         history.append(entry)
         
-        # Mantemos apenas os últimos 1000 registros para não estourar o arquivo
+        # Mantem apenas os últimos 1000 registros
         history = history[-1000:]
 
         with open(cls.AUDIT_FILE, "w", encoding="utf-8") as f:

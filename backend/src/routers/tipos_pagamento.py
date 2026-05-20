@@ -10,7 +10,7 @@ router = APIRouter(prefix="/tipos-pagamento", tags=["Tipos de Pagamento"])
 
 @router.post("/", response_model=TipoPagamentoRead)
 def criar_tipo_pagamento(tipo: TipoPagamentoCreate, db: Session = Depends(get_db)):
-    # Validação extra: Evita cadastrar "Pix" duas vezes, por exemplo
+    # Validação extra
     tipo_existente = db.query(TipoPagamento).filter(TipoPagamento.tipo == tipo.tipo).first()
     if tipo_existente:
         raise HTTPException(status_code=400, detail="Tipo de pagamento já cadastrado.")

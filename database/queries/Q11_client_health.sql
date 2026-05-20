@@ -1,5 +1,5 @@
 /* 
-  Q11: Saúde Operacional do Cliente (Avanço vs Desgaste)
+  Q11: Saúde Operacional do Cliente
   Objetivo: Consolidar o equilíbrio entre progresso (Entregas) e ruído (Eventos/Atrasos).
 */
 

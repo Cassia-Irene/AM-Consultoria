@@ -1,6 +1,6 @@
 /*
   Q03: Score de Caos (Índice de Instabilidade Operacional)
-  Objetivo: Calcular o nível de "caos" por contrato via SQL.
+  Objetivo: Calcular o nível de "caos" por contrato.
   Inclui: Visitas Urgentes, Pendências Atrasadas e Eventos Críticos Ativos.
 */
 

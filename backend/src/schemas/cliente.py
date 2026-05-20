@@ -2,7 +2,7 @@ from datetime import date
 
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
-from pydantic import BaseModel, field_validator # Importe o field_validator
+from pydantic import BaseModel, field_validator
 
 
 class ClienteBase(BaseModel):
@@ -14,7 +14,7 @@ class ClienteBase(BaseModel):
     #modalidade_atendimento: Optional[str] = None
     observacoes_gerais: Optional[str] = None
 
-    # Esse validador garante que 'Alta' vire 'alta' antes de chegar no banco
+    
     @field_validator('nivel_complexidade', 'status')
     @classmethod
     def para_minusculo(cls, v: str) -> str:

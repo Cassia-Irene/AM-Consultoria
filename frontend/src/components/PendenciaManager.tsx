@@ -114,7 +114,7 @@ export function PendenciaManager({ id, onUpdate, highlightColor = 'red' }: Pende
         
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 group">
           <div className="flex justify-between items-start mb-2">
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Descrição do Fato</p>
+            <p className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-zinc-300">Descrição do Fato</p>
             {!editing && (
               <button onClick={() => setEditing(true)} className="text-sky-500 text-[10px] font-bold hover:underline">Editar</button>
             )}
@@ -136,11 +136,11 @@ export function PendenciaManager({ id, onUpdate, highlightColor = 'red' }: Pende
       {/* METADADOS RÍGIDOS */}
       <section className="grid grid-cols-2 gap-4">
         <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-2xl p-4">
-          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-2">Instituição</p>
-          <p className="text-zinc-300 text-xs font-bold truncate">{clienteNome}</p>
+          <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-300 mb-2">Instituição</p>
+          <p className="text-zinc-200 text-xs font-bold truncate">{clienteNome}</p>
         </div>
         <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-2xl p-4">
-          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-2">Responsável</p>
+          <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-300 mb-2">Responsável</p>
           {editing ? (
             <select 
               className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1 text-xs text-white"
@@ -151,11 +151,11 @@ export function PendenciaManager({ id, onUpdate, highlightColor = 'red' }: Pende
               <option value="AM Consultoria">AM Consultoria</option>
             </select>
           ) : (
-            <p className="text-zinc-300 text-xs font-bold">{pendencia.responsavel}</p>
+            <p className="text-zinc-200 text-xs font-bold">{pendencia.responsavel}</p>
           )}
         </div>
         <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-2xl p-4">
-          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-2">Prazo Final</p>
+          <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-300 mb-2">Prazo Final</p>
           {editing ? (
             <input 
               type="date"
@@ -164,23 +164,23 @@ export function PendenciaManager({ id, onUpdate, highlightColor = 'red' }: Pende
               onChange={e => setForm({...form, data_prazo: e.target.value})}
             />
           ) : (
-            <p className="text-zinc-300 text-xs font-bold">{pendencia.data_prazo ? displayDate(pendencia.data_prazo) : 'Sem prazo'}</p>
+            <p className="text-zinc-200 text-xs font-bold">{pendencia.data_prazo ? displayDate(pendencia.data_prazo) : 'Sem prazo'}</p>
           )}
         </div>
         <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-2xl p-4">
-          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-2">Origem</p>
-          <p className="text-zinc-500 text-xs font-medium">{displayDate(pendencia.data_origem)}</p>
+          <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-300 mb-2">Origem</p>
+          <p className="text-zinc-200 text-xs font-medium">{displayDate(pendencia.data_origem)}</p>
         </div>
       </section>
 
       {/* HISTÓRICO E CONTEXTO (SIMULADO) */}
       <section className="space-y-4">
-        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 px-1">Rastro Operacional</p>
-        <div className="border-l-2 border-zinc-800 ml-2 pl-6 space-y-6">
+        <p className="text-[10px] font-black uppercase tracking-widest text-sky-500 px-1">Rastro Operacional</p>
+        <div className="border-l-2 border-zinc-700 ml-2 pl-6 space-y-6">
            <div className="relative">
-              <div className="absolute left-[-31px] top-1 size-2 rounded-full bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.5)]" />
-              <p className="text-[10px] text-zinc-500 font-bold mb-1">Criação do Fato</p>
-              <p className="text-xs text-zinc-400">Identificado durante visita de rotina técnica.</p>
+              <div className="absolute " />
+              <p className="text-[10px] md:text-[11px] text-zinc-300 font-bold mb-1 md:mb-2">Criação do Fato</p>
+              <p className="text-xs md:text-[12px] text-zinc-200">Identificado durante visita de rotina técnica.</p>
            </div>
            {pendencia.resolvida && (
              <div className="relative">

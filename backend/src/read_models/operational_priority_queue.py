@@ -30,7 +30,7 @@ class OperationalPriorityQueue:
         ordered = sorted(scored, key=lambda x: x["score"], reverse=True)
         
         # Controle de Fadiga: Se temos muitas pendências, agrupamos por criticidade
-        # e limitamos o "Drama"
+        
         return self._apply_fatigue_control(ordered)
 
     def _calculate_pragmatic_score(self, p: Pendencia) -> tuple[int, str]:
@@ -63,7 +63,7 @@ class OperationalPriorityQueue:
         high_priority = [i for i in items if i["score"] >= 40]
         
         if len(high_priority) > 5:
-            # Mantemos os top 3 intactos e "amortecemos" o resto para reduzir ansiedade
+            # Mantemos os top 3 intactos
             for i in range(3, len(items)):
                 if items[i]["score"] >= 40:
                     items[i]["score"] = 39 # Rebaixa levemente para tirar do topo absoluto

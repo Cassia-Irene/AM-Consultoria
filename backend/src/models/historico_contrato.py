@@ -11,5 +11,5 @@ class HistoricoContrato(Base):
     data_alteracao = Column(DateTime, nullable=False)
     motivo_alteracao = Column(Text, nullable=False)
 
-    # 🤝 Relacionamento
+   
     contrato = relationship("Contrato", back_populates="historicos", foreign_keys=[id_contrato_encerrado])

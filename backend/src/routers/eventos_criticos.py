@@ -4,14 +4,14 @@ from typing import List
 
 from src.database import get_db
 from src.models.evento_critico import EventoCritico
-from src.models.contrato import Contrato # Importar Contrato em vez de Visita
+from src.models.contrato import Contrato
 from src.schemas.evento_critico import EventoCriticoCreate, EventoCriticoRead, EventoCriticoUpdate
 
 router = APIRouter(prefix="/eventos-criticos", tags=["Eventos Críticos"])
 
 @router.post("/", response_model=EventoCriticoRead)
 def criar_evento_critico(evento: EventoCriticoCreate, db: Session = Depends(get_db)):
-    # AJUSTE: Valida se o CONTRATO existe (conforme Migration V013)
+    # Valida se o CONTRATO existe - Migration V013
     contrato = db.query(Contrato).filter(Contrato.id_contrato == evento.id_contrato).first()
     if not contrato:
         raise HTTPException(status_code=404, detail="Contrato não encontrado.")
@@ -46,7 +46,7 @@ def atualizar_evento_critico(
     # 2. Converte para dict ignorando campos não enviados
     update_data = evento_update.model_dump(exclude_unset=True)
 
-    # 3. Atualiza os campos dinamicamente
+    # 3. Atualiza os campos
     for key, value in update_data.items():
         setattr(db_evento, key, value)
 

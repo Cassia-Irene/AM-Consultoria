@@ -32,7 +32,7 @@ class SnapshotManager:
         if key not in snapshots:
             snapshots[key] = {}
         
-        # Salvamos apenas se for um novo dia para evitar inflação
+        # Salva apenas se for um novo dia para evitar inflação
         if today not in snapshots[key]:
             snapshots[key][today] = data
             with open(cls.SNAPSHOT_FILE, "w", encoding="utf-8") as f:
@@ -58,7 +58,7 @@ class SnapshotManager:
         if not history:
             return None
         
-        # Retorna o snapshot mais recente baseado na data (chave ISO)
+        # Retorna o snapshot mais recente baseado na data
         last_date = sorted(history.keys())[-1]
         data = history[last_date]
         data["data_snapshot"] = last_date

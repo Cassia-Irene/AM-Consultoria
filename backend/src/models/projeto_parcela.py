@@ -14,5 +14,5 @@ class ProjetoParcela(Base):
     data_pagamento = Column(Date)
     pago = Column(Boolean, nullable=False, default=False) 
 
-    # 🤝 Relacionamento
+    
     projeto = relationship("Projeto", back_populates="parcelas")

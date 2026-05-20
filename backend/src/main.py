@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.routers import clientes, contatos, contratos, visitas, projetos, pendencias, eventos_criticos, visitas_extra, projeto_parcelas, projetos_extra, tipos_pagamento, contrato_pagamento, faturamento_cliente, entregas, analytics
+from src.routers import clientes, contatos, contratos, visitas, projetos, pendencias, eventos_criticos, visitas_extra, projeto_parcelas, projetos_extra, tipos_pagamento, contrato_pagamento, faturamento_cliente, entregas, analytics, intelligence
 
 # 1º Criar a instância da aplicação
 app = FastAPI(title="AM Consultoria API")
@@ -30,6 +30,7 @@ app.include_router(contrato_pagamento.router)
 app.include_router(faturamento_cliente.router)
 app.include_router(entregas.router)
 app.include_router(analytics.router)
+app.include_router(intelligence.router)
 
 @app.get("/")
 def root():

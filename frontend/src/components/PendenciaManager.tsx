@@ -142,11 +142,14 @@ export function PendenciaManager({ id, onUpdate, highlightColor = 'red' }: Pende
         <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-2xl p-4">
           <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-2">Responsável</p>
           {editing ? (
-            <input 
+            <select 
               className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1 text-xs text-white"
               value={form.responsavel}
               onChange={e => setForm({...form, responsavel: e.target.value})}
-            />
+            >
+              <option value="Equipe Cliente">Equipe Cliente</option>
+              <option value="AM Consultoria">AM Consultoria</option>
+            </select>
           ) : (
             <p className="text-zinc-300 text-xs font-bold">{pendencia.responsavel}</p>
           )}

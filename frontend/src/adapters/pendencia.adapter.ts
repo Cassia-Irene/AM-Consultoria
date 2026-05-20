@@ -69,12 +69,12 @@ export function toPendenciaPayload(input: NovaPendenciaInput): PendenciaCreateDT
 }
 
 // Retrocompatibilidade para atualizar pendencia existente caso necessário no futuro
-export function pendenciaToPayload(pendencia: Pendencia): CriarPendenciaRequest {
+export function pendenciaToPayload(pendencia: Pendencia): PendenciaCreateDTO {
   return {
     id_contrato: Number(pendencia.contratoId),
     id_visita: pendencia.visitaId ? Number(pendencia.visitaId) : null,
     descricao: pendencia.descricao,
-    responsavel: pendencia.responsavel,
+    responsavel: pendencia.responsavel || 'Equipe Cliente',
     data_origem: pendencia.data_origem,
     data_prazo: pendencia.data_prazo ?? null,
     resolvida: pendencia.resolvida,

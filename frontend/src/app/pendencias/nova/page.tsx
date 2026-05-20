@@ -7,6 +7,7 @@ import { ClientesService } from '@/services/clientes.service'
 import { ContratoService } from '@/services/contrato.service'
 import { PendenciasService, type NovaPendenciaInput } from '@/services/pendencias.service'
 import { AppError } from '@/utils/errors'
+import { ChevronLeft } from 'lucide-react'
 
 export default function NovaPendenciaPage() {
   const router = useRouter()
@@ -81,12 +82,12 @@ export default function NovaPendenciaPage() {
       {/* ── HEADER SUPERIOR ── */}
       <div className="sticky top-0 z-10 bg-[#07090D]/90 backdrop-blur-md border-b border-zinc-800 px-6 py-5">
         <div className="max-w-3xl mx-auto flex items-center gap-4">
-          <Link href="/pendencias" className="text-zinc-400 hover:text-white transition-colors text-2xl leading-none">
-            ‹
+          <Link href="/pendencias" className="p-2 -ml-2 md:-ml-8 rounded-xl bg-zinc-900/60 border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700 transition-all flex items-center justify-center" title="Voltar para Pendências">
+            <ChevronLeft size={20} strokeWidth={2.5} />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-white">Nova Pendência</h1>
-            <p className="text-xs text-zinc-400 mt-0.5">Criar pendência manual e atrelar a um contrato</p>
+            <h1 className="text-xl md:text-2xl font-bold text-white">Nova Pendência</h1>
+            <p className="text-xs md:text-sm text-zinc-300 mt-2">Criar pendência manual e atrelar a um contrato</p>
           </div>
         </div>
       </div>
@@ -102,12 +103,12 @@ export default function NovaPendenciaPage() {
           
           {/* Contrato */}
           <div>
-            <label className="block text-sm font-semibold text-zinc-300 mb-2">Contrato Vinculado *</label>
+            <label className="block text-sm md:text-base font-semibold text-zinc-300 mb-3">Contrato Vinculado *</label>
             <select
               required
               value={form.contratoId}
               onChange={e => setForm({ ...form, contratoId: e.target.value })}
-              className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-zinc-600 transition-colors"
+              className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-500 transition-colors"
             >
               <option value="" disabled>Selecione um contrato...</option>
               {contratosOpcoes.map(c => (
@@ -118,37 +119,39 @@ export default function NovaPendenciaPage() {
 
           {/* Descrição */}
           <div>
-            <label className="block text-sm font-semibold text-zinc-300 mb-2">Descrição da Pendência *</label>
+            <label className="block text-sm md:text-base font-semibold text-zinc-300 mb-3">Descrição da Pendência *</label>
             <textarea
               required
               rows={4}
               placeholder="Ex: Enviar relatório de auditoria final..."
               value={form.descricao}
               onChange={e => setForm({ ...form, descricao: e.target.value })}
-              className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors resize-none"
+              className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-400 focus:outline-none focus:border-sky-500 transition-colors resize-none"
             />
           </div>
 
           {/* Responsável e Prazo */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-semibold text-zinc-300 mb-2">Responsável *</label>
-              <input
-                type="text"
+              <label className="block text-sm md:text-base font-semibold text-zinc-300 mb-3">Responsável *</label>
+              <select
                 required
-                placeholder="Ex: João Silva"
                 value={form.responsavel}
                 onChange={e => setForm({ ...form, responsavel: e.target.value })}
-                className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors"
-              />
+                className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sky-500 transition-colors"
+              >
+                <option value="" disabled>Selecione o responsável...</option>
+                <option value="Equipe Cliente">Equipe Cliente</option>
+                <option value="AM Consultoria">AM Consultoria</option>
+              </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-zinc-300 mb-2">Data Limite (Prazo)</label>
+              <label className="block text-sm md:text-base font-semibold text-zinc-300 mb-3">Data Limite (Prazo)</label>
               <input
                 type="date"
                 value={form.data_prazo}
                 onChange={e => setForm({ ...form, data_prazo: e.target.value })}
-                className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors scheme-dark"
+                className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-sky-500 transition-colors scheme-dark"
               />
             </div>
           </div>
@@ -171,7 +174,7 @@ export default function NovaPendenciaPage() {
               </div>
               <div>
                 <span className="text-sm font-medium text-white">Marcar como já resolvida</span>
-                <p className="text-xs text-zinc-500 mt-0.5">Apenas se você está registrando algo que já foi feito.</p>
+                <p className="text-xs text-sky-500 mt-0.5">Apenas se você está registrando algo que já foi feito.</p>
               </div>
             </label>
           </div>
@@ -180,14 +183,14 @@ export default function NovaPendenciaPage() {
           <div className="pt-6 border-t border-zinc-800/50 flex items-center justify-end gap-3">
             <Link
               href="/pendencias"
-              className="px-6 py-3 rounded-xl text-sm font-bold text-zinc-400 hover:text-white transition-colors"
+              className="px-6 py-3 rounded-xl text-sm font-bold text-zinc-400 hover:text-red-400 transition-colors"
             >
               Cancelar
             </Link>
             <button
               type="submit"
               disabled={loading}
-              className="bg-white text-black px-8 py-3 rounded-xl text-sm font-bold hover:bg-zinc-200 transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="bg-zinc-200 text-black px-8 py-3 rounded-xl text-sm font-bold hover:bg-white transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               {loading && (
                 <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { MapPin, ClipboardCheck, Wallet, Info, ChevronRight, AlertCircle } from 'lucide-react'
 
 export interface TimelinePendencia {
@@ -25,6 +25,20 @@ interface OperationalTimelineProps {
 }
 
 export function OperationalTimeline({ events, onEventClick }: OperationalTimelineProps) {
+  const [activeFilter, setActiveFilter] = useState<string>('todos')
+
+  const FILTERS = [
+    { key: 'todos',      label: 'Todos' },
+    { key: 'visita',     label: 'Visitas' },
+    { key: 'pendencia',  label: 'Pendências' },
+    { key: 'financeiro', label: 'Financeiro' },
+    { key: 'alerta',     label: 'Crises' },
+  ]
+
+  const filtered = activeFilter === 'todos'
+    ? events
+    : events.filter(e => e.type.toLowerCase() === activeFilter)
+
   const getTypeStyles = (type: string, critical: boolean) => {
     if (critical) return { color: 'bg-red-500', icon: AlertCircle }
     switch (type.toLowerCase()) {
@@ -36,64 +50,106 @@ export function OperationalTimeline({ events, onEventClick }: OperationalTimelin
   }
 
   return (
-    <div className="space-y-8 relative before:absolute before:inset-y-0 before:left-[13px] sm:before:left-[15px] before:w-0.5 before:bg-[#23272F]">
-      {events.map((event) => {
-        const { color, icon: Icon } = getTypeStyles(event.type, event.critical)
-        return (
-          <div key={event.id} className="relative pl-10 sm:pl-12">
-            {/* Dot/Icon - Optical Center Alignment */}
-            <div className={`absolute left-0 top-1 size-[28px] sm:size-[32px] rounded-full border-4 border-[#07090D] flex items-center justify-center shadow-lg transition-transform hover:scale-110 ${color}`}>
-              <Icon size={12} strokeWidth={3} className="text-white sm:scale-110" />
-            </div>
-            
-            {/* Content Card - Design System Spacing (Gap-4) */}
-            <div 
-              onClick={() => onEventClick?.(event)}
-              className={`group bg-[#0d1117] border border-[#23272F] rounded-2xl px-5 py-5 transition-all ${
-                onEventClick ? 'cursor-pointer hover:border-[#0466C8]/40 hover:bg-[#0d1117]/80' : ''
-              }`}
-            >
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
-                <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md inline-block w-fit max-w-full truncate ${
-                  event.critical ? 'bg-red-900/40 text-red-400 border border-red-500/20' : 'bg-[#23272F] text-[#7D8597]'
-                }`}>
-                  {event.subtitle}
-                </span>
-                <span className="text-[10px] font-bold tabular-nums text-[#4A5568] shrink-0">
-                  {new Date(event.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                </span>
+    <div>
+      {/* Filtros compactos — visíveis apenas quando há eventos suficientes */}
+      {events.length > 5 && (
+        <div className="flex gap-1.5 mb-6 flex-wrap">
+          {FILTERS.map(f => {
+            const count = f.key === 'todos'
+              ? events.length
+              : events.filter(e => e.type.toLowerCase() === f.key).length
+            if (f.key !== 'todos' && count === 0) return null
+            const isActive = activeFilter === f.key
+            return (
+              <button
+                key={f.key}
+                onClick={() => setActiveFilter(f.key)}
+                className={`px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest transition-colors ${
+                  isActive
+                    ? 'bg-zinc-700 text-white'
+                    : 'bg-transparent text-zinc-400 hover:text-zinc-300'
+                }`}
+              >
+                {f.label}
+                {count > 0 && (
+                  <span className={`ml-1 tabular-nums ${isActive ? 'text-zinc-200' : 'text-zinc-400'}`}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      <div className="space-y-8 relative before:absolute before:inset-y-0 before:left-[13px] sm:before:left-[15px] before:w-0.5 before:bg-[#23272F]">
+        {filtered.map((event) => {
+          const { color, icon: Icon } = getTypeStyles(event.type, event.critical)
+          return (
+            <div key={event.id} className="relative pl-10 sm:pl-12">
+              {/* Dot/Icon - Optical Center Alignment */}
+              <div className={`absolute left-0 top-1 size-[28px] sm:size-[32px] rounded-full border-4 border-[#07090D] flex items-center justify-center shadow-lg transition-transform hover:scale-110 ${color}`}>
+                <Icon size={12} strokeWidth={3} className="text-white sm:scale-110" />
               </div>
               
-              <h4 className="text-white text-sm font-bold leading-snug group-hover:text-[#0466C8] transition-colors pr-4">
-                {event.title}
-              </h4>
-
-              {/* Inline Pendencies (Point D) - Logical Hierarchy */}
-              {event.pendencias && event.pendencias.length > 0 && (
-                <div className="mt-5 space-y-3 pt-4 border-t border-[#23272F]/50">
-                   <p className="text-[8px] font-black uppercase tracking-widest text-zinc-600">Ações Geradas</p>
-                   {event.pendencias.map(p => (
-                     <div key={p.id} className="flex items-start gap-3 group/item">
-                        <ChevronRight size={12} className="text-emerald-500 mt-0.5 shrink-0 opacity-60 group-hover/item:opacity-100 transition-opacity" />
-                        <p className="text-[11px] text-zinc-400 font-medium leading-tight">{p.descricao}</p>
-                     </div>
-                   ))}
+              {/* Content Card - Design System Spacing (Gap-4) */}
+              <div 
+                onClick={() => onEventClick?.(event)}
+                className={`group bg-[#0d1117] border border-[#23272F] rounded-2xl px-5 py-5 transition-all ${
+                  onEventClick ? 'cursor-pointer hover:border-[#0466C8]/40 hover:bg-[#0d1117]/80' : ''
+                }`}
+              >
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
+                  <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md inline-block w-fit max-w-full truncate ${
+                    event.critical ? 'bg-red-900/40 text-red-400 border border-red-500/20' : 'bg-[#23272F] text-zinc-300'
+                  }`}>
+                    {event.subtitle}
+                  </span>
+                  <span className="text-[10px] font-bold tabular-nums text-zinc-200 shrink-0">
+                    {new Date(event.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                  </span>
                 </div>
-              )}
+                
+                <h4 className="text-white text-sm font-bold leading-snug group-hover:text-[#0466C8] transition-colors pr-4">
+                  {event.title}
+                </h4>
 
-              <div className="flex items-center gap-3 mt-5 opacity-60">
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#4A5568]">
-                  {event.type}
-                </span>
-                <span className="size-1 rounded-full bg-[#23272F]" />
-                <span className="text-[9px] text-[#4A5568] font-bold tabular-nums">
-                  {new Date(event.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                </span>
+                {/* Inline Pendencies (Point D) - Logical Hierarchy */}
+                {event.pendencias && event.pendencias.length > 0 && (
+                  <div className="mt-5 space-y-2.5 pt-4 border-t border-zinc-700/60">
+                     <p className="text-[8px] font-black uppercase tracking-widest text-zinc-200 mb-3">Ações Geradas</p>
+                     {event.pendencias.map(p => (
+                       <div key={p.id} className="flex items-start gap-2.5 group/item">
+                          <ChevronRight size={12} className="text-emerald-400 mt-0.5 shrink-0" />
+                          <p className="text-[11px] text-zinc-200 font-medium leading-tight">{p.descricao}</p>
+                       </div>
+                     ))}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2.5 mt-5">
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/80">
+                    {event.type}
+                  </span>
+                  {event.type.toLowerCase() === 'visita' && (
+                    <>
+                      <span className="size-1.5 rounded-full bg-zinc-500" />
+                      <span className="text-[9px] text-white/70 font-bold tabular-nums">
+                        {new Date(event.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        )
-      })}
+          )
+        })}
+        {filtered.length === 0 && (
+          <p className="text-[11px] text-zinc-400 font-bold uppercase tracking-widest text-center py-8">
+            Nenhum evento para este filtro
+          </p>
+        )}
+      </div>
     </div>
   )
 }

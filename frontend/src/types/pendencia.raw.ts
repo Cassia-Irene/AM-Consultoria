@@ -17,6 +17,7 @@ export interface PendenciaRaw {
 
   // Inteligência (Back-First)
   score_prioridade?: number
+  motivo_prioridade?: string
   urgencia_label?: string
   dias_atraso?: number
 }

@@ -45,3 +45,16 @@ export function mapCliente(raw: ClienteRaw): Cliente {
     status: normalizeStatus(raw.status || 'ativo'),
   }
 }
+
+export function mapClienteToRaw(cliente: Partial<Cliente>): Partial<ClienteRaw> {
+  const raw: Partial<ClienteRaw> = {}
+
+  if (cliente.nome_instituicao !== undefined) raw.nome = cliente.nome_instituicao
+  if (cliente.tipo_instituicao !== undefined) raw.tipo_instituicao = cliente.tipo_instituicao
+  if (cliente.cidade !== undefined) raw.cidade = cliente.cidade
+  if (cliente.status !== undefined) raw.status = cliente.status
+  if (cliente.nivel_complexidade !== undefined) raw.nivel_complexidade = cliente.nivel_complexidade
+  if (cliente.observacoes_gerais !== undefined) raw.observacoes_gerais = cliente.observacoes_gerais
+
+  return raw
+}

@@ -21,7 +21,7 @@ export function DashboardTabs() {
   const activeTab = getActiveTab()
 
   return (
-    <div className="sticky top-0 z-50 bg-[#07090D]/90 backdrop-blur-md border-b border-[#23272F] px-4 pt-8 pb-4 sm:pt-10">
+    <div className="sticky top-0 z-50 backdrop-blur-md px-4 pt-8 pb-4 sm:pt-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-2">
         <div className="flex items-center justify-center sm:justify-between">
           <h1 className="text-white text-lg sm:text-xl font-black tracking-tight">
@@ -37,7 +37,7 @@ export function DashboardTabs() {
               className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
                 activeTab === tab.id 
                   ? `${tab.color} text-white shadow-lg` 
-                  : 'text-[#4F5B73] hover:text-[#7D8597]'
+                  : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
               {tab.label}
@@ -45,7 +45,7 @@ export function DashboardTabs() {
           ))}
         </div>
       </div>
-      <p className="hidden sm:block text-[#4F5B73] text-[10px] font-bold uppercase tracking-[0.2em] px-1">
+      <p className="hidden sm:block text-zinc-200 text-[10px] font-bold uppercase tracking-[0.2em] px-1">
         {activeTab === 'caos' ? 'Foco: Resolver Agora' : activeTab === 'planejamento' ? 'Foco: Organizar Semana' : 'Foco: Entender Padrões'}
       </p>
     </div>

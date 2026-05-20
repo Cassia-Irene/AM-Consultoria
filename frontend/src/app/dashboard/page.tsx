@@ -12,8 +12,6 @@ import {
 
 import { DashboardTabs } from '@/components/DashboardTabs'
 import { VisitaRotinaCard } from '@/components/VisitaRotinaCard'
-import { AttentionPanel } from '@/components/AttentionPanel'
-import { type AttentionItem } from '@/services/analytics.service'
 
 // --- Componentes Locais ---
 
@@ -22,10 +20,10 @@ function SectionHeader({ label, count, cor, href }: { label: string; count?: num
   const content = (
     <div className="flex items-center gap-2 group cursor-pointer">
       <span className={`size-2 rounded-full ${dotColor} shadow-[0_0_8px_rgba(0,0,0,0.5)] group-hover:scale-125 transition-transform`} />
-      <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#7D8597] group-hover:text-zinc-300 transition-colors">{label}</h2>
-      {count !== undefined && <span className="text-[11px] text-[#4A5568] font-bold">({count})</span>}
+      <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-200 group-hover:text-white transition-colors">{label}</h2>
+      {count !== undefined && <span className="text-[11px] text-white font-bold">({count})</span>}
       {href && (
-        <svg className="text-[#4A5568] group-hover:text-sky-500 transition-colors" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+        <svg className="text-zinc-200 group-hover:text-white transition-colors" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
           <path d="M9 18l6-6-6-6" />
         </svg>
       )}
@@ -55,11 +53,18 @@ function DecisaoCard({ item }: { item: TopPriority }) {
           {item.titulo}
         </h3>
         
-        <div className="flex items-center gap-2 mb-6">
-          <div className="size-6 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-            <span className="text-red-500 text-[10px] font-bold">!</span>
+        <div className="flex flex-col gap-2 mb-6">
+          <div className="flex items-center gap-2">
+            <div className="size-6 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+              <span className="text-red-500 text-[10px] font-bold">!</span>
+            </div>
+            <span className="text-zinc-200 text-xs font-medium">{item.cliente}</span>
           </div>
-          <span className="text-zinc-400 text-xs font-medium">{item.cliente}</span>
+          {item.motivoPrioridade && (
+            <p className="text-[10px] md:text-[12px] text-red-400 font-medium italic leading-relaxed pl-1 border-l border-red-900/50">
+              “{item.motivoPrioridade}”
+            </p>
+          )}
         </div>
 
         <Link href={`/pendencias?id=${item.id}`} className="block">
@@ -78,7 +83,7 @@ function AcaoCard({ item }: { item: TopPriority }) {
       <div className="flex items-center gap-3 bg-[#0d1117] border-l-4 border-red-500 rounded-r-2xl px-4 py-3 min-h-[64px]">
         <div className="flex-1 min-w-0">
           <p className="text-white font-semibold text-[14px] leading-tight truncate">{item.titulo}</p>
-          <p className="text-[#7D8597] text-[10px] mt-0.5 truncate">{item.cliente}</p>
+          <p className="text-zinc-300 text-[10px] md:text-[11px] mt-1 md:mt-2 truncate">{item.cliente}</p>
         </div>
         <div className="shrink-0 text-right">
           <span className="text-red-400 text-xs font-bold tabular-nums">
@@ -93,9 +98,9 @@ function AcaoCard({ item }: { item: TopPriority }) {
 
 function GrupoCliente({ clienteNome, items }: { clienteNome: string; items: TopPriority[] }) {
   return (
-    <div className="space-y-2">
-      <p className="text-[10px] font-bold text-[#4A5568] uppercase tracking-widest ml-1">{clienteNome}</p>
-      <div className="space-y-2">
+    <div className="space-y-2 md:space-y-4 md:mb-6">
+      <p className="text-[10px] md:text-[11px] font-bold text-rose-400 uppercase tracking-widest ml-1">{clienteNome}</p>
+      <div className="space-y-2 md:space-y-4">
         {items.map(item => <AcaoCard key={item.id} item={item} />)}
       </div>
     </div>
@@ -140,25 +145,23 @@ export default function DashboardPage() {
   const [visitsToday, setVisitsToday] = useState<TodayVisit[]>([])
   const [priorities, setPriorities] = useState<TopPriority[]>([])
   const [caosScores, setCaosScores] = useState<CaosScore[]>([])
-  const [attentionItems, setAttentionItems] = useState<AttentionItem[]>([])
 
   const [loading, setLoading] = useState(true)
+  const [showAllPriorities, setShowAllPriorities] = useState(false)
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [s, today, p, cs, attention] = await Promise.all([
+        const [s, today, p, cs] = await Promise.all([
           AnalyticsService.getSummary(),
           AnalyticsService.getTodayAgenda(),
           AnalyticsService.getPriorities(),
-          AnalyticsService.getCaosScore(),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/intelligence/attention`).then(r => r.json())
+          AnalyticsService.getCaosScore()
         ])
         setSummary(s)
         setVisitsToday(today)
         setPriorities(p)
         setCaosScores(cs.filter(c => c.totalAlertas > 3)) // Apenas os críticos
-        setAttentionItems(attention)
       } catch (err) {
         console.error('Erro ao carregar dashboard:', err)
       } finally {
@@ -188,6 +191,10 @@ export default function DashboardPage() {
     return acc
   }, new Map<string, TopPriority[]>())
 
+  const allClientGroups = Array.from(prioritiesByClient.entries())
+  const visibleGroups = showAllPriorities ? allClientGroups : allClientGroups.slice(0, 3)
+  const hiddenGroupsCount = allClientGroups.length - 3
+
 
   return (
     <main className="min-h-screen bg-[#07090D] pb-32">
@@ -209,10 +216,18 @@ export default function DashboardPage() {
           <section>
             <SectionHeader label="Ações Imediatas" count={otherPriorities.length} cor="red" href="/pendencias" />
             <div className="space-y-4">
-              {Array.from(prioritiesByClient.entries()).map(([cliente, items]) => (
+              {visibleGroups.map(([cliente, items]) => (
                 <GrupoCliente key={cliente} clienteNome={cliente} items={items} />
               ))}
             </div>
+            {!showAllPriorities && hiddenGroupsCount > 0 && (
+              <button
+                onClick={() => setShowAllPriorities(true)}
+                className="mt-3 w-full py-3 text-[11px] font-black uppercase tracking-widest text-[#7D8597] border border-dashed border-[#23272F] rounded-2xl active:bg-[#0d1117] transition-colors"
+              >
+                + {hiddenGroupsCount} cliente{hiddenGroupsCount > 1 ? 's' : ''} com pendências
+              </button>
+            )}
           </section>
         )}
 
@@ -236,16 +251,6 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
-
-      {/* 🆕 CAMADA DE ATENÇÃO GLOBAL */}
-      {!loading && attentionItems.length > 0 && (
-        <AttentionPanel 
-          items={attentionItems} 
-          onItemClick={(id: number) => {
-            console.log('Click no contrato:', id)
-          }}
-        />
-      )}
 
       {/* Floating Action Bar */}
       <div className="fixed bottom-6 left-0 right-0 px-4 z-50">

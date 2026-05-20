@@ -10,7 +10,8 @@ export interface ContatoRaw {
   cargo: string | null
   papel: string
 
-  telefone_whatsapp: string | null
+  telefone?: string | null
+  telefone_whatsapp?: string | null
   email: string | null
   observacoes_gerais: string | null
 }

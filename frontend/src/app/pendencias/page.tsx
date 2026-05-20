@@ -11,8 +11,9 @@ import { getPendenciaSeveridade, getPendenciaStatus } from '@/utils/pendencia'
 import type { Pendencia } from '@/domain/pendencia'
 import { displayDate } from '@/utils/date'
 import { OperationalTabs } from '@/components/OperationalTabs'
+import { Plus } from 'lucide-react'
 
-type Filtro = 'todas' | 'abertas' | 'atrasadas' | 'concluidas'
+type Filtro = 'todas' | 'abertas' | 'atrasadas' | 'concluidas' | 'urgentes'
 
 type PendenciaView = {
   p: Pendencia
@@ -29,6 +30,8 @@ function PendenciasList() {
   const [error, setError] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<Partial<Pendencia>>({})
+  const [searchTerm, setSearchTerm] = useState('')
+  const [searchDate, setSearchDate] = useState('')
 
   const filtro = (searchParams.get('status') as Filtro) || 'todas'
 
@@ -156,10 +159,32 @@ function PendenciasList() {
 
   // Filtragem
   const filtradas = pendencias.filter(v => {
-    if (filtro === 'todas') return true
-    if (filtro === 'abertas') return v.status === 'aberta'
-    if (filtro === 'atrasadas') return v.status === 'atrasada'
-    if (filtro === 'concluidas') return v.status === 'concluida'
+    // 1. Filtro de Status/Filtro Principal
+    let matchesStatus = true
+    if (filtro === 'abertas') matchesStatus = v.status === 'aberta'
+    else if (filtro === 'atrasadas') matchesStatus = v.status === 'atrasada'
+    else if (filtro === 'concluidas') matchesStatus = v.status === 'concluida'
+    else if (filtro === 'urgentes') matchesStatus = v.severidade === 'urgente' && v.status !== 'concluida'
+
+    if (!matchesStatus) return false
+
+    // 2. Filtro de Texto (searchTerm)
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase()
+      const matchesText = 
+        v.p.descricao.toLowerCase().includes(term) ||
+        v.clienteNome.toLowerCase().includes(term) ||
+        (v.p.responsavel || '').toLowerCase().includes(term)
+      if (!matchesText) return false
+    }
+
+    // 3. Filtro de Data (searchDate)
+    if (searchDate) {
+      if (!v.p.data_prazo) return false
+      const prazoDate = v.p.data_prazo.split('T')[0]
+      if (prazoDate !== searchDate) return false
+    }
+
     return true
   })
 
@@ -217,11 +242,14 @@ function PendenciasList() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 block mb-1">Responsável</label>
-              <input
+              <select
                 className="w-full bg-zinc-800 text-white text-sm rounded-xl px-4 py-2.5 border border-zinc-700 focus:outline-none focus:border-blue-500"
                 value={editForm.responsavel}
                 onChange={e => setEditForm({ ...editForm, responsavel: e.target.value })}
-              />
+              >
+                <option value="Equipe Cliente">Equipe Cliente</option>
+                <option value="AM Consultoria">AM Consultoria</option>
+              </select>
             </div>
             <div>
               <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 block mb-1">Prazo</label>
@@ -260,12 +288,23 @@ function PendenciasList() {
             <p className="text-white text-base font-medium mb-1 wrap-break-word">{view.p.descricao}</p>
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               <span className="text-zinc-400 text-xs font-semibold uppercase tracking-wider">{view.clienteNome}</span>
-              <span className="text-zinc-600">•</span>
-              <span className="text-zinc-400 text-xs">Resp: {view.p.responsavel}</span>
+              <span className="text-zinc-200">•</span>
+              <span className="text-zinc-300 text-xs">Resp: {view.p.responsavel}</span>
               {view.p.data_prazo && (
                 <>
-                  <span className="text-zinc-600">•</span>
-                  <span className="text-zinc-400 text-xs">Prazo: {displayDate(view.p.data_prazo)}</span>
+                  <span className="text-zinc-200">•</span>
+                  <span className="text-zinc-300 text-xs">Prazo: {displayDate(view.p.data_prazo)}</span>
+                </>
+              )}
+              {view.p.visitaId && (
+                <>
+                  <span className="text-zinc-200">•</span>
+                  <Link 
+                    href={`/visitas/${view.p.visitaId}`}
+                    className="text-sky-400 hover:text-sky-300 font-bold hover:underline transition-colors text-xs inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    Origem: Visita #{view.p.visitaId}
+                  </Link>
                 </>
               )}
             </div>
@@ -362,8 +401,8 @@ function PendenciasList() {
     return (
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">{titulo}</h2>
-          <span className="bg-zinc-800 text-zinc-400 text-[10px] px-2 py-0.5 rounded-full font-bold">
+          <h2 className="text-sm font-black uppercase tracking-widest text-zinc-200">{titulo}</h2>
+          <span className="bg-zinc-800 text-zinc-300 text-[11px] px-2 py-0.5 rounded-full font-bold">
             {items.length}
           </span>
         </div>
@@ -381,10 +420,10 @@ function PendenciasList() {
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white">Pendências</h1>
-            <p className="text-sm text-zinc-400 mt-1">Acompanhamento operacional e itens críticos</p>
+            <p className="text-sm text-zinc-300 mt-1">Acompanhamento operacional e itens críticos</p>
           </div>
-          <Link href="/pendencias/nova" className="w-full sm:w-auto text-center inline-block bg-white text-black font-bold text-sm px-6 py-2.5 rounded-xl hover:bg-zinc-200 transition-colors">
-            + Nova Pendência
+          <Link href="/pendencias/nova" className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white text-black font-bold text-sm px-6 py-2.5 rounded-xl hover:bg-zinc-200 transition-colors">
+            <Plus size={18} strokeWidth={3} /> Nova Pendência
           </Link>
         </div>
       </div>
@@ -393,19 +432,19 @@ function PendenciasList() {
         {/* ── KPIs SUPERIORES ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Abertas</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-300 mb-1">Abertas</p>
             <p className="text-3xl font-black tabular-nums text-white">{kpiAbertas}</p>
           </div>
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Atrasadas</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-300 mb-1">Atrasadas</p>
             <p className="text-3xl font-black tabular-nums text-red-400">{kpiAtrasadas}</p>
           </div>
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Concluídas</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-300 mb-1">Concluídas</p>
             <p className="text-3xl font-black tabular-nums text-green-400">{kpiConcluidas}</p>
           </div>
           <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Urgentes</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-300 mb-1">Urgentes</p>
             <p className="text-3xl font-black tabular-nums text-red-500">{kpiUrgentes}</p>
           </div>
         </div>
@@ -415,12 +454,55 @@ function PendenciasList() {
           options={[
             { value: 'todas', label: 'Todas', count: pendencias.length },
             { value: 'abertas', label: 'Abertas', count: kpiAbertas },
+            { value: 'urgentes', label: 'Urgentes', count: kpiUrgentes },
             { value: 'atrasadas', label: 'Atrasadas', count: kpiAtrasadas },
             { value: 'concluidas', label: 'Concluídas', count: kpiConcluidas },
           ]}
           currentValue={filtro}
           onChange={setFiltro}
         />
+
+        {/* ── BARRA DE BUSCA E DATA ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 mt-6">
+          <div className="sm:col-span-2 relative">
+            <input
+              type="text"
+              placeholder="Buscar por descrição, cliente ou responsável..."
+              className="w-full bg-zinc-900/60 border border-zinc-800 text-white rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-zinc-700 transition-colors placeholder-zinc-500"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+            <div className="absolute left-3.5 top-3.5 text-zinc-300">
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </div>
+          </div>
+          <div>
+            <input
+              type="date"
+              className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-zinc-700 transition-colors text-zinc-300"
+              value={searchDate}
+              onChange={e => setSearchDate(e.target.value)}
+              title="Filtrar por data limite (prazo)"
+            />
+          </div>
+        </div>
+
+        {(searchTerm || searchDate) && (
+          <div className="flex justify-end mb-6">
+            <button
+              onClick={() => {
+                setSearchTerm('')
+                setSearchDate('')
+              }}
+              className="text-xs text-zinc-400 hover:text-white bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-1.5 transition-colors font-semibold"
+            >
+              Limpar filtros de busca
+            </button>
+          </div>
+        )}
 
         {/* ── LISTAGEM PRINCIPAL ── */}
         {filtradas.length === 0 ? (

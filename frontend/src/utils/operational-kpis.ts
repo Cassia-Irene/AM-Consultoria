@@ -122,7 +122,8 @@ export function calculateClientHealth(
   visitas: Visita[],
   pendencias: Pendencia[],
   contrato?: Contrato,
-  faturamentos: FaturamentoCliente[] = []
+  faturamentos: FaturamentoCliente[] = [],
+  visitasExtrasFisicas: { id_visita: number }[] = []
 ): ClientOperationalHealth {
   const visitasDoCliente = visitas.filter(v => v.contratoId === contrato?.id)
   const pendenciasAbertas = pendencias.filter(p => p.contratoId === contrato?.id && !p.resolvida)
@@ -132,10 +133,12 @@ export function calculateClientHealth(
   const pendenciasUrgentes = pendenciasAbertas.filter(p => getPendenciaSeveridade(p) === 'urgente').length
   const indiceUrgencia = Math.min(100, (emergenciais * 20) + (pendenciasUrgentes * 15))
   
-  // 2. Taxa de Goodwill (Visitas extras nao cobradas / total)
-  const limiteMensal = contrato?.visitas_previstas_mes ?? 4
-  const visitasExtras = Math.max(0, visitasDoCliente.length - limiteMensal)
-  const taxaGoodwill = visitasDoCliente.length > 0 ? (visitasExtras / visitasDoCliente.length) * 100 : 0
+  // 2. Taxa de Goodwill (Visitas extras físicas reais / total de visitas realizadas)
+  const totalVisitasRealizadas = visitasDoCliente.filter(v => v.status === 'realizada').length
+  const countExtrasFisicas = visitasDoCliente.filter(v => 
+    visitasExtrasFisicas.some(ex => Number(ex.id_visita) === Number(v.id))
+  ).length
+  const taxaGoodwill = totalVisitasRealizadas > 0 ? (countExtrasFisicas / totalVisitasRealizadas) * 100 : 0
   
   // 3. Horas Invisiveis Estimadas
   const horasInvisiveis = estimateInvisibleHours(visitasDoCliente)

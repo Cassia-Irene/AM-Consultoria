@@ -1,19 +1,8 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
+import requests
 
-app = FastAPI()
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8005)
+try:
+    response = requests.get("http://127.0.0.1:8000/projetos/")
+    print(f"Status: {response.status_code}")
+    print(f"Body: {response.text[:200]}...")
+except Exception as e:
+    print(f"Error: {e}")

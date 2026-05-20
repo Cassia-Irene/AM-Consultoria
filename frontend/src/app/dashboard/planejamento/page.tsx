@@ -18,6 +18,8 @@ import { OperationalDrawer } from '@/components/OperationalDrawer'
 import { PendenciaManager } from '@/components/PendenciaManager'
 import { VisitaDetailView } from '@/components/VisitaDetailView'
 import { EntregaManager } from '@/components/EntregaManager'
+import { AttentionPanel } from '@/components/AttentionPanel'
+import { type AttentionItem } from '@/services/analytics.service'
 
 type SubTab = 'organizacao' | 'operacao'
 
@@ -26,8 +28,8 @@ type SubTab = 'organizacao' | 'operacao'
 function SectionHeader({ label, sub, count, href }: { label: string; sub?: string; count?: number; href?: string }) {
   const content = (
     <div className="flex items-center gap-2">
-      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#7D8597]">{label}</p>
-      {count !== undefined && <span className="text-[11px] text-[#4A5568] font-bold">({count})</span>}
+      <p className="text-[11px] md:text-[12px] font-black uppercase tracking-[0.2em] text-zinc-200">{label}</p>
+      {count !== undefined && <span className="text-[11px] text-sky-500 font-bold">({count})</span>}
     </div>
   )
 
@@ -36,12 +38,12 @@ function SectionHeader({ label, sub, count, href }: { label: string; sub?: strin
       {href ? (
         <Link href={href} className="hover:text-white transition-colors">{content}</Link>
       ) : content}
-      {sub && <p className="text-[10px] text-[#7D8597] font-bold">{sub}</p>}
+      {sub && <p className="text-[10px] md:text-[11px] text-zinc-200 font-bold">{sub}</p>}
     </div>
   )
 }
 
-function MetricCard({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent?: 'red' | 'amber' | 'yellow' | 'blue' }) {
+function MetricCard({ label, value, sub, accent, href }: { label: string; value: string | number; sub?: string; accent?: 'red' | 'amber' | 'yellow' | 'blue'; href?: string }) {
   const color = {
     red:    'text-red-500',
     amber:  'text-amber-400',
@@ -49,11 +51,25 @@ function MetricCard({ label, value, sub, accent }: { label: string; value: strin
     blue:   'text-sky-400',
   }[accent ?? 'blue']
 
+  const cardContent = (
+    <>
+      <p className="text-[9px] lg:text-[10px] font-black uppercase tracking-widest text-zinc-200 mb-1.5 md:mb-2">{label}</p>
+      <p className={`text-2xl lg:text-3xl font-black tabular-nums leading-none ${color}`}>{value}</p>
+      {sub && <p className="text-[9px] md:text-[11px] text-zinc-300 mt-2 font-bold">{sub}</p>}
+    </>
+  )
+
+  if (href) {
+    return (
+      <Link href={href} className="bg-[#0d1117] border border-[#23272F] rounded-2xl p-4 lg:p-6 shadow-xl transition-all hover:border-[#0466C8]/60 hover:scale-[1.02] block cursor-pointer group active:scale-[0.98]">
+        {cardContent}
+      </Link>
+    )
+  }
+
   return (
     <div className="bg-[#0d1117] border border-[#23272F] rounded-2xl p-4 lg:p-6 shadow-xl transition-all hover:border-[#0466C8]/30">
-      <p className="text-[9px] lg:text-[10px] font-black uppercase tracking-widest text-[#7D8597] mb-1.5">{label}</p>
-      <p className={`text-2xl lg:text-3xl font-black tabular-nums leading-none ${color}`}>{value}</p>
-      {sub && <p className="text-[9px] lg:text-[10px] text-[#4A5568] mt-2 font-bold">{sub}</p>}
+      {cardContent}
     </div>
   )
 }
@@ -68,7 +84,7 @@ function PendenciaItem({ item, cor, onClick }: { item: OpenPendency; cor: 'red' 
   const text = {
     red: 'text-red-400',
     amber: 'text-amber-400',
-    zinc: 'text-zinc-500'
+    zinc: 'text-zinc-300'
   }[cor]
 
   return (
@@ -79,10 +95,10 @@ function PendenciaItem({ item, cor, onClick }: { item: OpenPendency; cor: 'red' 
       <div className={`flex items-center gap-4 bg-[#0d1117] border-l-4 ${border} rounded-r-xl px-4 py-3.5 hover:bg-[#161b22] transition-colors`}>
         <div className="flex-1 min-w-0">
           <p className="text-white font-bold text-sm leading-tight truncate">{item.descricao}</p>
-          <p className="text-[#4A5568] text-[10px] mt-1 font-bold truncate">{item.cliente} · {item.responsavel}</p>
+          <p className="text-zinc-300 text-[10px] md:text-[11px] mt-1 md:mt-2 font-bold truncate">{item.cliente} · {item.responsavel}</p>
         </div>
         <div className="shrink-0 text-right">
-          <span className={`${text} text-[10px] font-black uppercase tracking-tighter tabular-nums`}>
+          <span className={`${text} text-[10px] md:text-[11px] font-black uppercase tracking-tighter tabular-nums`}>
             {item.dataPrazo ? labelPrazo(item.dataPrazo) : '—'}
           </span>
         </div>
@@ -110,7 +126,7 @@ function HistoryItem({ event, onClick }: { event: TimelineEvent; onClick: () => 
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-zinc-300 font-bold text-sm truncate">{event.titulo}</p>
-        <p className="text-[#4A5568] text-[9px] sm:text-[10px] font-black uppercase tracking-widest truncate">{event.cliente} · {displayDate(event.data)}</p>
+        <p className="text-zinc-300 text-[9px] sm:text-[10px] font-black uppercase tracking-widest truncate mt-2">{event.cliente} · {displayDate(event.data)}</p>
       </div>
       <div className="hidden sm:block text-[10px] font-black uppercase tracking-widest text-blue-500">
         Ver Pendência
@@ -128,7 +144,7 @@ function HistoryItem({ event, onClick }: { event: TimelineEvent; onClick: () => 
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-zinc-300 font-bold text-sm truncate">{event.titulo}</p>
-        <p className="text-[#4A5568] text-[10px] font-black uppercase tracking-widest truncate">{event.cliente} · {displayDate(event.data)}</p>
+        <p className="text-zinc-300 text-[10px] font-black uppercase tracking-widest truncate mt-2">{event.cliente} · {displayDate(event.data)}</p>
       </div>
       
       {/* Inline Pendencies (Point D) */}
@@ -137,10 +153,10 @@ function HistoryItem({ event, onClick }: { event: TimelineEvent; onClick: () => 
           <p className="text-[8px] font-black uppercase tracking-widest text-emerald-600 mb-1">Ações</p>
           <div className="space-y-1">
             {event.pendenciasLista.slice(0, 1).map((p, i) => (
-              <p key={i} className="text-[9px] text-zinc-500 truncate leading-none">↳ {p.descricao}</p>
+              <p key={i} className="text-[9px] text-zinc-300 truncate leading-none">↳ {p.descricao}</p>
             ))}
             {event.pendenciasLista.length > 1 && (
-              <p className="text-[8px] text-zinc-600 font-bold">+{event.pendenciasLista.length - 1} mais</p>
+              <p className="text-[8px] text-zinc-300 font-bold">+{event.pendenciasLista.length - 1} mais</p>
             )}
           </div>
         </div>
@@ -180,6 +196,7 @@ function PlanningList() {
     id: number | string;
     color?: 'amber' | 'zinc' | 'red'
   } | null>(null)
+  const [attentionItems, setAttentionItems] = useState<AttentionItem[]>([])
   const [loading, setLoading] = useState(true)
 
   const activeTab = (searchParams.get('tab') as SubTab) || 'organizacao'
@@ -192,16 +209,18 @@ function PlanningList() {
 
   const loadData = useCallback(async () => {
     try {
-      const [s, today, p, t] = await Promise.all([
+      const [s, today, p, t, attention] = await Promise.all([
         AnalyticsService.getSummary(),
         AnalyticsService.getWeeklyAgenda(),
         AnalyticsService.getPendencies(),
-        AnalyticsService.getTimeline()
+        AnalyticsService.getTimeline(),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/intelligence/attention`).then(r => r.json())
       ])
       setSummary(s)
       setVisits(today)
       setPendencies(p)
       setTimeline(t)
+      setAttentionItems(attention)
     } catch (err) {
       console.error('Erro no planejamento:', err)
     } finally {
@@ -261,12 +280,25 @@ function PlanningList() {
             <section>
               <SectionHeader label="Carga Operacional" />
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <MetricCard label="Atrasados" value={atrasados.length} accent="red" />
-                <MetricCard label="Atenção" value={emBreve.length} accent="amber" />
-                <MetricCard label="A Receber" value={summary.inadimplenciaCount} accent="yellow" sub="Vencimentos" />
-                <MetricCard label="Contratos" value={summary.contratosAtivos} accent="blue" sub="Em vigor" />
+                <MetricCard label="Pendências Atrasadas" value={atrasados.length} accent="red" sub="Tarefas de clientes vencidas" href="/pendencias?status=atrasadas" />
+                <MetricCard label="Pendências em Atenção" value={emBreve.length} accent="amber" sub="Vencendo hoje ou breve" href="/pendencias?status=abertas" />
+                <MetricCard label="Clientes Inadimplentes" value={summary.inadimplenciaCount} accent="yellow" sub="Contratos e projetos vencidos" href="/financeiro/inadimplencia?status=vencidas" />
+                <MetricCard label="Contratos Ativos" value={summary.contratosAtivos} accent="blue" sub="Parcerias em vigor" href="/contratos" />
               </div>
             </section>
+
+            {/* 🆕 CAMADA DE ATENÇÃO ESTRATÉGICA INTEGRADA */}
+            {attentionItems.length > 0 && (
+              <section>
+                <AttentionPanel 
+                  isInline
+                  items={attentionItems} 
+                  onItemClick={(id: number) => {
+                    router.push(`/clientes/${id}`)
+                  }}
+                />
+              </section>
+            )}
 
             {/* FUSÃO A + B (TRILHO OPERACIONAL) */}
             <div className="space-y-8">
@@ -364,7 +396,7 @@ function PlanningList() {
           </>
         )}
 
-        {/* DRAWER OPERACIONAL (Anti-ERP Continuity) */}
+        {/* DRAWER OPERACIONAL */}
         <OperationalDrawer
           isOpen={!!selectedItem}
           onClose={() => setSelectedItem(null)}

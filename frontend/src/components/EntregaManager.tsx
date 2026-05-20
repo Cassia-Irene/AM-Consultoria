@@ -7,6 +7,15 @@ import { type EntregaRaw } from '@/types/entrega.raw'
 import { CheckCircle2, Circle, Calendar, Link as LinkIcon, AlertTriangle } from 'lucide-react'
 import { displayDate } from '@/utils/date'
 
+function isUrl(str: string): boolean {
+  try {
+    const trimmed = (str || '').trim()
+    return trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('www.')
+  } catch {
+    return false
+  }
+}
+
 interface EntregaManagerProps {
   id?: string | number
   projetoId?: string | number
@@ -23,16 +32,26 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
   const [descricao, setDescricao] = useState('')
   const [dataPrevista, setDataPrevista] = useState('')
   const [referenciaDoc, setReferenciaDoc] = useState('')
+  const [dataEntregaReal, setDataEntregaReal] = useState('')
 
   const loadEntrega = React.useCallback(async () => {
     if (!id) return
     setLoading(true)
     const data = await EntregasService.getById(id)
     if (data) {
-      setEntrega(data)
+      setEntrega({
+        id: String(data.id_entrega),
+        projetoId: String(data.id_projeto),
+        descricao: data.descricao,
+        data_entrega_prevista: data.data_entrega_prevista,
+        data_entrega_real: data.data_entrega_real || undefined,
+        entregue: data.entregue,
+        referencia_doc: data.referencia_doc || undefined
+      })
       setDescricao(data.descricao)
       setDataPrevista(data.data_entrega_prevista.split('T')[0])
       setReferenciaDoc(data.referencia_doc || '')
+      setDataEntregaReal(data.data_entrega_real ? data.data_entrega_real.split('T')[0] : '')
     }
     setLoading(false)
   }, [id])
@@ -50,7 +69,7 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
         entregue: newStatus,
         data_entrega_real: newStatus ? new Date().toISOString().split('T')[0] : null
       }
-      await EntregasService.update(entrega.id, updateData)
+      await EntregasService.update(Number(entrega.id), updateData)
       await loadEntrega()
       onUpdate?.()
     } catch (err) {
@@ -66,15 +85,19 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
       const payload: Partial<EntregaRaw> = {
         descricao,
         data_entrega_prevista: dataPrevista,
-        referencia_doc: referenciaDoc || null
+        referencia_doc: referenciaDoc || null,
+        data_entrega_real: dataEntregaReal || null
       }
 
       if (id) {
-        await EntregasService.update(id, payload)
+        payload.entregue = !!dataEntregaReal
+        await EntregasService.update(Number(id), payload)
         setEditMode(false)
         await loadEntrega()
+        onUpdate?.()
       } else if (projetoId) {
         payload.id_projeto = Number(projetoId)
+        payload.entregue = !!dataEntregaReal
         await EntregasService.create(payload)
         onUpdate?.()
       }
@@ -117,7 +140,7 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
               <p className="text-white font-bold text-sm">
                 {entrega.entregue ? 'Marco Concluído' : 'Aguardando Entrega'}
               </p>
-              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
+              <p className="text-[10px] text-zinc-300 font-bold uppercase tracking-widest">
                 {entrega.entregue ? `Entregue em ${displayDate(entrega.data_entrega_real!)}` : 'Operação Pendente'}
               </p>
             </div>
@@ -143,7 +166,7 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
               <textarea 
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
-                placeholder="Ex: Entrega do dpssiê técnico final..."
+                placeholder="Ex: Entrega do dossiê técnico final..."
                 className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-white text-sm focus:border-emerald-500/50 outline-none transition-all min-h-[100px]"
               />
             </div>
@@ -168,6 +191,16 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
                   className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-white text-sm focus:border-emerald-500/50 outline-none"
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 ml-1">Conclusão Real (Opcional - Lançar data conclui o marco)</label>
+              <input 
+                type="date"
+                value={dataEntregaReal}
+                onChange={(e) => setDataEntregaReal(e.target.value)}
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-white text-sm focus:border-emerald-500/50 outline-none"
+              />
             </div>
 
             <button 
@@ -196,7 +229,7 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
               </div>
               <button 
                 onClick={() => setEditMode(true)}
-                className="text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:text-white transition-colors"
+                className="text-[10px] font-black uppercase tracking-widest text-sky-500 hover:text-white transition-colors"
               >
                 Editar
               </button>
@@ -204,17 +237,32 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
 
             <div className="grid grid-cols-2 gap-4 pt-4">
               <div className="bg-zinc-900/30 p-4 rounded-2xl border border-zinc-800/50">
-                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1">Previsão Original</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-200 mb-1">Previsão Original</p>
                 <div className="flex items-center gap-2 text-zinc-300 text-xs font-bold">
                   <Calendar size={12} className="text-emerald-500" />
                   {displayDate(entrega.data_entrega_prevista)}
                 </div>
               </div>
               <div className="bg-zinc-900/30 p-4 rounded-2xl border border-zinc-800/50">
-                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1">Documentação</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-200 mb-1">Documentação</p>
                 <div className="flex items-center gap-2 text-zinc-300 text-xs font-bold truncate">
                   <LinkIcon size={12} className="text-emerald-500 shrink-0" />
-                  <span className="truncate">{entrega.referencia_doc || 'Sem referência'}</span>
+                  {entrega.referencia_doc ? (
+                    isUrl(entrega.referencia_doc) ? (
+                      <a 
+                        href={entrega.referencia_doc.startsWith('www.') ? `https://${entrega.referencia_doc}` : entrega.referencia_doc} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="truncate text-sky-400 hover:text-sky-300 hover:underline transition-colors"
+                      >
+                        {entrega.referencia_doc}
+                      </a>
+                    ) : (
+                      <span className="truncate">{entrega.referencia_doc}</span>
+                    )
+                  ) : (
+                    <span className="truncate text-zinc-500 italic">Sem referência</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -237,7 +285,7 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
 
       {/* FOOTER / TIPS */}
       <div className="px-2">
-        <p className="text-zinc-600 text-[10px] leading-relaxed italic">
+        <p className="text-zinc-300 text-[10px] leading-relaxed italic">
           As entregas são marcos contratuais. Concluir um marco atualiza automaticamente o progresso do projeto e a saúde operacional do cliente.
         </p>
       </div>

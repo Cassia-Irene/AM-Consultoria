@@ -60,6 +60,10 @@ class ActiveProject(BaseAnalyticsSchema):
     id_contrato: int
     entregas_pendentes: int
     parcelas_pendentes: int
+    nivel_tensao: Optional[str] = None
+    motivo_tensao: Optional[str] = None
+    is_estagnado: Optional[bool] = None
+    motivo_estagnacao: Optional[str] = None
 
 
 class FinancialMonth(BaseAnalyticsSchema):
@@ -98,6 +102,7 @@ class TopPriority(BaseAnalyticsSchema):
     data_prazo: Optional[date]
     status_prazo: str
     score_prioridade: int
+    motivo_prioridade: Optional[str] = None
 
 class PlanningOverview(BaseAnalyticsSchema):
     cliente: str

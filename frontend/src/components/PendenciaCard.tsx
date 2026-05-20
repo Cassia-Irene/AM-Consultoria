@@ -62,7 +62,14 @@ export function PendenciaCard({ pendencia, clienteNome, onResolve, onClick }: Pr
           <p className="text-[15px] font-medium text-gray-900 leading-snug" title={pendencia.descricao}>
             {truncateText(pendencia.descricao, 60)}
           </p>
-          <p className="text-sm text-gray-500 mt-0.5">{clienteNome}</p>
+          <div className="flex flex-col mt-0.5">
+            <p className="text-sm text-gray-500">{clienteNome}</p>
+            {pendencia.motivo_prioridade && (
+              <p className="text-[10px] text-amber-600 font-medium italic mt-1 leading-tight">
+                “{pendencia.motivo_prioridade}”
+              </p>
+            )}
+          </div>
         </div>
         <StatusBadge variant={statusVisual} />
       </div>

@@ -7,7 +7,7 @@ WITH ContratosAtivos AS (
     SELECT c.id_contrato, cl.nome as cliente_nome
     FROM contratos c
     JOIN clientes cl ON c.id_cliente = cl.id_cliente
-    WHERE c.data_fim IS NULL
+    WHERE c.data_fim IS NULL OR c.data_fim >= CURRENT_DATE
 ),
 VisitasSemana AS (
     SELECT id_contrato, COUNT(*) as qtd

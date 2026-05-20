@@ -12,7 +12,7 @@ WITH DadosVisitas AS (
         END) as minutos_visitas,
         COUNT(*) FILTER (WHERE tipo_visita = 'urgente') as visitas_urgentes
     FROM visitas
-    WHERE data_hora >= CURRENT_DATE - INTERVAL '30 days'
+    WHERE data_hora >= CURRENT_DATE - INTERVAL '60 days'
     GROUP BY id_contrato
 ),
 DadosPendencias AS (
@@ -28,7 +28,7 @@ DadosEventos AS (
         COUNT(*) FILTER (WHERE acao_tomada IS NULL) as eventos_ativos,
         COUNT(*) * 45 as minutos_eventos
     FROM eventos_criticos
-    WHERE data_evento >= CURRENT_DATE - INTERVAL '30 days'
+    WHERE data_evento >= CURRENT_DATE - INTERVAL '60 days'
     GROUP BY id_contrato
 ),
 DadosEntregas AS (
@@ -80,5 +80,5 @@ LEFT JOIN DadosVisitas dv ON con.id_contrato = dv.id_contrato
 LEFT JOIN DadosPendencias dp ON con.id_contrato = dp.id_contrato
 LEFT JOIN DadosEventos de ON con.id_contrato = de.id_contrato
 LEFT JOIN DadosEntregas dent ON con.id_contrato = dent.id_contrato
-WHERE con.data_fim IS NULL
+WHERE con.data_fim IS NULL OR con.data_fim >= CURRENT_DATE
 ORDER BY eventos_ativos DESC, visitas_urgentes DESC;

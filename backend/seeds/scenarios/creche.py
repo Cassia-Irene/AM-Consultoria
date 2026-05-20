@@ -80,7 +80,7 @@ class CrecheScenario(Scenario):
             resultados="Detectada falta de extintores em 2 alas."
         )
         self._add_and_commit([v_inspecao])
-        pendencias.append(create_causal_pendency(v_inspecao, "Atualizar POPs da cantina", responsavel="Adriano", dias_prazo=10))
+        pendencias.append(create_causal_pendency(v_inspecao, "Atualizar POPs da cantina", responsavel="AM Consultoria", dias_prazo=10))
 
         if mode in ["realistic", "stress"]:
             # Visita Extra: Treinamento de Emergência Pediátrica

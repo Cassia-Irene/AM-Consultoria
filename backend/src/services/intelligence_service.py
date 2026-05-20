@@ -32,15 +32,15 @@ class IntelligenceService:
             # --- LÓGICA DE ESTADO OPERACIONAL ---
             state = client.get('status_operacional', 'normal')
             
-            # Narrativa baseada em fatos
+            # Narrativa factual — sem dramatização
             if state == "emergência":
-                summary = f"OPERAÇÃO EM CRISE: {eventos_ativos} evento(s) crítico(s) sem ação."
+                summary = f"{eventos_ativos} evento(s) crítico(s) em aberto · {dias_sem_entrega}d sem entrega"
             elif state == "atenção":
-                summary = f"ATENÇÃO: Estagnação de entregas ({dias_sem_entrega} dias) ou baixo progresso."
+                summary = f"{dias_sem_entrega}d sem entrega · {progresso_medio}% de avanço no checklist"
             else:
-                summary = "Operação fluindo conforme o planejado."
+                summary = f"{progresso_medio}% de avanço · última entrega há {dias_sem_entrega}d"
 
-            value_narrative = f"Avanço Checklist: {progresso_medio}% | Última entrega há {dias_sem_entrega} dias."
+            value_narrative = f"{progresso_medio}% concluído · última entrega há {dias_sem_entrega}d"
             
             # DECISÃO DE ATENÇÃO
             if state != "normal":

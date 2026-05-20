@@ -88,5 +88,28 @@ export const VisitasService = {
     } catch (err) {
       throw new AppError('Falha ao registrar visita no servidor.', 'API_ERROR', err)
     }
+  },
+
+  async update(id: number | string, updates: Partial<VisitaRaw>): Promise<Visita> {
+    if (USE_MOCKS) {
+      const { Visitas: mockVisitas } = await import('@/mocks/visitas')
+      const found = mockVisitas.find(v => String(v.id_visita) === String(id))
+      if (found) {
+        Object.assign(found, updates)
+        return mapVisita(found as unknown as VisitaRaw)
+      }
+      throw new AppError('Visita não encontrada nos mocks.', 'INTEGRATION_ERROR')
+    }
+
+    try {
+      const data = await fetchApi<VisitaRaw>(`/visitas/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates),
+      })
+      return mapVisita(data)
+    } catch (err) {
+      console.error(`[SERVICE][ERROR] Falha ao atualizar visita ${id}:`, err)
+      throw new AppError('Falha ao atualizar detalhes da visita.', 'API_ERROR', err)
+    }
   }
 }

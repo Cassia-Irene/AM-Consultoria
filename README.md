@@ -54,6 +54,7 @@ A interface estratégica permite uma análise visual e tomada de decisão intuit
    docker-compose up --build
 
 3. **Acede às Plataformas:**
+
   Interface Web (Frontend Next.js):
    ```bash 
    http://localhost:3000 
@@ -135,7 +136,8 @@ A interface estratégica permite uma análise visual e tomada de decisão intuit
 ### 👩‍💻 Devs
 * **Cássia Irene | [GitHub](https://github.com/Cassia-Irene)**
 * **Leonardo Ferreira | [GitHub](https://github.com/leonardoferrza)**
-* **Melissa Wolff | [GitHub](https://github.com/melwolff13)** 
+* **Melissa Wolff | [GitHub](https://github.com/melwolff13)**
+
 ---
 
 Projeto acadêmico desenvolvido para a disciplina de **Banco de Dados** - **UNDB**, com foco em modelagem relacional, integridade de dados, inteligência operacional e arquitetura Full-Stack aplicada à gestão de contratos e auditoria operacional.

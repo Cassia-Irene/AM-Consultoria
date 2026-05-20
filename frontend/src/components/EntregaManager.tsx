@@ -94,6 +94,7 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
         await EntregasService.update(Number(id), payload)
         setEditMode(false)
         await loadEntrega()
+        onUpdate?.()
       } else if (projetoId) {
         payload.id_projeto = Number(projetoId)
         payload.entregue = !!dataEntregaReal
@@ -165,7 +166,7 @@ export function EntregaManager({ id, projetoId, onUpdate }: EntregaManagerProps)
               <textarea 
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
-                placeholder="Ex: Entrega do dpssiê técnico final..."
+                placeholder="Ex: Entrega do dossiê técnico final..."
                 className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-white text-sm focus:border-emerald-500/50 outline-none transition-all min-h-[100px]"
               />
             </div>

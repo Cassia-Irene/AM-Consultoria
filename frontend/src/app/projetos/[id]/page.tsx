@@ -557,22 +557,22 @@ export default function ProjetoDetalhePage({ params }: PageProps) {
           <div className="lg:col-span-7">
             <section>
               <div>
-                 <SectionHeader label="Crises Institucionais" />
-                 <div className="mt-4 space-y-2">
+                 <SectionHeader label="Eventos Críticos" />
+                 <div className="mt-4 space-y-3">
                    {eventos.length > 0 ? (
                      <>
                         {(showAllEventos ? eventos : eventos.slice(0, 3)).map(ev => {
                           const cardContent = (
-                            <div className="bg-zinc-900/20 hover:bg-zinc-900/30 border border-zinc-800/40 rounded-xl p-3.5 flex items-start gap-3 transition-colors">
-                              <span className="size-2 rounded-full bg-rose-500 mt-1.5 shrink-0 animate-pulse" />
+                            <div className="bg-rose-950/20 border border-rose-900/30 rounded-xl p-3 hover:bg-rose-950/35 flex items-start gap-3 transition-colors">
+                              <span className="size-1.5 rounded-full bg-rose-500 mt-1 shrink-0 animate-pulse" />
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-4 mb-1">
-                                  <p className="text-[9px] font-black uppercase tracking-widest text-rose-500/80">Crise Institucional</p>
-                                  <p className="text-[10px] text-zinc-500 font-bold">{displayDate(ev.data_evento)}</p>
+                                <div className="flex items-center justify-between gap-4 mb-1 md:mb-2">
+                                  <p className="text-[10px] md:text-[11px] font-bold text-rose-400 uppercase tracking-wider">Evento Crítico</p>
+                                  <p className="text-[10px] md:text-[11px] text-zinc-400">{displayDate(ev.data_evento)}</p>
                                 </div>
-                                <p className="text-zinc-300 text-xs font-semibold leading-relaxed whitespace-pre-line">{linkifyText(ev.descricao)}</p>
+                                <p className="text-zinc-200 text-xs font-semibold leading-relaxed whitespace-pre-line">{linkifyText(ev.descricao)}</p>
                                 {ev.acao_tomada && (
-                                  <div className="mt-2 bg-black/10 border-l border-zinc-800 pl-2.5 py-1 text-[10.5px] italic text-sky-400/90 leading-snug whitespace-pre-line">
+                                  <div className="mt-2 bg-black/10 border-l border-zinc-800 pl-2.5 py-1 text-[11px] italic text-sky-400/90 leading-snug whitespace-pre-line">
                                     {linkifyText(ev.acao_tomada)}
                                   </div>
                                 )}

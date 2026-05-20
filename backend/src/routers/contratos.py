@@ -67,8 +67,8 @@ def atualizar_contrato_cosmetico(
     if not db_contrato:
         raise HTTPException(status_code=404, detail="Contrato não encontrado")
 
-    # REGRA DE OURO: Se o contrato já estiver encerrado, nem o PATCH restrito passa!
-    if db_contrato.data_fim is not None:
+    # REGRA DE OURO: Se o contrato já estiver encerrado (hoje ou no passado), nem o PATCH restrito passa!
+    if db_contrato.data_fim is not None and db_contrato.data_fim <= date.today():
         raise HTTPException(
             status_code=400, 
             detail="Não é possível alterar um contrato encerrado. Use o fluxo de substituição."

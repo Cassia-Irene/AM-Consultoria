@@ -6,7 +6,9 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { FaturamentosService } from '@/services/faturamento.service'
 import { ClientesService } from '@/services/clientes.service'
 import { ContratoService } from '@/services/contrato.service'
-import { getStatusFaturamento, type FaturamentoCliente } from '@/domain/faturamento'
+import { ParcelasService } from '@/services/parcelas.service'
+import { AnalyticsService } from '@/services/analytics.service'
+import { getStatusFaturamento } from '@/domain/faturamento'
 import { OperationalTabs, type TabOption } from '@/components/OperationalTabs'
 
 type FiltroStatus = 'todas' | 'pendentes' | 'vencidas' | 'pagas'
@@ -21,17 +23,34 @@ function formatMesAno(mesAno: string) {
   return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
 }
 
+function formatDateSafe(dateStr: string) {
+  try {
+    const cleanStr = dateStr.split('T')[0]
+    const [year, month, day] = cleanStr.split('-').map(Number)
+    const date = new Date(year, month - 1, day)
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+  } catch {
+    return dateStr
+  }
+}
+
 function InadimplenciaContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [rawItems, setRawItems] = useState<{
-    faturamento: FaturamentoCliente
+    id: string
+    isProjeto: boolean
+    projetoId?: string
+    projetoTitulo?: string
+    numeroParcela?: number
+    valor: number
     cliente: string
     clienteId: string
-    contratoId: string
+    contratoId?: string
     diasAtraso: number
     statusOperacional: FiltroStatus
+    dataReferencia: string
   }[]>([])
 
   const filtro = (searchParams.get('status') as FiltroStatus) || 'todas'
@@ -40,19 +59,21 @@ function InadimplenciaContent() {
     const params = new URLSearchParams(searchParams.toString())
     if (newStatus === 'todas') params.delete('status')
     else params.set('status', newStatus)
-    router.replace(`/dashboard/financeiro/inadimplencia?${params.toString()}`)
+    router.replace(`/financeiro/inadimplencia?${params.toString()}`)
   }
 
   useEffect(() => {
     async function load() {
       try {
-        const [faturamentos, clientes, contratos] = await Promise.all([
+        const [faturamentos, clientes, contratos, parcelas, projects] = await Promise.all([
           FaturamentosService.getAll(),
           ClientesService.getAll(),
-          ContratoService.getAll()
+          ContratoService.getAll(),
+          ParcelasService.getAll(),
+          AnalyticsService.getProjects()
         ])
 
-        const mapped = faturamentos.map(f => {
+        const contractItems = faturamentos.map(f => {
           const contrato = contratos.find(c => c.id === f.contratoId)
           const cliente = clientes.find(c => c.id === contrato?.clienteId)
           
@@ -69,16 +90,63 @@ function InadimplenciaContent() {
           const diasAtraso = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)))
 
           return {
-            faturamento: f,
+            id: `contrato-${f.id}`,
+            isProjeto: false,
+            valor: f.valor_total,
             cliente: cliente?.nome_instituicao ?? 'Cliente não identificado',
             clienteId: cliente?.id ?? '',
             contratoId: f.contratoId,
-            diasAtraso,
-            statusOperacional
+            diasAtraso: f.pago ? 0 : diasAtraso,
+            statusOperacional,
+            dataReferencia: f.mes_ano
           }
         })
 
-        setRawItems(mapped)
+        const projectItems = parcelas.map(p => {
+          const project = projects.find(pr => String(pr.id) === String(p.projetoId))
+          const clientObj = clientes.find(c => c.nome_instituicao === project?.cliente)
+          
+          const vencimento = new Date(p.data_pagamento_prevista.split('T')[0])
+          const hoje = new Date()
+          
+          const hojeDate = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
+          const vencimentoDate = new Date(vencimento.getFullYear(), vencimento.getMonth(), vencimento.getDate())
+          
+          const isVencida = !p.pago && vencimentoDate < hojeDate
+          const statusOperacional: FiltroStatus = p.pago 
+            ? 'pagas' 
+            : isVencida 
+              ? 'vencidas' 
+              : 'pendentes'
+
+          let diasAtraso = 0
+          if (!p.pago && isVencida) {
+            const diffTime = hojeDate.getTime() - vencimentoDate.getTime()
+            diasAtraso = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)))
+          }
+
+          return {
+            id: `projeto-${p.id}`,
+            isProjeto: true,
+            projetoId: p.projetoId,
+            projetoTitulo: project?.projeto ?? 'Projeto não identificado',
+            numeroParcela: p.numero_parcela,
+            valor: p.valor_parcela,
+            cliente: project?.cliente ?? 'Cliente não identificado',
+            clienteId: clientObj?.id ?? '',
+            diasAtraso,
+            statusOperacional,
+            dataReferencia: p.data_pagamento_prevista
+          }
+        })
+
+        const unified = [...contractItems, ...projectItems].sort((a, b) => {
+          if (a.statusOperacional === 'vencidas' && b.statusOperacional !== 'vencidas') return -1
+          if (a.statusOperacional !== 'vencidas' && b.statusOperacional === 'vencidas') return 1
+          return b.diasAtraso - a.diasAtraso || b.dataReferencia.localeCompare(a.dataReferencia)
+        })
+
+        setRawItems(unified)
       } catch (err) {
         console.error('Erro ao carregar inadimplência:', err)
       } finally {
@@ -121,7 +189,7 @@ function InadimplenciaContent() {
         </button>
         <div className="min-w-0">
           <h1 className="text-white text-2xl font-black tracking-tight truncate">Inadimplência</h1>
-          <p className="text-amber-500 text-[10px] font-black uppercase tracking-widest truncate">Ações Financeiras Necessárias</p>
+          <p className="text-amber-500 text-[10px] font-black uppercase tracking-widest truncate mt-1 md:mt-3">Ações Financeiras Necessárias</p>
         </div>
       </header>
 
@@ -146,18 +214,30 @@ function InadimplenciaContent() {
                 <div className="flex items-center gap-2">
                   <span className={`size-2 rounded-full shrink-0 ${item.statusOperacional === 'pagas' ? 'bg-emerald-500' : item.statusOperacional === 'vencidas' ? 'bg-red-500' : 'bg-amber-500'}`} />
                   <h2 className="text-white font-black text-base sm:text-lg group-hover:text-amber-400 transition-colors truncate">{item.cliente}</h2>
+                  {item.isProjeto && (
+                    <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[8px] font-black uppercase tracking-widest shrink-0">
+                      Projeto
+                    </span>
+                  )}
                 </div>
-                <p className="text-zinc-500 text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate">
-                  Contrato #{item.contratoId} · <span className="text-zinc-300 capitalize">{formatMesAno(item.faturamento.mes_ano)}</span>
-                </p>
+                
+                {item.isProjeto ? (
+                  <p className="text-sky-500 text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate">
+                    <span className="text-amber-400 font-bold">{item.projetoTitulo}</span> · Parcela #{item.numeroParcela} · <span className="text-zinc-300 capitalize">{formatDateSafe(item.dataReferencia)}</span>
+                  </p>
+                ) : (
+                  <p className="text-zinc-300 text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate">
+                    Contrato #{item.contratoId} · <span className="text-zinc-200 capitalize">{formatMesAno(item.dataReferencia)}</span>
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center justify-between lg:justify-end gap-3 sm:gap-6 border-t lg:border-t-0 border-zinc-800/40 pt-4 lg:pt-0">
                 <div className="text-left lg:text-right min-w-[80px]">
                   <p className={`text-lg sm:text-xl font-black tabular-nums ${item.statusOperacional === 'pagas' ? 'text-emerald-500' : item.statusOperacional === 'vencidas' ? 'text-red-500' : 'text-zinc-300'}`}>
-                    {formatCurrency(item.faturamento.valor_total)}
+                    {formatCurrency(item.valor)}
                   </p>
-                  <p className="text-[9px] sm:text-[10px] text-zinc-600 font-black uppercase tracking-widest leading-none">
+                  <p className="text-[9px] sm:text-[10px] text-zinc-300 font-black uppercase tracking-widest leading-none mt-1">
                     {item.statusOperacional === 'pagas' ? 'Liquidado' : 'A Receber'}
                   </p>
                 </div>
@@ -165,12 +245,12 @@ function InadimplenciaContent() {
                 {item.statusOperacional === 'vencidas' && (
                   <div className="px-2.5 py-1 sm:px-3 sm:py-1.5 bg-red-500/10 border border-red-500/20 rounded-xl text-center min-w-[60px] sm:min-w-[70px]">
                     <p className="text-red-500 text-sm sm:text-base font-black tabular-nums">{item.diasAtraso}d</p>
-                    <p className="text-[8px] text-red-500/60 font-black uppercase tracking-tighter">Atraso</p>
+                    <p className="text-[8px] md:text-[10px] text-red-500 font-bold uppercase tracking-tighter">Atraso</p>
                   </div>
                 )}
 
                 <Link 
-                  href={`/clientes/${item.clienteId}`} 
+                  href={item.isProjeto ? `/projetos/${item.projetoId}` : `/clientes/${item.clienteId}`} 
                   className="size-10 sm:size-12 bg-amber-500 hover:bg-amber-400 text-black rounded-full flex items-center justify-center shadow-lg shadow-amber-900/20 transition-all active:scale-90 shrink-0 ml-auto lg:ml-0"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -187,9 +267,9 @@ function InadimplenciaContent() {
         <div className="mt-12 px-5">
           <div className="bg-red-500/5 border border-red-500/10 rounded-2xl p-6">
             <h3 className="text-red-500 text-xs font-black uppercase tracking-widest mb-2">Impacto no Caixa</h3>
-            <p className="text-zinc-400 text-sm leading-relaxed">
-              Existem <span className="text-white font-bold">{filteredItems.length} faturamentos</span> vencidos. 
-              O impacto total é de <span className="text-white font-bold">{formatCurrency(filteredItems.reduce((acc, curr) => acc + curr.faturamento.valor_total, 0))}</span>.
+            <p className="text-white text-sm leading-relaxed">
+              Existem <span className="text-amber-500 font-bold">{filteredItems.length} faturamentos/parcelas</span> vencidos. 
+              O impacto total é de <span className="text-amber-500 font-bold">{formatCurrency(filteredItems.reduce((acc, curr) => acc + curr.valor, 0))}</span>.
             </p>
           </div>
         </div>
@@ -209,4 +289,3 @@ export default function InadimplenciaPage() {
     </Suspense>
   )
 }
-

@@ -25,25 +25,26 @@ export const mockTimeline: TimelineEvent[] = [
     idReferencia: 101,
     idContrato: 2,
     data: new Date().toISOString(),
-    titulo: 'Visita de Rotina',
+    titulo: 'urgente: presencial',
     cliente: 'CAPS II Renascer',
-    categoria: 'administrativa',
-    criticidade: 'normal',
+    categoria: 'Intervenção Crítica',
+    criticidade: 'critica',
     statusPagamento: 'pago',
     pendenciasContagem: 2,
-    ultimaVisitaResultados: 'Realizada conferência de estoque. Faltam 3 itens na farmácia.'
+    ultimaVisitaResultados: 'Crise detectada. Escala comprometida, ação imediata tomada.'
   },
   {
-    tipo: 'pendencia',
-    idReferencia: 50,
+    tipo: 'alerta',
+    idReferencia: 2,
     idContrato: 3,
     data: new Date(Date.now() - 86400000).toISOString(),
-    titulo: 'Falta de Documentação Profissional',
+    titulo: 'Alerta: Documentação profissional irregular',
     cliente: 'CuidaBem Home Care',
-    categoria: 'RH',
-    criticidade: 'alta'
+    categoria: 'RH Crítico',
+    criticidade: 'critica'
   }
 ]
+
 
 export const mockTopPriorities: TopPriority[] = [
   {

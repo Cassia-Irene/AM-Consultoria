@@ -34,7 +34,7 @@ export function BottomNavigation() {
       icon: CheckSquare
     },
     { 
-      href: '/dashboard/financeiro', 
+      href: '/financeiro', 
       label: 'Financeiro',
       icon: Wallet
     }

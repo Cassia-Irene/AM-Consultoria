@@ -8,6 +8,7 @@ import { OperationalDrawer } from '@/components/OperationalDrawer'
 import { VisitaDetailView } from '@/components/VisitaDetailView'
 import { PendenciaManager } from '@/components/PendenciaManager'
 import { EntregaManager } from '@/components/EntregaManager'
+import { AlertaManager } from '@/components/AlertaManager'
 import { OperationalContractCard } from '@/components/OperationalContractCard'
 
 /* ─────────────────────────────────────────────
@@ -33,9 +34,9 @@ function InsightCard({
   
   return (
     <div className="bg-[#0d1117] border border-[#23272F] rounded-3xl p-5 sm:p-6 shadow-lg">
-      <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-[#7D8597] mb-1">{label}</p>
+      <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-zinc-300 mb-1">{label}</p>
       <p className={`text-2xl sm:text-3xl font-black ${colors[accent]}`}>{value}</p>
-      <p className="text-[11px] sm:text-xs text-[#7D8597] mt-2 leading-relaxed">{description}</p>
+      <p className="text-[11px] sm:text-xs text-zinc-400 mt-2 leading-relaxed">{description}</p>
     </div>
   )
 }
@@ -85,7 +86,7 @@ export default function ModoReflexaoPage() {
         
         {/* SEÇÃO 1: OS INVISÍVEIS */}
         <section>
-          <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.3em] text-[#7D8597] mb-4 px-1">Carga Invisível</p>
+          <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.3em] text-zinc-200 mb-4 px-1">Carga Invisível</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <InsightCard 
               label="Esforço Não Faturado" 
@@ -104,7 +105,7 @@ export default function ModoReflexaoPage() {
 
         {/* SEÇÃO 2: DIAGNÓSTICO E SAÚDE OPERACIONAL */}
         <section>
-          <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.3em] text-[#7D8597] mb-4 px-1">Saúde dos Contratos</p>
+          <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.3em] text-zinc-200 mb-4 px-1">Saúde dos Contratos</p>
           <div className="space-y-3">
             {data.topDrainingClients.map(health => (
               <OperationalContractCard 
@@ -119,7 +120,7 @@ export default function ModoReflexaoPage() {
 
         {/* SEÇÃO 3: TIMELINE VIVA */}
         <section>
-          <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.3em] text-[#7D8597] mb-4 px-1">Memória Operacional</p>
+          <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.3em] text-zinc-200 mb-4 px-1">Memória Operacional</p>
           <div className="bg-[#0d1117] border border-[#23272F] rounded-3xl p-4 sm:p-6 shadow-xl">
             <OperationalTimeline 
               events={timelineEvents} 
@@ -161,6 +162,14 @@ export default function ModoReflexaoPage() {
               setSelectedItem(null)
             }} 
           />
+        ) : selectedItem?.type === 'alerta' ? (
+          <AlertaManager 
+            id={selectedItem.id as string | number}
+            onUpdate={() => {
+              loadData()
+              setRefreshSignal(prev => prev + 1)
+            }}
+          />
         ) : (
           <div className="text-center py-10">
             <p className="text-zinc-600 text-xs italic">Selecione um item para operar.</p>
@@ -169,7 +178,7 @@ export default function ModoReflexaoPage() {
       </OperationalDrawer>
 
       <footer className="mt-12 px-10 text-center pb-20">
-        <p className="text-[#4F5B73] text-[11px] leading-relaxed">
+        <p className="text-zinc-400 text-[11px] leading-relaxed">
           Este modo foi desenhado para ser uma leitura silenciosa da operação humana da AM Consultoria.
         </p>
       </footer>

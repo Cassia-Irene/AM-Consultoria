@@ -37,9 +37,7 @@ export function OperationalTimeline({ events, onEventClick }: OperationalTimelin
 
   const filtered = activeFilter === 'todos'
     ? events
-    : activeFilter === 'alerta'
-      ? events.filter(e => e.critical)
-      : events.filter(e => e.type.toLowerCase() === activeFilter)
+    : events.filter(e => e.type.toLowerCase() === activeFilter)
 
   const getTypeStyles = (type: string, critical: boolean) => {
     if (critical) return { color: 'bg-red-500', icon: AlertCircle }
@@ -59,9 +57,7 @@ export function OperationalTimeline({ events, onEventClick }: OperationalTimelin
           {FILTERS.map(f => {
             const count = f.key === 'todos'
               ? events.length
-              : f.key === 'alerta'
-                ? events.filter(e => e.critical).length
-                : events.filter(e => e.type.toLowerCase() === f.key).length
+              : events.filter(e => e.type.toLowerCase() === f.key).length
             if (f.key !== 'todos' && count === 0) return null
             const isActive = activeFilter === f.key
             return (
@@ -120,25 +116,25 @@ export function OperationalTimeline({ events, onEventClick }: OperationalTimelin
 
                 {/* Inline Pendencies (Point D) - Logical Hierarchy */}
                 {event.pendencias && event.pendencias.length > 0 && (
-                  <div className="mt-5 space-y-3 pt-4 border-t border-[#23272F]/50">
-                     <p className="text-[8px] font-black uppercase tracking-widest text-zinc-400">Ações Geradas</p>
+                  <div className="mt-5 space-y-2.5 pt-4 border-t border-zinc-700/60">
+                     <p className="text-[8px] font-black uppercase tracking-widest text-zinc-200 mb-3">Ações Geradas</p>
                      {event.pendencias.map(p => (
-                       <div key={p.id} className="flex items-start gap-3 group/item">
-                          <ChevronRight size={12} className="text-emerald-500 mt-0.5 shrink-0 opacity-60 group-hover/item:opacity-100 transition-opacity" />
-                          <p className="text-[11px] text-zinc-400 font-medium leading-tight">{p.descricao}</p>
+                       <div key={p.id} className="flex items-start gap-2.5 group/item">
+                          <ChevronRight size={12} className="text-emerald-400 mt-0.5 shrink-0" />
+                          <p className="text-[11px] text-zinc-200 font-medium leading-tight">{p.descricao}</p>
                        </div>
                      ))}
                   </div>
                 )}
 
-                <div className="flex items-center gap-3 mt-5">
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-300">
+                <div className="flex items-center gap-2.5 mt-5">
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/80">
                     {event.type}
                   </span>
                   {event.type.toLowerCase() === 'visita' && (
                     <>
-                      <span className="size-1 rounded-full bg-[#23272F]" />
-                      <span className="text-[9px] text-zinc-300 font-bold tabular-nums">
+                      <span className="size-1.5 rounded-full bg-zinc-500" />
+                      <span className="text-[9px] text-white/70 font-bold tabular-nums">
                         {new Date(event.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </>

@@ -29,7 +29,7 @@ function SectionHeader({ label, sub, count, href }: { label: string; sub?: strin
   const content = (
     <div className="flex items-center gap-2">
       <p className="text-[11px] md:text-[12px] font-black uppercase tracking-[0.2em] text-zinc-200">{label}</p>
-      {count !== undefined && <span className="text-[11px] text-[#4A5568] font-bold">({count})</span>}
+      {count !== undefined && <span className="text-[11px] text-sky-500 font-bold">({count})</span>}
     </div>
   )
 
@@ -126,7 +126,7 @@ function HistoryItem({ event, onClick }: { event: TimelineEvent; onClick: () => 
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-zinc-300 font-bold text-sm truncate">{event.titulo}</p>
-        <p className="text-[#4A5568] text-[9px] sm:text-[10px] font-black uppercase tracking-widest truncate">{event.cliente} · {displayDate(event.data)}</p>
+        <p className="text-zinc-300 text-[9px] sm:text-[10px] font-black uppercase tracking-widest truncate mt-2">{event.cliente} · {displayDate(event.data)}</p>
       </div>
       <div className="hidden sm:block text-[10px] font-black uppercase tracking-widest text-blue-500">
         Ver Pendência
@@ -144,7 +144,7 @@ function HistoryItem({ event, onClick }: { event: TimelineEvent; onClick: () => 
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-zinc-300 font-bold text-sm truncate">{event.titulo}</p>
-        <p className="text-[#4A5568] text-[10px] font-black uppercase tracking-widest truncate">{event.cliente} · {displayDate(event.data)}</p>
+        <p className="text-zinc-300 text-[10px] font-black uppercase tracking-widest truncate mt-2">{event.cliente} · {displayDate(event.data)}</p>
       </div>
       
       {/* Inline Pendencies (Point D) */}
@@ -153,7 +153,7 @@ function HistoryItem({ event, onClick }: { event: TimelineEvent; onClick: () => 
           <p className="text-[8px] font-black uppercase tracking-widest text-emerald-600 mb-1">Ações</p>
           <div className="space-y-1">
             {event.pendenciasLista.slice(0, 1).map((p, i) => (
-              <p key={i} className="text-[9px] text-zinc-500 truncate leading-none">↳ {p.descricao}</p>
+              <p key={i} className="text-[9px] text-zinc-300 truncate leading-none">↳ {p.descricao}</p>
             ))}
             {event.pendenciasLista.length > 1 && (
               <p className="text-[8px] text-zinc-300 font-bold">+{event.pendenciasLista.length - 1} mais</p>

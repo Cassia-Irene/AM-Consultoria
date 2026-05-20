@@ -1,0 +1,13 @@
+// lib/mocks.ts — barrel que re-exporta todos os mocks
+export { Clientes }     from '../mocks/clientes'
+export { Contratos }    from '../mocks/contratos'
+export { Faturamentos } from '../mocks/faturamentos'
+export { Pendencias }   from '../mocks/pendencias'
+export { Visitas }      from '../mocks/visitas'
+export { TiposPagamento } from '../mocks/tiposPagamento'
+export { ContratoPagamentos } from '../mocks/contratoPagamentos'
+export { Projetos } from '../mocks/projetos'
+export { Entregas } from '../mocks/entregas'
+export { ProjetoParcelas } from '../mocks/projetoParcelas'
+export { ProjetoExtras } from '../mocks/projetoExtras'
+export { Contatos } from '../mocks/contatos'

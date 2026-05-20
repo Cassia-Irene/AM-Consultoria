@@ -130,6 +130,8 @@ A interface estratégica permite uma análise visual e tomada de decisão intuit
 └── run_backend.py                # Script raiz para inicialização rápida do servidor FastAPI em desenvolvimento
 ```
 
+---
+
 ### 👩‍💻 Devs
 * **Cássia Irene | [GitHub](https://github.com/Cassia-Irene)**
 * **Leonardo Ferreira | [GitHub](https://github.com/leonardoferrza)**

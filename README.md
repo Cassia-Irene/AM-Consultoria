@@ -143,4 +143,4 @@ A interface estratégica permite uma análise visual e tomada de decisão intuit
 
 ---
 
-Projeto acadêmico desenvolvido para a disciplina de **Banco de Dados** - **UNDB**, com foco em modelagem relacional, integridade de dados, inteligência operacional e arquitetura Full-Stack aplicada à gestão de contratos e auditoria operacional.
+Projeto acadêmico desenvolvido para a disciplina de **Banco de Dados** — **UNDB**, com foco em modelagem relacional, integridade de dados e inteligência operacional.

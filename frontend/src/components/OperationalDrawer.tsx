@@ -49,7 +49,7 @@ export function OperationalDrawer({
 
       {/* Drawer Panel */}
       <aside 
-        className={`fixed right-0 top-0 bottom-0 w-full md:w-[450px] bg-[#0d1117] border-l border-zinc-800/50 z-50 shadow-2xl transition-transform duration-300 ease-out flex flex-col ${
+        className={`fixed right-0 top-0 bottom-0 w-full md:w-[550px] bg-[#0d1117] border-l border-zinc-800/50 z-50 shadow-2xl transition-transform duration-300 ease-out flex flex-col ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >

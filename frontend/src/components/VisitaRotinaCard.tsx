@@ -54,7 +54,7 @@ export function VisitaRotinaCard({ event, compact = false }: { event: CardEvent;
             </span>
           </div>
           <h3 className={`text-white font-black leading-tight tracking-tight truncate ${compact ? 'text-[15px]' : 'text-[17px]'}`}>{event.cliente}</h3>
-          <p className="text-zinc-320 text-[10px] md:text-[11px] font-bold mt-0.5 md:mt-1">
+          <p className="text-zinc-300 text-[10px] md:text-[11px] font-bold mt-0.5 md:mt-1">
             {new Date(data).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
           </p>
 

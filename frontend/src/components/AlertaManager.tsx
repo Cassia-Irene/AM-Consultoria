@@ -107,7 +107,7 @@ export function AlertaManager({ id, onUpdate }: AlertaManagerProps) {
         </div>
         
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
-          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-2">Descrição do Fato / Incidente</p>
+          <p className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-zinc-300 mb-2">Descrição do Fato / Incidente</p>
           <p className="text-zinc-200 text-sm leading-relaxed font-medium">{evento.descricao}</p>
         </div>
       </section>
@@ -115,18 +115,18 @@ export function AlertaManager({ id, onUpdate }: AlertaManagerProps) {
       {/* METADADOS RÍGIDOS */}
       <section className="grid grid-cols-2 gap-4">
         <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-2xl p-4">
-          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-2">Instituição / Contrato</p>
-          <p className="text-zinc-300 text-xs font-bold truncate">{clienteNome}</p>
+          <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-300 mb-2">Instituição / Contrato</p>
+          <p className="text-zinc-200 text-xs font-bold truncate">{clienteNome}</p>
         </div>
         <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-2xl p-4">
-          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-2">Data do Evento</p>
-          <p className="text-zinc-300 text-xs font-bold">{displayDate(evento.data_evento)}</p>
+          <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-300 mb-2">Data do Evento</p>
+          <p className="text-zinc-200 text-xs font-bold">{displayDate(evento.data_evento)}</p>
         </div>
       </section>
 
       {/* AÇÃO MITIGADORA */}
       <section className="space-y-4">
-        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 px-1">Ação de Contenção & Estabilização</p>
+        <p className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-zinc-300 px-1">Ação de Contenção & Estabilização</p>
         
         {(!isResolvida || editing) ? (
           <div className="space-y-3">
@@ -139,7 +139,7 @@ export function AlertaManager({ id, onUpdate }: AlertaManagerProps) {
             {editing && (
               <button 
                 onClick={() => setEditing(false)}
-                className="text-zinc-500 text-[10px] font-black uppercase tracking-widest hover:text-zinc-400 block px-1"
+                className="text-zinc-400 text-[10px] font-black uppercase tracking-widest hover:text-zinc-400 block px-1"
               >
                 Cancelar Edição
               </button>
@@ -149,7 +149,7 @@ export function AlertaManager({ id, onUpdate }: AlertaManagerProps) {
           <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-2xl p-5 relative group">
             <button 
               onClick={() => setEditing(true)} 
-              className="absolute right-4 top-4 text-emerald-400 hover:text-emerald-300 text-[10px] font-bold"
+              className="absolute right-4 top-4 md:top-6 text-emerald-400 hover:text-emerald-300 text-[10px] font-bold"
             >
               Editar Ação
             </button>
@@ -160,25 +160,25 @@ export function AlertaManager({ id, onUpdate }: AlertaManagerProps) {
 
       {/* RASTRO OPERACIONAL DE ATENÇÃO */}
       <section className="space-y-4">
-        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 px-1">Rastro de Impacto</p>
-        <div className="border-l-2 border-zinc-800 ml-2 pl-6 space-y-6">
+        <p className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-zinc-300 px-1">Rastro de Impacto</p>
+        <div className="border-l-2 border-zinc-700 ml-2 pl-6 space-y-6">
            <div className="relative">
-              <div className="absolute left-[-31px] top-1 size-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
-              <p className="text-[10px] text-red-400 font-bold mb-1">Ruptura Operacional Detectada</p>
-              <p className="text-xs text-zinc-400">Incidente registrado no sistema com impacto direto na estabilidade do cliente.</p>
+              <div className="absolute" />
+              <p className="text-[10px] md:text-[14px] text-red-400 font-bold mb-1">Ruptura Operacional Detectada</p>
+              <p className="text-[10px] md:text-[12px] text-zinc-200">Incidente registrado no sistema com impacto direto na estabilidade do cliente.</p>
            </div>
            {isResolvida && (
              <div className="relative">
-                <div className="absolute left-[-31px] top-1 size-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                <p className="text-[10px] text-emerald-400 font-bold mb-1">Crise Estabilizada</p>
-                <p className="text-xs text-zinc-400">Plano de contenção cadastrado e saúde operacional em vias de recuperação.</p>
+                <div className="absolute" />
+                <p className="text-[10px] md:text-[14px] text-emerald-400 font-bold mb-1">Crise Estabilizada</p>
+                <p className="text-[10px] md:text-[12px] text-zinc-200">Plano de contenção cadastrado e saúde operacional em vias de recuperação.</p>
              </div>
            )}
         </div>
       </section>
 
       {/* AÇÕES DE SALVAMENTO / RESOLUÇÃO */}
-      <div className="pt-6 border-t border-zinc-800">
+      <div className="pt-6 border-t border-zinc-700">
         {(!isResolvida || editing) ? (
           <button 
             onClick={handleStabilize}
@@ -189,7 +189,7 @@ export function AlertaManager({ id, onUpdate }: AlertaManagerProps) {
         ) : (
           <button 
             onClick={handleReopen}
-            className="w-full py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-2xl text-xs font-black uppercase tracking-widest transition-all"
+            className="w-full py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-2xl text-xs font-black uppercase tracking-widest transition-all"
           >
             Reabrir Crise / Cancelar Estabilização
           </button>

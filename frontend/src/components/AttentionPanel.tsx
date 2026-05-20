@@ -118,17 +118,17 @@ export const AttentionPanel: React.FC<AttentionPanelProps> = ({ items, onItemCli
                   <p className="text-rose-400 text-[11px] font-medium leading-tight mb-1">
                     {item.summary}
                   </p>
-                  <p className="text-[9px] text-zinc-500 italic mb-3">
+                  <p className="text-[9px] text-zinc-400 italic mb-3">
                     {item.statusOperacional}
                   </p>
                   
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1.5">
-                      <Clock size={12} className="text-zinc-500" />
+                      <Clock size={12} className="text-zinc-300" />
                       <span className="text-[10px] text-zinc-400 font-bold">{item.lastDeliveryDays}d sem entrega</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Package size={12} className="text-zinc-500" />
+                      <Package size={12} className="text-zinc-300" />
                       <span className="text-[10px] text-zinc-400 font-bold">{item.progressoReal}% avanço</span>
                     </div>
                   </div>

@@ -19,6 +19,7 @@ import { PendenciaManager } from '@/components/PendenciaManager'
 import { VisitaDetailView } from '@/components/VisitaDetailView'
 import { EntregaManager } from '@/components/EntregaManager'
 import { AttentionPanel } from '@/components/AttentionPanel'
+import { AlertaManager } from '@/components/AlertaManager'
 import { type AttentionItem } from '@/services/analytics.service'
 
 type SubTab = 'organizacao' | 'operacao'
@@ -417,6 +418,8 @@ function PlanningList() {
             <VisitaDetailView id={selectedItem.id} />
           ) : selectedItem?.type === 'entrega' ? (
             <EntregaManager id={selectedItem.id} onUpdate={loadData} />
+          ) : selectedItem?.type === 'alerta' ? (
+            <AlertaManager id={selectedItem.id} onUpdate={loadData} />
           ) : (
             <div className="text-center py-10">
               <p className="text-zinc-600 text-xs italic">Selecione um item para operar.</p>

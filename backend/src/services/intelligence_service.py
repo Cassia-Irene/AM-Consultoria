@@ -31,6 +31,8 @@ class IntelligenceService:
             
             # --- LÓGICA DE ESTADO OPERACIONAL ---
             state = client.get('status_operacional', 'normal')
+            if "normal" in state.lower():
+                state = "normal"
             
             # Narrativa factual
             if state == "emergência":

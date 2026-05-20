@@ -36,7 +36,8 @@ class CrecheScenario(Scenario):
                 servicos_contratados="Organização administrativa e prestação de contas",
                 visitas_previstas_mes=3,
                 inclui_relatorio=True,
-                data_inicio=date(2024, 6, 1)
+                data_inicio=date(2024, 6, 1),
+                observacoes_gerais="Equipe afetiva e pouco organizada documentalmente. Grande medo de auditoria da prefeitura. [OVERRIDE_PERFIL:normal] [OVERRIDE_SAUDE:normal] [OVERRIDE_DESGASTE:0]"
             )
             self.db.add(contrato)
             self.db.flush()

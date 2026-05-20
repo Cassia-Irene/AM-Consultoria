@@ -36,7 +36,8 @@ class ReabilitaScenario(Scenario):
                 servicos_contratados="Organização operacional e faturamento",
                 visitas_previstas_mes=4,
                 inclui_relatorio=True,
-                data_inicio=date(2025, 3, 1)
+                data_inicio=date(2025, 3, 1),
+                observacoes_gerais="Equipe técnica muito boa, mas gestão financeira confusa. A Fernanda muda prioridades frequentemente conforme pressão dos convênios. [OVERRIDE_PERFIL:normal] [OVERRIDE_SAUDE:normal] [OVERRIDE_DESGASTE:0]"
             )
             self.db.add(contrato)
             self.db.flush()

@@ -289,7 +289,7 @@ function RegistroRapidoForm() {
             </div>
             <div>
               <p className="text-white text-sm font-bold">Rascunho recuperado</p>
-              <p className="text-blue-200/70 text-[10px]">Você tem um relato não finalizado.</p>
+              <p className="text-blue-200 text-[10px] md:text-[11px] mt-2">Você tem um relato não finalizado.</p>
             </div>
           </div>
           <button 
@@ -301,8 +301,6 @@ function RegistroRapidoForm() {
         </div>
       )}
 
-      {/* Toggle removido conforme nova orientação de fluxo separado */}
-
       {error && (
         <div className="bg-red-500/10 border border-red-500/50 text-red-500 text-xs p-4 rounded-xl mb-6">
           {error}
@@ -312,7 +310,7 @@ function RegistroRapidoForm() {
       <div className="space-y-8">
         {/* Cliente */}
         <section>
-          <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-[#7D8597] mb-3">
+          <label className="block text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-300 mb-3">
             Cliente
           </label>
           <select
@@ -343,7 +341,7 @@ function RegistroRapidoForm() {
 
         {/* Tipo de Visita */}
         <section>
-          <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-[#7D8597] mb-3">
+          <label className="block text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-300 mb-3">
             Tipo
           </label>
           <div className="flex gap-2">
@@ -365,7 +363,7 @@ function RegistroRapidoForm() {
 
         {/* Relato */}
         <section>
-          <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-[#7D8597] mb-3">
+          <label className="block text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-300 mb-3">
             O que aconteceu?
           </label>
           <textarea
@@ -378,7 +376,7 @@ function RegistroRapidoForm() {
 
         {/* Pendência Rápida */}
         <section>
-          <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-[#7D8597] mb-3">
+          <label className="block text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-300 mb-3">
             Gerar Pendência? (Opcional)
           </label>
           <input
@@ -403,14 +401,14 @@ function RegistroRapidoForm() {
               className="size-4 rounded border-zinc-800 bg-[#0d1117] text-sky-600 focus:ring-sky-500 cursor-pointer"
             />
             <div>
-              <p className="text-xs font-bold text-white">Marcar como Visita Extra</p>
-              <p className="text-[9px] font-black uppercase tracking-widest text-[#7D8597]">Não Planejada / Demanda Sobressalente</p>
+              <p className="text-xs md:text-sm font-bold text-white md:mb-2">Marcar como Visita Extra</p>
+              <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-sky-500">Não Planejada / Demanda Sobressalente</p>
             </div>
           </label>
 
           {form.isExtra && (
             <div className="animate-in fade-in slide-in-from-top-1 duration-200 space-y-2 pt-4 border-t border-zinc-900/50">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[#7D8597] ml-1">Quem solicitou a visita? *</label>
+              <label className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-zinc-300 ml-1">Quem solicitou a visita? *</label>
               <select
                 value={form.solicitadoPor || ''}
                 onChange={e => {
@@ -443,15 +441,15 @@ function RegistroRapidoForm() {
               className="size-4 rounded border-zinc-800 bg-[#0d1117] text-rose-600 focus:ring-rose-500 cursor-pointer"
             />
             <div>
-              <p className="text-xs font-bold text-white">Houve situação crítica nesta visita</p>
-              <p className="text-[9px] font-black uppercase tracking-widest text-rose-500/80">Registra uma intercorrência importante na linha do tempo operacional</p>
+              <p className="text-xs md:text-sm font-bold text-white md:mb-2">Houve situação crítica nesta visita</p>
+              <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-rose-500/80">Registra uma intercorrência importante na linha do tempo operacional</p>
             </div>
           </label>
 
           {form.temCrise && (
             <div className="animate-in fade-in slide-in-from-top-1 duration-200 space-y-4 pt-4 border-t border-zinc-900/50">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[#7D8597] ml-1">Descrição da Situação Crítica *</label>
+                <label className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-zinc-300 ml-1">Descrição da Situação Crítica *</label>
                 <textarea
                   value={form.criseDescricao || ''}
                   onChange={e => {
@@ -460,18 +458,18 @@ function RegistroRapidoForm() {
                   }}
                   rows={2}
                   placeholder="Descreva a intercorrência crítica encontrada em campo..."
-                  className="w-full bg-[#0d1117] border border-[#23272F] rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-rose-500 text-white resize-none"
+                  className="w-full bg-[#0d1117] border border-[#23272F] rounded-2xl px-5 py-4 mt-2 text-sm focus:outline-none focus:border-rose-500 text-white resize-none"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-[#7D8597] ml-1">Ação Tomada (Opcional)</label>
+                <label className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-zinc-300 ml-1">Ação Tomada (Opcional)</label>
                 <input
                   type="text"
                   value={form.criseAcaoTomada || ''}
                   onChange={e => setForm({ ...form, criseAcaoTomada: e.target.value })}
                   placeholder="Opcional. Padrão: Intervenção técnica imediata realizada pelo Adriano."
-                  className="w-full bg-[#0d1117] border border-[#23272F] rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-rose-500 text-white"
+                  className="w-full bg-[#0d1117] border border-[#23272F] rounded-2xl px-5 py-4 mt-2 text-sm focus:outline-none focus:border-rose-500 text-white"
                 />
               </div>
             </div>

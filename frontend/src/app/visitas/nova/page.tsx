@@ -574,7 +574,7 @@ function NovaVisitaForm() {
           </button>
           <div>
             <h1 className="text-white text-base font-black tracking-tight">Visita Detalhada</h1>
-            <p className="text-zinc-600 text-[10px] uppercase tracking-wider font-bold">Relato e Ação Direta</p>
+            <p className="text-zinc-300 text-[10px] md:text-[11px] uppercase tracking-wider font-bold mt-2">Relato e Ação Direta</p>
           </div>
         </div>
       </div>
@@ -587,7 +587,7 @@ function NovaVisitaForm() {
             </div>
             <div>
               <p className="text-white text-xs font-bold">Rascunho recuperado</p>
-              <p className="text-zinc-600 text-[9px] uppercase tracking-wider font-bold">Preenchimento não finalizado</p>
+              <p className="text-blue-200 text-[9px] md:text-[10px] uppercase tracking-wider font-bold mt-2">Preenchimento não finalizado</p>
             </div>
           </div>
           <button 
@@ -609,20 +609,20 @@ function NovaVisitaForm() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="px-5 mt-6 space-y-6">
+      <form onSubmit={handleSubmit} className="px-5 mt-8 space-y-8 md:space-y-10">
         
         {/* CLIENTE & CONTRATO */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-2">Cliente *</label>
+            <label className="block text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-300 mb-3">Cliente *</label>
             <select
               value={form.clienteId}
               onChange={e => {
                 setForm(f => ({ ...f, clienteId: e.target.value, contratoId: '' }))
                 setErrors(er => ({ ...er, clienteId: undefined }))
               }}
-              className={`w-full rounded-xl border px-4 py-3 text-sm text-white bg-zinc-950 focus:outline-none focus:border-[#0466C8] transition-colors ${
-                errors.clienteId ? 'border-red-900' : 'border-zinc-800/80'
+              className={`w-full bg-[#0d1117] border rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-[#0466C8] appearance-none transition-colors ${
+                errors.clienteId ? 'border-red-900' : 'border-[#23272F]'
               }`}
             >
               <option value="">Selecione o cliente...</option>
@@ -633,7 +633,7 @@ function NovaVisitaForm() {
           </div>
 
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-2">Contrato Vinculado *</label>
+            <label className="block text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-300 mb-3">Contrato Vinculado *</label>
             <select
               value={form.contratoId}
               onChange={e => {
@@ -641,8 +641,8 @@ function NovaVisitaForm() {
                 setErrors(er => ({ ...er, contratoId: undefined }))
               }}
               disabled={!form.clienteId}
-              className={`w-full rounded-xl border px-4 py-3 text-sm text-white bg-zinc-950 focus:outline-none focus:border-[#0466C8] disabled:opacity-40 transition-colors ${
-                errors.contratoId ? 'border-red-900' : 'border-zinc-800/80'
+              className={`w-full bg-[#0d1117] border rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-[#0466C8] disabled:opacity-40 appearance-none transition-colors ${
+                errors.contratoId ? 'border-red-900' : 'border-[#23272F]'
               }`}
             >
               <option value="">Selecione o contrato...</option>
@@ -654,9 +654,9 @@ function NovaVisitaForm() {
         </div>
 
         {/* RELATO CENTRAL (FOCO TOTAL) */}
-        <div className="bg-zinc-900/20 border border-zinc-800/40 rounded-2xl p-5 space-y-4">
+        <div className="bg-zinc-950/40 border border-[#23272F]/60 rounded-2xl p-6 md:p-8 space-y-6">
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-2">O que aconteceu? (Relato Principal) *</label>
+            <label className="block text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-300 mb-3">O que aconteceu? (Relato Principal) *</label>
             <textarea
               autoFocus
               value={form.descricao}
@@ -666,15 +666,15 @@ function NovaVisitaForm() {
               }}
               rows={4}
               placeholder="Descreva a visita. Ex: Inspeção sanitária mensal na cozinha. Identificado estoque sem identificação de validade..."
-              className={`w-full bg-zinc-950 rounded-xl border px-4 py-3 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-[#0466C8] resize-none transition-colors ${
-                errors.descricao ? 'border-red-900' : 'border-zinc-800/80'
+              className={`w-full bg-[#0d1117] rounded-2xl border px-5 py-4 text-sm text-white placeholder-zinc-400 focus:outline-none focus:border-[#0466C8] resize-none transition-colors ${
+                errors.descricao ? 'border-red-900' : 'border-[#23272F]'
               }`}
             />
           </div>
 
           {form.status === 'realizada' && (
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-2">Resultados Detalhados *</label>
+              <label className="block text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-300 mb-3">Resultados Detalhados *</label>
               <textarea
                 value={form.resultados}
                 onChange={e => {
@@ -683,8 +683,8 @@ function NovaVisitaForm() {
                 }}
                 rows={3}
                 placeholder="Ex: Treinado manipuladores sobre descarte imediato. Lixeira sem pedal marcada para troca..."
-                className={`w-full bg-zinc-950 rounded-xl border px-4 py-3 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-[#0466C8] resize-none transition-colors ${
-                  errors.resultados ? 'border-red-900' : 'border-zinc-800/80'
+                className={`w-full bg-[#0d1117] rounded-2xl border px-5 py-4 text-sm text-white placeholder-zinc-400 focus:outline-none focus:border-[#0466C8] resize-none transition-colors ${
+                  errors.resultados ? 'border-red-900' : 'border-[#23272F]'
                 }`}
               />
             </div>
@@ -692,45 +692,45 @@ function NovaVisitaForm() {
         </div>
 
         {/* PENDÊNCIAS & AÇÕES GERADAS INLINE */}
-        <div className="bg-zinc-900/20 border border-zinc-800/40 rounded-2xl p-5 space-y-4">
+        <div className="bg-zinc-950/40 border border-[#23272F]/60 rounded-2xl p-6 md:p-8 space-y-6">
           <div>
-            <h3 className="text-white text-xs font-black uppercase tracking-widest">Pendências e Ações Geradas</h3>
-            <p className="text-[10px] text-zinc-600 mt-1">Conforme você relata, pendências com score alto são salvas automaticamente. Outras aparecem como sugestões.</p>
+            <h3 className="text-white text-sm font-bold">Pendências e Ações Geradas</h3>
+            <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.15em] text-sky-500 mt-2">Conforme você relata, pendências com score alto são salvas automaticamente. Outras aparecem como sugestões.</p>
           </div>
 
           {/* Lista de Inclusas */}
           {form.pendencias.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Já Inclusas ({form.pendencias.length})</p>
-              <div className="grid grid-cols-1 gap-2">
+            <div className="space-y-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400">Já Inclusas ({form.pendencias.length})</p>
+              <div className="grid grid-cols-1 gap-3">
                 {form.pendencias.map(p => (
-                  <div key={p.id} className="bg-zinc-950/60 border border-zinc-800/60 rounded-xl p-3 flex items-start justify-between gap-3">
-                    <div className="flex-1 space-y-2">
+                  <div key={p.id} className="bg-[#0d1117] border border-[#23272F] rounded-2xl p-4 flex items-start justify-between gap-4">
+                    <div className="flex-1 space-y-3">
                       <input
                         type="text"
                         value={p.descricao}
                         onChange={e => updatePendencia(p.id, { descricao: e.target.value })}
-                        className="w-full bg-transparent text-white text-xs font-bold focus:outline-none border-b border-dashed border-zinc-800 focus:border-zinc-700 pb-1"
+                        className="w-full bg-transparent text-white text-sm font-bold focus:outline-none border-b border-dashed border-zinc-800 focus:border-zinc-700 pb-1"
                       />
-                      <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex items-center gap-1.5 bg-zinc-900 px-2 py-1 rounded text-[10px]">
-                          <span className="text-zinc-600 font-bold uppercase tracking-widest">Prazo:</span>
+                      <div className="flex flex-wrap items-center gap-4">
+                        <div className="flex items-center gap-2 bg-[#001845] px-3 py-1.5 rounded-xl border border-[#002855] text-[11px]">
+                          <span className="text-[#7D8597] font-bold uppercase tracking-widest">Prazo:</span>
                           <input
                             type="date"
                             value={p.data_prazo}
                             onChange={e => updatePendencia(p.id, { data_prazo: e.target.value })}
-                            className="bg-transparent text-zinc-300 focus:outline-none cursor-pointer"
+                            className="bg-transparent text-white focus:outline-none cursor-pointer font-bold"
                           />
                         </div>
-                        <div className="flex items-center gap-1.5 bg-zinc-900 px-2 py-1 rounded text-[10px]">
-                          <span className="text-zinc-600 font-bold uppercase tracking-widest">Responsável:</span>
+                        <div className="flex items-center gap-2 bg-[#001845] px-3 py-1.5 rounded-xl border border-[#002855] text-[11px]">
+                          <span className="text-[#7D8597] font-bold uppercase tracking-widest">Responsável:</span>
                           <select
                             value={p.responsavel}
                             onChange={e => updatePendencia(p.id, { responsavel: e.target.value })}
-                            className="bg-transparent text-zinc-300 focus:outline-none"
+                            className="bg-transparent text-white focus:outline-none font-bold"
                           >
-                            <option value="Equipe Cliente" className="bg-zinc-950">Equipe Cliente</option>
-                            <option value="AM Consultoria" className="bg-zinc-950">AM Consultoria</option>
+                            <option value="Equipe Cliente" className="bg-[#001845]">Equipe Cliente</option>
+                            <option value="AM Consultoria" className="bg-[#001845]">AM Consultoria</option>
                           </select>
                         </div>
                       </div>
@@ -738,7 +738,7 @@ function NovaVisitaForm() {
                     <button
                       type="button"
                       onClick={() => removePendencia(p.id, p.descricao)}
-                      className="size-6 rounded-lg bg-zinc-900/60 hover:bg-red-950/20 text-zinc-500 hover:text-red-400 transition-colors flex items-center justify-center text-sm"
+                      className="size-8 rounded-xl bg-zinc-900/60 hover:bg-red-950/20 text-zinc-500 hover:text-red-400 transition-colors flex items-center justify-center text-lg font-bold"
                     >
                       ×
                     </button>
@@ -750,27 +750,27 @@ function NovaVisitaForm() {
 
           {/* Sugestões Opcionais (Opt-in) */}
           {sugestoes.length > 0 && (
-            <div className="space-y-2 pt-2 border-t border-zinc-900/50">
-              <p className="text-[10px] font-black uppercase tracking-widest text-[#0466C8]">Adicionar também? ({sugestoes.length})</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="space-y-3 pt-4 border-t border-[#23272F]/60">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#0466C8]">Adicionar também? ({sugestoes.length})</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {sugestoes.map(s => (
-                  <div key={s.id} className="bg-zinc-950/30 border border-zinc-900/80 rounded-xl p-3 flex items-center justify-between gap-3">
+                  <div key={s.id} className="bg-[#0d1117] border border-[#23272F] rounded-2xl p-4 flex items-center justify-between gap-4">
                     <div className="min-w-0">
-                      <p className="text-white text-xs font-bold truncate">{s.descricao}</p>
-                      <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest mt-0.5">Prazo: {formatarDataBR(s.data_prazo)}</p>
+                      <p className="text-white text-sm font-bold truncate">{s.descricao}</p>
+                      <p className="text-[9px] text-[#7D8597] font-bold uppercase tracking-[0.1em] mt-1">Prazo: {formatarDataBR(s.data_prazo)}</p>
                     </div>
-                    <div className="flex gap-1 shrink-0">
+                    <div className="flex gap-2 shrink-0">
                       <button
                         type="button"
                         onClick={() => aceitarSugestao(s.id)}
-                        className="px-2.5 py-1 rounded bg-[#0466C8]/10 hover:bg-[#0466C8]/20 border border-[#0466C8]/20 text-[#0466C8] text-[10px] font-black uppercase tracking-widest transition-colors"
+                        className="px-3.5 py-2 rounded-xl bg-[#0466C8]/10 hover:bg-[#0466C8]/20 border border-[#0466C8]/20 text-[#0466C8] text-[10px] font-black uppercase tracking-widest transition-colors"
                       >
                         + Sim
                       </button>
                       <button
                         type="button"
                         onClick={() => descartarSugestao(s.id, s.gatilho)}
-                        className="px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-500 text-[10px] font-black uppercase tracking-widest transition-colors"
+                        className="px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-500 text-[10px] font-black uppercase tracking-widest transition-colors"
                       >
                         Não
                       </button>
@@ -798,21 +798,21 @@ function NovaVisitaForm() {
                 ]
               }))
             }}
-            className="w-full py-3.5 border border-dashed border-zinc-800/80 rounded-xl hover:border-zinc-700 text-zinc-500 hover:text-zinc-400 text-xs font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
+            className="w-full py-4 border border-dashed border-zinc-600 rounded-2xl hover:border-zinc-500 text-zinc-300 hover:text-zinc-200 text-xs font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
           >
-            <Plus size={12} /> Escrever pendência manual
+            <Plus className='w-4 h-4 text-white' /> Escrever pendência manual
           </button>
         </div>
 
         {/* DETALHES ADICIONAIS (CONTINUIDADE NATURAL - COMPACTOS E PRÉ-PREENCHIDOS) */}
-        <div className="bg-zinc-900/10 border border-zinc-900/40 rounded-2xl p-5 space-y-4">
+        <div className="bg-zinc-950/40 border border-[#23272F]/60 rounded-2xl p-6 md:p-8 space-y-6">
           <div>
-            <h3 className="text-white text-xs font-black uppercase tracking-widest">Detalhes de Execução (Opcionais)</h3>
-            <p className="text-[10px] text-zinc-700">Preenchidos por padrão para máxima agilidade. Altere se necessário.</p>
+            <h3 className="text-white text-sm font-bold">Detalhes de Execução (Opcionais)</h3>
+            <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.15em] text-zinc-300 mt-2">Preenchidos por padrão para máxima agilidade. Altere se necessário.</p>
           </div>
 
           {/* SELEÇÃO DE VISITA EXTRA E SOLICITANTE */}
-          <div className="bg-zinc-950/40 border border-zinc-900/60 rounded-xl p-4 space-y-3.5">
+          <div className="bg-[#0d1117] border border-[#23272F] rounded-2xl p-5 space-y-4">
             <label className="flex items-center gap-3 cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -825,21 +825,21 @@ function NovaVisitaForm() {
               />
               <div>
                 <p className="text-xs font-bold text-white">Marcar como Visita Extra</p>
-                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600">Não planejada / Demanda sobressalente</p>
+                <p className="text-[9px] md:tex-[10px] font-black uppercase tracking-widest text-sky-500 mt-2">Não planejada / Demanda sobressalente</p>
               </div>
             </label>
 
             {form.isExtra && (
               <div className="animate-in fade-in slide-in-from-top-1 duration-200">
-                <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-1.5">Solicitado por *</label>
+                <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-300 mb-2">Solicitado por *</label>
                 <select
                   value={form.solicitadoPor}
                   onChange={e => {
                     setForm(f => ({ ...f, solicitadoPor: e.target.value }))
                     setErrors(er => ({ ...er, solicitadoPor: undefined }))
                   }}
-                  className={`w-full bg-zinc-950 rounded-xl border px-3 py-2 text-xs text-white focus:outline-none focus:border-[#0466C8] transition-colors ${
-                    errors.solicitadoPor ? 'border-red-900' : 'border-zinc-900/80'
+                  className={`w-full bg-[#0d1117] rounded-2xl border px-4 py-3 text-xs text-white focus:outline-none focus:border-[#0466C8] appearance-none transition-colors ${
+                    errors.solicitadoPor ? 'border-red-900' : 'border-[#23272F]'
                   }`}
                 >
                   <option value="">Selecione o contato solicitante...</option>
@@ -850,14 +850,14 @@ function NovaVisitaForm() {
                   ))}
                 </select>
                 {errors.solicitadoPor && (
-                  <p className="text-red-500 text-[10px] mt-1 font-bold">{errors.solicitadoPor}</p>
+                  <p className="text-red-500 text-[10px] md:text[11px] mt-1 font-bold">{errors.solicitadoPor}</p>
                 )}
               </div>
             )}
           </div>
 
           {/* SELEÇÃO DE SITUAÇÃO CRÍTICA (CAUSALIDADE OPERACIONAL) */}
-          <div className="bg-zinc-950/40 border border-zinc-900/60 rounded-xl p-4 space-y-3.5 mt-4">
+          <div className="bg-[#0d1117] border border-[#23272F] rounded-2xl p-5 space-y-4">
             <label className="flex items-center gap-3 cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -869,15 +869,15 @@ function NovaVisitaForm() {
                 className="size-4 rounded border-zinc-800 bg-zinc-950 text-rose-600 focus:ring-rose-500 cursor-pointer"
               />
               <div>
-                <p className="text-xs font-bold text-white">Houve situação crítica nesta visita</p>
-                <p className="text-[9px] font-black uppercase tracking-widest text-rose-500/80">Registra uma intercorrência importante na linha do tempo operacional</p>
+                <p className="text-xs md:text-[12px] font-bold text-white">Houve situação crítica nesta visita</p>
+                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-rose-500/80 mt-2">Registra uma intercorrência importante na linha do tempo operacional</p>
               </div>
             </label>
 
             {form.temCrise && (
-              <div className="animate-in fade-in slide-in-from-top-1 duration-200 space-y-3.5 pt-2 border-t border-zinc-900/50">
+              <div className="animate-in fade-in slide-in-from-top-1 duration-200 space-y-4 pt-4 border-t border-[#23272F]/60">
                 <div>
-                  <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-1.5">Descrição da Situação Crítica *</label>
+                  <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-300 mb-2">Descrição da Situação Crítica *</label>
                   <textarea
                     value={form.criseDescricao || ''}
                     onChange={e => {
@@ -886,8 +886,8 @@ function NovaVisitaForm() {
                     }}
                     rows={2}
                     placeholder="Descreva a intercorrência crítica encontrada em campo..."
-                    className={`w-full bg-zinc-950 rounded-xl border px-3 py-2 text-xs text-white placeholder-zinc-800 focus:outline-none focus:border-rose-500 transition-colors ${
-                      errors.criseDescricao ? 'border-red-900' : 'border-zinc-900/80'
+                    className={`w-full bg-[#0d1117] rounded-2xl border px-4 py-3 text-xs md:text-[12px] text-white placeholder-zinc-400 focus:outline-none focus:border-rose-500 resize-none transition-colors ${
+                      errors.criseDescricao ? 'border-red-900' : 'border-[#23272F]'
                     }`}
                   />
                   {errors.criseDescricao && (
@@ -896,26 +896,26 @@ function NovaVisitaForm() {
                 </div>
 
                 <div>
-                  <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-1.5">Ação Tomada (Opcional)</label>
+                  <label className="block text-[9px] md:text-[10px] font-black uppercase tracking-widest text-zinc-300 mb-2">Ação Tomada (Opcional)</label>
                   <input
                     type="text"
                     value={form.criseAcaoTomada || ''}
                     onChange={e => setForm(f => ({ ...f, criseAcaoTomada: e.target.value }))}
                     placeholder="Opcional. Padrão: Intervenção técnica imediata realizada pelo Adriano."
-                    className="w-full bg-zinc-950 rounded-xl border border-zinc-900/80 px-3 py-2 text-xs text-white placeholder-zinc-800 focus:outline-none focus:border-rose-500 transition-colors"
+                    className="w-full bg-[#0d1117] rounded-2xl border border-[#23272F] px-4 py-3 text-xs md:text-[12px] text-white placeholder-zinc-400 focus:outline-none focus:border-rose-500 transition-colors"
                   />
                 </div>
               </div>
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div>
-              <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1.5">Status</label>
+              <label className="block text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-300 mb-3">Status</label>
               <select
                 value={form.status}
                 onChange={e => setForm(f => ({ ...f, status: e.target.value as StatusVisita }))}
-                className="w-full bg-zinc-950 rounded-xl border border-zinc-900/80 px-3 py-2 text-xs text-white focus:outline-none focus:border-[#0466C8]"
+                className="w-full bg-[#0d1117] rounded-2xl border border-[#23272F] px-4 py-3 text-xs md:text-[12px] text-white focus:outline-none focus:border-[#0466C8] appearance-none"
               >
                 <option value="realizada">Concluída</option>
                 <option value="agendada">Agendada</option>
@@ -924,11 +924,11 @@ function NovaVisitaForm() {
             </div>
 
             <div>
-              <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1.5">Tipo de Visita</label>
+              <label className="block text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-300 mb-3">Tipo de Visita</label>
               <select
                 value={form.tipo_visita}
                 onChange={e => setForm(f => ({ ...f, tipo_visita: e.target.value as TipoVisita }))}
-                className="w-full bg-zinc-950 rounded-xl border border-zinc-900/80 px-3 py-2 text-xs text-white focus:outline-none focus:border-[#0466C8]"
+                className="w-full bg-[#0d1117] rounded-2xl border border-[#23272F] px-4 py-3 text-xs md:text-[12px] text-white focus:outline-none focus:border-[#0466C8] appearance-none"
               >
                 <option value="rotineira">Rotineira</option>
                 <option value="urgente">Urgente</option>
@@ -939,11 +939,11 @@ function NovaVisitaForm() {
             </div>
 
             <div>
-              <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1.5">Modalidade</label>
+              <label className="block text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-300 mb-3">Modalidade</label>
               <select
                 value={form.modalidade}
                 onChange={e => setForm(f => ({ ...f, modalidade: e.target.value as ModalidadeVisita }))}
-                className="w-full bg-zinc-950 rounded-xl border border-zinc-900/80 px-3 py-2 text-xs text-white focus:outline-none focus:border-[#0466C8]"
+                className="w-full bg-[#0d1117] rounded-2xl border border-[#23272F] px-4 py-3 text-xs md:text-[12px] text-white focus:outline-none focus:border-[#0466C8] appearance-none"
               >
                 <option value="presencial">Presencial</option>
                 <option value="remota">Remota</option>
@@ -951,44 +951,40 @@ function NovaVisitaForm() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <label className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1.5 flex items-center gap-1">
-                <Calendar size={10} /> Data e Hora
+              <label className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-300 mb-3 flex items-center gap-1.5">
+                <Calendar size={12} /> Data e Hora
               </label>
               <input
                 type="datetime-local"
                 value={form.data_hora}
                 onChange={e => setForm(f => ({ ...f, data_hora: e.target.value }))}
                 style={{ colorScheme: 'dark' }}
-                className="w-full bg-zinc-950 rounded-xl border border-zinc-900/80 px-3 py-2 text-xs text-white focus:outline-none focus:border-[#0466C8] cursor-pointer"
+                className="w-full bg-[#0d1117] rounded-2xl border border-[#23272F] px-4 py-3 text-xs md:text-[12px] text-white focus:outline-none focus:border-[#0466C8] cursor-pointer"
               />
             </div>
 
             <div>
-              <label className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1.5 flex items-center gap-1">
-                <Clock size={10} /> Duração (minutos)
+              <label className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-300 mb-3 flex items-center gap-1.5">
+                <Clock size={12} /> Duração (minutos)
               </label>
               <input
                 type="number"
                 value={form.duracao_minutos}
                 onChange={e => setForm(f => ({ ...f, duracao_minutos: Number(e.target.value) }))}
-                className="w-full bg-zinc-950 rounded-xl border border-zinc-900/80 px-3 py-2 text-xs text-white focus:outline-none focus:border-[#0466C8]"
+                className="w-full bg-[#0d1117] rounded-2xl border border-[#23272F] px-4 py-3 text-xs md:text-[12px] text-white focus:outline-none focus:border-[#0466C8]"
               />
             </div>
           </div>
         </div>
 
         {/* BOTÃO FIXO/FINAL DE ENVIO */}
-        <div className="pt-4">
+        <div className="pt-6">
           <button
             type="submit"
             disabled={saving}
-            className={`w-full py-4 rounded-xl text-sm font-black uppercase tracking-widest text-white transition-all shadow-lg active:scale-[0.99] ${
-              saving 
-                ? 'bg-sky-600/40 text-sky-300 animate-pulse' 
-                : 'bg-sky-600 hover:bg-sky-500 shadow-sky-900/10'
-            }`}
+            className={`w-full bg-[#0466C8] hover:bg-[#0353A4] active:scale-[0.98] transition-all text-white text-[12px] font-black text-center rounded-xl py-4 shadow-lg shadow-blue-900/30 uppercase tracking-widest disabled:opacity-50 disabled:animate-pulse`}
           >
             {saving ? (savingStep || 'Registrando Visita...') : 'Registrar Visita'}
           </button>

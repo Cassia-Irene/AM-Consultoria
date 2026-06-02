@@ -181,7 +181,7 @@ http://localhost:8000/docs
 ---
 
 ### 👩‍💻 Devs
-* **Cássia Irene | [GitHub](https://github.com/Cassia-Irene)**
+* **Cássia Nascimento | [GitHub](https://github.com/cassia-nascimento)**
 * **Leonardo Ferreira | [GitHub](https://github.com/leonardoferrza)**
 * **Melissa Wolff | [GitHub](https://github.com/melwolff13)**
 

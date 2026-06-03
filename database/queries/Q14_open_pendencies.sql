@@ -1,7 +1,8 @@
 /* 
-  Q03: Pendências Abertas por Cliente e Responsável
+  Q14: Pendências Abertas por Cliente e Responsável
   Consumo: Página de Pendências / Dashboard
-  Objetivo: Listar tarefas pendentes com foco em quem deve resolver.
+  Objetivo: Listar todas as tarefas pendentes com foco em quem deve resolver.
+  Renomeado de Q03_open_pendencies para Q14_open_pendencies (evitar conflito com Q03_caos_score).
 */
 
 SELECT 

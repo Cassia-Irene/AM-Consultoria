@@ -40,7 +40,7 @@ class AnalyticsService:
 
     @classmethod
     def get_open_pendencies(cls, db: Session):
-        return cls.execute_query(db, "Q03_open_pendencies.sql")
+        return cls.execute_query(db, "Q14_open_pendencies.sql")
 
     @classmethod
     def get_active_projects(cls, db: Session):

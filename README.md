@@ -104,12 +104,13 @@ AM-Consultoria
 │   │   ├── services/
 │   │   │   └── intelligence/
 │   │   └── read_models/
+│   ├── seeds/
+│   │   └── scenarios/
 │   └── requirements.txt
 │
 ├── database/
 │   ├── migrations/
-│   ├── queries/
-│   └── seeds/
+│   └── queries/
 │
 ├── frontend/
 │   ├── src/
@@ -123,16 +124,17 @@ AM-Consultoria
 │
 ├── docs/
 ├── docker-compose.yml
-└── run_backend.py
+├── run_backend.py
+└── .env
 ```
 
-**Backend:** API REST, regras de negócio e motores de inteligência operacional.
+**Backend:** API REST (FastAPI), regras de negócio, sementes de dados (seeds) e motores de inteligência operacional.
 
-**Frontend:** Interface web construída com Next.js, responsável pela visualização dos indicadores, contratos, clientes e operações.
+**Frontend:** Interface web construída com Next.js, responsável pela visualização de indicadores, contratos, clientes e operações.
 
-**Database:** Scripts de migração, consultas analíticas e população inicial dos dados.
+**Database:** Contém os scripts das migrações do banco de dados (`database/migrations/`) e as consultas analíticas (`database/queries/`).
 
-**Docs:** Diagramas, requisitos e documentação técnica do projeto.
+**Docs:** Diagramas, requisitos e guias de implantação e desenvolvimento do projeto.
 
 ---
 

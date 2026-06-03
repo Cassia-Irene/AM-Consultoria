@@ -1,6 +1,6 @@
 -- ============================================================
 -- AM Consultoria - Snapshot Oficial para Apresentacao
--- Gerado em: 2026-05-20 10:39:16
+-- Gerado em: 2026-06-03 04:00:16
 -- Banco: am_consultoria @ 127.0.0.1:5432
 --
 -- ATENCAO: Este arquivo e o espelho exato do banco de origem.

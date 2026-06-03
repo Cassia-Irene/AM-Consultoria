@@ -757,7 +757,7 @@ function NovaVisitaForm() {
                   <div key={s.id} className="bg-[#0d1117] border border-[#23272F] rounded-2xl p-4 flex items-center justify-between gap-4">
                     <div className="min-w-0">
                       <p className="text-white text-sm font-bold truncate">{s.descricao}</p>
-                      <p className="text-[9px] text-[#7D8597] font-bold uppercase tracking-[0.1em] mt-1">Prazo: {formatarDataBR(s.data_prazo)}</p>
+                      <p className="text-[9px] text-[#7D8597] font-bold uppercase tracking-widest mt-1">Prazo: {formatarDataBR(s.data_prazo)}</p>
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <button

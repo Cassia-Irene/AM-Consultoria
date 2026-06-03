@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.routers import clientes, contatos, contratos, visitas, projetos, pendencias, eventos_criticos, visitas_extra, projeto_parcelas, projetos_extra, tipos_pagamento, contrato_pagamento, faturamento_cliente, entregas, analytics, intelligence
@@ -5,10 +6,15 @@ from src.routers import clientes, contatos, contratos, visitas, projetos, penden
 # Cria a instância da aplicação
 app = FastAPI(title="AM Consultoria API")
 
-# Configurar CORS
+# ── CORS ──────────────────────────────────────────────────────────────────────
+# Em desenvolvimento: CORS_ORIGINS não definido → fallback para localhost
+# Em produção: definir CORS_ORIGINS=https://meu-app.vercel.app no painel do Render
+_cors_env = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+CORS_ORIGINS = [origin.strip() for origin in _cors_env.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -38,5 +44,6 @@ def root():
 
 if __name__ == "__main__":
     import uvicorn
-    print("[BACKEND] Iniciando servidor na porta 8000 (todas as interfaces)...")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("PORT", "8000"))
+    print(f"[BACKEND] Iniciando servidor na porta {port} (todas as interfaces)...")
+    uvicorn.run(app, host="0.0.0.0", port=port)

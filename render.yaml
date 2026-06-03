@@ -1,0 +1,34 @@
+# render.yaml — AM Consultoria
+# Configuração declarativa do serviço no Render
+# Documentação: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: am-consultoria-api
+    runtime: python
+    region: oregon          # Altere para a região mais próxima dos usuários
+
+    # Diretório raiz do projeto (raiz do repositório)
+    # Não usamos rootDir: backend para manter acesso ao database/queries/
+    rootDir: .
+
+    # Instala dependências do backend
+    buildCommand: pip install -r backend/requirements.txt
+
+    # Inicia com PYTHONPATH=backend para resolver 'import src.*'
+    # A porta é injetada pelo Render via variável $PORT
+    startCommand: PYTHONPATH=backend uvicorn src.main:app --host 0.0.0.0 --port $PORT
+
+    # Variáveis de ambiente (configurar os VALUES no painel do Render)
+    envVars:
+      - key: DATABASE_URL
+        sync: false        # Valor secreto — definir manualmente no painel
+
+      - key: ENVIRONMENT
+        value: production
+
+      - key: CORS_ORIGINS
+        sync: false        # Ex: https://meu-app.vercel.app — definir no painel
+
+      - key: PYTHON_VERSION
+        value: "3.11.0"

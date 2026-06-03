@@ -1,4 +1,4 @@
-# Importa o Base para o Alembic conseguir ler os metadados de todas as tabelas
+# Importa o Base para que o SQLAlchemy registre os metadados de todas as tabelas
 from src.database import Base
 
 # Importa todos os modelos para que eles sejam registrados no Base.metadata

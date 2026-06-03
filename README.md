@@ -65,7 +65,6 @@ A plataforma busca reduzir a dispersão de informações, facilitar o monitorame
 * Python 3.11+
 * FastAPI
 * SQLAlchemy 2.x
-* Alembic
 * PostgreSQL
 * Pydantic 2
 * Uvicorn
@@ -82,8 +81,10 @@ A plataforma busca reduzir a dispersão de informações, facilitar o monitorame
 
 ### Banco de Dados
 
-* PostgreSQL
-* Migrations SQL versionadas
+* PostgreSQL (local via Docker, produção via Neon)
+* Migrations SQL versionadas (`V001__` — `V015__`) em `database/migrations/`
+* Executor oficial: `backend/scripts/run_sql_migrations.py`
+* Controle de versão na tabela `schema_migrations` (idempotente)
 * Constraints de integridade referencial
 * Scripts de população e simulação de dados
 
@@ -150,33 +151,53 @@ Esses componentes processam informações operacionais e financeiras para gerar 
 
 ## 🚀 Execução do Projeto
 
-### Pré-requisitos
+O projeto suporta dois ambientes. Basta alterar o `.env` para alternar entre eles.
 
-* Docker
-* Docker Compose
-
-### Configuração
-
-1. Configure os arquivos `.env`.
-2. Execute os containers:
+### Ambiente Local (Desenvolvimento)
 
 ```bash
-docker-compose up --build
+# 1. Copie o .env de exemplo
+cp .env.example .env
+
+# 2. Suba o banco de dados (Docker)
+docker-compose up -d
+
+# 3. Aplique as migrations SQL
+python backend/scripts/run_sql_migrations.py
+
+# 4. Instale as dependências do backend
+cd backend && pip install -r requirements.txt && cd ..
+
+# 5. Inicie o backend
+python run_backend.py
+
+# 6. Em outro terminal, inicie o frontend
+cd frontend && npm install && npm run dev
 ```
 
-### Acesso
+| Serviço | URL |
+|---------|-----|
+| Frontend | http://localhost:3000 |
+| Backend API | http://localhost:8000 |
+| Swagger | http://localhost:8000/docs |
 
-Frontend:
+> 📖 **Guia detalhado**: [docs/DEV_LOCAL.md](docs/DEV_LOCAL.md) · [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md)
 
-```text
-http://localhost:3000
+---
+
+### Produção (Vercel + Render + Neon)
+
+A troca entre local e produção é feita apenas nas variáveis de ambiente, sem alterar código.
+
+```env
+# Produção — .env ou painel das plataformas
+DATABASE_URL=postgresql://user:senha@host.neon.tech/db?sslmode=require
+ENVIRONMENT=production
+CORS_ORIGINS=https://meu-app.vercel.app
+NEXT_PUBLIC_API_URL=https://meu-backend.onrender.com
 ```
 
-Swagger da API:
-
-```text
-http://localhost:8000/docs
-```
+> 📖 **Guia de deploy completo**: [docs/DEPLOY.md](docs/DEPLOY.md)
 
 ---
 
@@ -186,6 +207,5 @@ http://localhost:8000/docs
 * **Melissa Wolff | [GitHub](https://github.com/melwolff13)**
 
 ---
-
 
 Projeto desenvolvido na disciplina de *Banco de Dados* da **UNDB**, integrando conceitos de modelagem relacional, desenvolvimento Full Stack, APIs REST, integridade de dados e inteligência operacional aplicada.

@@ -3937,6 +3937,27 @@
       "tendencia_relacionamento": "estável",
       "dependencia_operacional": "nominal",
       "capacidade_recuperacao": "estável"
+    },
+    "2026-06-03": {
+      "perfil_pragmatico": "operação_de_alto_atrito",
+      "desgaste_longitudinal": 74,
+      "evidencias": [
+        "2 crise(s)/evento(s) crítico(s) recente(s)",
+        "7 pendência(s) operacional(ais) ativa(s)",
+        "Frequência operacional de alto desgaste"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": false,
+      "indice_urgencia": 74,
+      "indice_desgaste": 74,
+      "perfil": "operação_de_alto_atrito",
+      "motivo_saude": "Desgaste Crítico",
+      "intensidade_operacional": "alta",
+      "desgaste_acumulado": 74,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
     }
   },
   "contrato_295": {
@@ -4038,6 +4059,25 @@
       "capacidade_recuperacao": "estável"
     },
     "2026-05-20": {
+      "perfil_pragmatico": "nominal",
+      "desgaste_longitudinal": 54,
+      "evidencias": [
+        "27 pendência(s) operacional(ais) ativa(s)"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": false,
+      "indice_urgencia": 54,
+      "indice_desgaste": 54,
+      "perfil": "nominal",
+      "motivo_saude": "Atenção Recomendada",
+      "intensidade_operacional": "normal",
+      "desgaste_acumulado": 54,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
+    },
+    "2026-06-03": {
       "perfil_pragmatico": "nominal",
       "desgaste_longitudinal": 54,
       "evidencias": [
@@ -4174,6 +4214,25 @@
       "tendencia_relacionamento": "estável",
       "dependencia_operacional": "nominal",
       "capacidade_recuperacao": "estável"
+    },
+    "2026-06-03": {
+      "perfil_pragmatico": "nominal",
+      "desgaste_longitudinal": 14,
+      "evidencias": [
+        "7 pendência(s) operacional(ais) ativa(s)"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": false,
+      "indice_urgencia": 14,
+      "indice_desgaste": 14,
+      "perfil": "nominal",
+      "motivo_saude": "Em conformidade",
+      "intensidade_operacional": "normal",
+      "desgaste_acumulado": 14,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
     }
   },
   "contrato_297": {
@@ -4292,6 +4351,25 @@
       "tendencia_relacionamento": "estável",
       "dependencia_operacional": "nominal",
       "capacidade_recuperacao": "estável"
+    },
+    "2026-06-03": {
+      "perfil_pragmatico": "nominal",
+      "desgaste_longitudinal": 30,
+      "evidencias": [
+        "15 pendência(s) operacional(ais) ativa(s)"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": false,
+      "indice_urgencia": 30,
+      "indice_desgaste": 30,
+      "perfil": "nominal",
+      "motivo_saude": "Em conformidade",
+      "intensidade_operacional": "normal",
+      "desgaste_acumulado": 30,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
     }
   },
   "contrato_298": {
@@ -4393,6 +4471,26 @@
       "capacidade_recuperacao": "estável"
     },
     "2026-05-20": {
+      "perfil_pragmatico": "nominal",
+      "desgaste_longitudinal": 68,
+      "evidencias": [
+        "34 pendência(s) operacional(ais) ativa(s)",
+        "Frequência operacional de alto desgaste"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": false,
+      "indice_urgencia": 68,
+      "indice_desgaste": 68,
+      "perfil": "nominal",
+      "motivo_saude": "Desgaste Crítico",
+      "intensidade_operacional": "alta",
+      "desgaste_acumulado": 68,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
+    },
+    "2026-06-03": {
       "perfil_pragmatico": "nominal",
       "desgaste_longitudinal": 68,
       "evidencias": [
@@ -4531,6 +4629,26 @@
       "tendencia_relacionamento": "estável",
       "dependencia_operacional": "nominal",
       "capacidade_recuperacao": "estável"
+    },
+    "2026-06-03": {
+      "perfil_pragmatico": "normal",
+      "desgaste_longitudinal": 0,
+      "evidencias": [
+        "1 crise(s)/evento(s) crítico(s) recente(s)",
+        "17 pendência(s) operacional(ais) ativa(s)"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": true,
+      "indice_urgencia": 0,
+      "indice_desgaste": 0,
+      "perfil": "normal",
+      "motivo_saude": "normal",
+      "intensidade_operacional": "normal",
+      "desgaste_acumulado": 0,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
     }
   },
   "contrato_296": {
@@ -4647,6 +4765,26 @@
       "motivo_saude": "Desgaste Crítico",
       "intensidade_operacional": "alta",
       "desgaste_acumulado": 84,
+      "personalidade": "reativo",
+      "tendencia_relacionamento": "estável",
+      "dependencia_operacional": "nominal",
+      "capacidade_recuperacao": "estável"
+    },
+    "2026-06-03": {
+      "perfil_pragmatico": "normal",
+      "desgaste_longitudinal": 0,
+      "evidencias": [
+        "2 crise(s)/evento(s) crítico(s) recente(s)",
+        "12 pendência(s) operacional(ais) ativa(s)"
+      ],
+      "motivo_auditavel": "Fluxo institucional monitorado e estável.",
+      "override_ativo": true,
+      "indice_urgencia": 0,
+      "indice_desgaste": 0,
+      "perfil": "normal",
+      "motivo_saude": "normal",
+      "intensidade_operacional": "normal",
+      "desgaste_acumulado": 0,
       "personalidade": "reativo",
       "tendencia_relacionamento": "estável",
       "dependencia_operacional": "nominal",

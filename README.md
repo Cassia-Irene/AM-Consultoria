@@ -1,10 +1,16 @@
-# 📊 AM-Consultoria
+<h1 align="center">
+  📊 AM-Consultoria
+</h1>
 
 Sistema web para gerenciamento operacional de consultorias, desenvolvido com arquitetura Full Stack utilizando FastAPI, PostgreSQL e Next.js.
 
 O projeto centraliza informações de clientes, contratos, projetos, visitas técnicas, faturamento, eventos críticos e pendências operacionais em uma única plataforma, permitindo o acompanhamento estruturado das atividades e o apoio à tomada de decisão.
 
 Além da gestão operacional, o sistema incorpora mecanismos de análise e priorização de demandas através de motores de inteligência responsáveis pelo cálculo de indicadores de criticidade, saúde operacional e priorização de atendimento.
+
+<p align="center">
+  <img src="frontend/public/modo-caos.png" alt="Modo Caos" width="80%">
+</p>
 
 ---
 
